@@ -31,9 +31,9 @@ import type {
 export interface BattleConfig {
   seed: number;
   /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流，或一个自定义 Ruleset */
-  heroRuleset: "A" | "B" | "C" | Ruleset;
+  heroRuleset: "A" | "B" | "C" | "D" | "E" | Ruleset;
   /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
-  enemyRuleset?: "ENEMY" | "ENEMY_B";
+  enemyRuleset?: "ENEMY" | "ENEMY_B" | "ENEMY_C" | "ENEMY_D" | "ENEMY_E";
   maxFrames?: number;
 }
 
@@ -92,8 +92,8 @@ export interface BattleStats {
 
 export interface BattleResult {
   seed: number;
-  heroRuleset: "A" | "B" | "C";
-  enemyRuleset: "ENEMY" | "ENEMY_B";
+  heroRuleset: "A" | "B" | "C" | "D" | "E";
+  enemyRuleset: "ENEMY" | "ENEMY_B" | "ENEMY_C" | "ENEMY_D" | "ENEMY_E";
   winner: "hero" | "enemy" | "draw";
   frames: number;
   heroHp: number;
@@ -967,5 +967,6 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 

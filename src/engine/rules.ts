@@ -1,4 +1,4 @@
-import {
+﻿import {
   JUDGE_TOLERANCE_FRAMES,
 } from "./skills.ts";
 import type { Cost, RuleDef, RuleTag, Side, SkillId } from "./types.ts";
@@ -20,7 +20,17 @@ export interface Ruleset {
   rules: RuleDef[];
 }
 
-export type RulesetId = "A" | "B" | "C" | "ENEMY" | "ENEMY_B";
+export type RulesetId =
+  | "A"
+  | "B"
+  | "C"
+  | "D"
+  | "E"
+  | "ENEMY"
+  | "ENEMY_B"
+  | "ENEMY_C"
+  | "ENEMY_D"
+  | "ENEMY_E";
 
 export interface RuleOverride {
   id: string;
@@ -606,18 +616,131 @@ export const ENEMY_RULES_B = makeRuleset(
   ],
 );
 
-export const ENEMY_RULESETS: Record<"ENEMY" | "ENEMY_B", Ruleset> = {
+/**
+ * 规则表变体：复用同一批判定，只改优先级/冷却，保证行为差异可被日志观察。
+ */
+function variant(
+  base: Ruleset,
+  id: RulesetId,
+  name: string,
+  side: Side,
+  description: string,
+  tweaks: Record<string, { priority?: number; cooldown?: number; name?: string; disabled?: boolean }>,
+): Ruleset {
+  const rules = base.rules
+    .filter((r) => !tweaks[r.id]?.disabled)
+    .map((r) => {
+      const t = tweaks[r.id];
+      if (!t) return { ...r };
+      return {
+        ...r,
+        name: t.name ?? r.name,
+        priority: t.priority ?? r.priority,
+        cooldown: t.cooldown ?? r.cooldown,
+      };
+    })
+    .map((r, i) => ({ ...r, index: i + 1 }));
+  return { id, name, side, description, rules };
+}
+
+/** D：裂伤处决流（先裂伤，再碎地，最后处决）。 */
+export const HERO_RULES_D = variant(
+  HERO_RULES_A,
+  "D",
+  "裂伤处决",
+  "hero",
+  "优先铺裂伤→碎地→处决，打断与识破让位给 combo。",
+  {
+    A_interrupt: { priority: 55 },
+    A_read: { priority: 50 },
+    A_guard: { priority: 40 },
+    A_rend: { priority: 92, name: "裂伤起手" },
+    A_hammer: { priority: 90, name: "碎地收割" },
+    A_execute: { priority: 94, name: "处决终结" },
+  },
+);
+
+/** E：守势反击流（格挡/闪避/识破优先，只在安全窗口还击）。 */
+export const HERO_RULES_E = variant(
+  HERO_RULES_B,
+  "E",
+  "守势反击",
+  "hero",
+  "先格挡/识破/闪避，等敌方收招再还击；伤害低但很难被一套打死。",
+  {
+    B_guard: { priority: 92 },
+    B_dodge: { priority: 90 },
+    B_read: { priority: 88 },
+    B_riposte: { priority: 86, name: "反击窗口" },
+    B_thrust: { priority: 40 },
+  },
+);
+
+export const ENEMY_RULESETS = {
   ENEMY: ENEMY_RULES,
   ENEMY_B: ENEMY_RULES_B,
-};
+} as unknown as Record<"ENEMY" | "ENEMY_B" | "ENEMY_C" | "ENEMY_D" | "ENEMY_E", Ruleset>;
 
-export const HERO_RULESETS: Record<"A" | "B" | "C", Ruleset> = {
+/** C：蓄力处决（更早蓄力、重锤更频繁）。 */
+export const ENEMY_RULES_C = variant(
+  ENEMY_RULES_B,
+  "ENEMY_C",
+  "蓄力处决",
+  "enemy",
+  "更早进入蓄力，重锤释放优先级最高，横扫只做填充。",
+  {
+    EB_charge: { priority: 94, cooldown: 160, name: "提前蓄力" },
+    EB_release: { priority: 98 },
+    EB_slam: { priority: 70 },
+    EB_swipe: { priority: 15 },
+  },
+);
+
+/** D：快刀压制（横扫为主，几乎不蓄力）。 */
+export const ENEMY_RULES_D = variant(
+  ENEMY_RULES,
+  "ENEMY_D",
+  "快刀压制",
+  "enemy",
+  "贴身连续横扫，蓄力极少；用高频小伤害压制英雄。",
+  {
+    E_swipe: { priority: 96, cooldown: 24, name: "连扫" },
+    E_slam: { priority: 55, cooldown: 200 },
+    E_charge: { priority: 20, cooldown: 300 },
+    E_step: { priority: 70 },
+  },
+);
+
+/** E：游走消耗（保持距离，抓空档重锤）。 */
+export const ENEMY_RULES_E = variant(
+  ENEMY_RULES_B,
+  "ENEMY_E",
+  "游走消耗",
+  "enemy",
+  "先拉开距离再抓空档，重锤少但更突然。",
+  {
+    EB_step: { priority: 92, name: "拉开距离" },
+    EB_slam: { priority: 60, cooldown: 220 },
+    EB_charge: { priority: 65, cooldown: 260 },
+    EB_swipe: { priority: 30 },
+  },
+);
+
+ENEMY_RULESETS.ENEMY_C = ENEMY_RULES_C;
+ENEMY_RULESETS.ENEMY_D = ENEMY_RULES_D;
+ENEMY_RULESETS.ENEMY_E = ENEMY_RULES_E;
+
+export const HERO_RULESETS: Record<"A" | "B" | "C" | "D" | "E", Ruleset> = {
   A: HERO_RULES_A,
   B: HERO_RULES_B,
   C: HERO_RULES_C,
+  D: HERO_RULES_D,
+  E: HERO_RULES_E,
 };
 
 export function getRuleset(id: RulesetId): Ruleset {
-  if (id === "ENEMY" || id === "ENEMY_B") return ENEMY_RULESETS[id];
-  return HERO_RULESETS[id];
+  if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
+  return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+

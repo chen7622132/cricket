@@ -57,8 +57,14 @@ async function boot(): Promise<void> {
   rulesBtn.addEventListener("click", () => hud.toggleRules());
   rulesClose.addEventListener("click", () => hud.toggleRules(false));
 
-  const currentHeroId = (): "A" | "B" | "C" =>
-    rulesetSelect.value === "B" ? "B" : rulesetSelect.value === "C" ? "C" : "A";
+  type HeroId = "A" | "B" | "C" | "D" | "E";
+  type EnemyId = "ENEMY" | "ENEMY_B" | "ENEMY_C" | "ENEMY_D" | "ENEMY_E";
+  const HERO_IDS: HeroId[] = ["A", "B", "C", "D", "E"];
+  const ENEMY_IDS: EnemyId[] = ["ENEMY", "ENEMY_B", "ENEMY_C", "ENEMY_D", "ENEMY_E"];
+  const currentHeroId = (): HeroId => {
+    const v = rulesetSelect.value as HeroId;
+    return HERO_IDS.includes(v) ? v : "A";
+  };
 
   let customRuleset: Ruleset | null = null;
   const editor = new RuleEditor((overrides, base) => {
@@ -82,9 +88,9 @@ async function boot(): Promise<void> {
   const seedParam = Number.parseInt(params.get("seed") ?? "", 10);
   if (Number.isFinite(seedParam) && seedParam > 0) seedInput.value = String(seedParam);
   const rulesParam = params.get("rules");
-  if (rulesParam === "A" || rulesParam === "B" || rulesParam === "C") rulesetSelect.value = rulesParam;
-  const enemyParam = params.get("enemy");
-  if (enemyParam === "ENEMY" || enemyParam === "ENEMY_B") enemySelect.value = enemyParam;
+  if (HERO_IDS.includes(rulesParam as HeroId)) rulesetSelect.value = rulesParam as HeroId;
+  const enemyParam = params.get("enemy") as EnemyId;
+  if (ENEMY_IDS.includes(enemyParam)) enemySelect.value = enemyParam;
   const speedParam = Number.parseInt(params.get("speed") ?? "", 10);
   if (speeds.includes(speedParam)) {
     speedIdx = speeds.indexOf(speedParam);
@@ -106,7 +112,9 @@ async function boot(): Promise<void> {
     const parsed = Number.parseInt(seedInput.value, 10);
     const seed = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     const ruleset = currentHeroId();
-    const enemyRuleset = enemySelect.value === "ENEMY_B" ? "ENEMY_B" : "ENEMY";
+    const enemyRuleset = ENEMY_IDS.includes(enemySelect.value as EnemyId)
+    ? (enemySelect.value as EnemyId)
+    : "ENEMY";
     const heroRules = customRuleset ?? ruleset;
 
     // 把当前对局写进 URL，刷新/分享都能还原
@@ -123,8 +131,8 @@ async function boot(): Promise<void> {
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
     const forecast = new Battle({ seed, heroRuleset: heroRules, enemyRuleset }).run();
 
-    const baseHeroLabel = ruleset === "A" ? "突刺优先" : ruleset === "B" ? "全格挡流" : "识破流";
-    const enemyLabel = enemyRuleset === "ENEMY_B" ? "压制连锤" : "碎地重锤";
+    const baseHeroLabel = getRuleset(ruleset).name;
+    const enemyLabel = getRuleset(enemyRuleset).name;
     const heroTag = customRuleset ? `自定义（基于 ${ruleset} ${baseHeroLabel}）` : `${ruleset} ${baseHeroLabel}`;
     hud.reset(seed, `${heroTag} · 敌方 ${enemyLabel}`);
     const forecastName = forecast.winner === "hero" ? "英雄" : forecast.winner === "enemy" ? "敌人" : "平局";
@@ -259,6 +267,8 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
+
 
 
 
