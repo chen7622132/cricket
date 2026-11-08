@@ -137,12 +137,21 @@ export class Hud {
     window.setTimeout(() => row.classList.remove("fired"), 900);
   }
 
+  setCombo(n: number): void {
+    const el = document.getElementById("combo");
+    if (!el) return;
+    el.classList.toggle("hidden", n < 2);
+    el.classList.toggle("hot", n >= 5);
+    el.textContent = n >= 2 ? `${n} HIT` : "";
+  }
+
   toggleRules(force?: boolean): void {
     const open = force ?? this.rulesPanel.classList.contains("hidden");
     this.rulesPanel.classList.toggle("hidden", !open);
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 
 

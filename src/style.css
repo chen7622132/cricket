@@ -931,3 +931,25 @@ body.sidebar-collapsed #side {
   margin: 0;
 }
 
+
+/* 连击计数（BvN 式） */
+.combo {
+  position: absolute;
+  top: 132px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Courier New", monospace;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #ffd45c;
+  text-shadow: 0 2px 0 #5a3a08, 0 0 12px rgba(255, 180, 60, 0.55);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.combo.hot {
+  color: #ff8a5c;
+  text-shadow: 0 2px 0 #5a1a08, 0 0 16px rgba(255, 90, 40, 0.7);
+}
+

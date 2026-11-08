@@ -153,6 +153,7 @@ async function boot(): Promise<void> {
       onBanner: (text, kind) => hud.banner(text, kind),
       onEnd: (winner, frames) => hud.end(winner, frames, seed),
       onRule: (index, _text, side) => hud.flashRule(side, index),
+      onCombo: (n) => hud.setCombo(n),
     };
     hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${heroTag} · 敌方 ${enemyLabel}`);
     game.play(battle, hooks);
@@ -170,6 +171,7 @@ async function boot(): Promise<void> {
       duelPanel.render();
     },
     onRule: () => {},
+    onCombo: (n) => hud.setCombo(n),
   };
 
   let duelSeed = 20260101;
@@ -272,6 +274,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

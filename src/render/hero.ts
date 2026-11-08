@@ -52,6 +52,8 @@ export class HeroActor {
   onHitFrame?: () => void;
 
   private flashMs = 0;
+  private kdMs = 0;
+  private kdDir = 1;
   private airHeight = 0;
   private airVel = 0;
   private landedThisFrame = false;
@@ -174,6 +176,13 @@ export class HeroActor {
     }
   }
 
+  /** 重击倒地：身体绕脚点旋转 90°，短暂僵直后起身。 */
+  knockdown(dir: number, ms = 0.55): void {
+    this.kdMs = ms;
+    this.kdDir = dir;
+    this.play("HIT", true);
+  }
+
   /** 程序化腾空：没有跳跃序列帧，用垂直位移 + 影子缩放表现滞空。 */
   startJump(height: number): void {
     if (this.airHeight > 2) return;
@@ -238,7 +247,19 @@ export class HeroActor {
         this.setSquash(1.18, 0.84);
       }
     }
-    this.body.y = -this.airHeight;
+    if (this.kdMs > 0) {
+      this.kdMs -= dt;
+      const t = Math.min(1, (1 - this.kdMs / 0.55) * 4);
+      this.body.rotation = this.kdDir * 1.25 * t;
+      this.body.y = -this.airHeight - 1 + 7 * t;
+      if (this.kdMs <= 0) {
+        this.body.rotation = 0;
+        this.body.y = -this.airHeight;
+      }
+    } else {
+      this.body.rotation = 0;
+      this.body.y = -this.airHeight;
+    }
     const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
     this.shadow.scale.set(shadowScale);
     this.shadow.alpha = 0.4 + shadowScale * 0.35;
@@ -321,6 +342,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

@@ -16,6 +16,7 @@ export interface PresenterHooks {
   onBanner(text: string, kind: "clash" | "combo" | "reveal" | "end"): void;
   onEnd(winner: string, frames: number): void;
   onRule?: (ruleIndex: number, text: string, side: "hero" | "enemy") => void;
+  onCombo?: (n: number) => void;
 }
 
 interface FloatText {
@@ -50,6 +51,9 @@ export class Presenter {
   private readonly impact: ImpactFx;
   private readonly aura = new PIXI.Graphics();
   private clock = 0;
+  private combo = 0;
+  private comboOwner: Side | null = null;
+  private comboTimer = 0;
   private readonly hooks: PresenterHooks;
 
   private floats: FloatText[] = [];
@@ -117,6 +121,10 @@ export class Presenter {
     this.impact.clear();
     this.hero.clearGhosts();
     this.enemy.clearGhosts();
+    this.combo = 0;
+    this.comboOwner = null;
+    this.comboTimer = 0;
+    this.hooks.onCombo?.(0);
     for (const f of this.floats) f.text.destroy();
     this.floats = [];
     for (const m of this.marks) m.g.destroy();
@@ -364,6 +372,24 @@ export class Presenter {
     if (!o.guard) {
       o.target.flashWhite(Math.max(0.07, this.freezeMs / 1000));
       o.attacker.spawnSmear(dir, o.attackerSide === "hero" ? 0xffffff : 0xffd0d0);
+
+      // 连击 / 浮空追击 / 重击倒地
+      if (o.damage > 0) {
+        if (this.comboOwner === o.attackerSide) this.combo++;
+        else {
+          this.comboOwner = o.attackerSide;
+          this.combo = 1;
+        }
+        this.comboTimer = 0.9;
+        this.hooks.onCombo?.(this.combo);
+        if (o.target.airborne) {
+          o.target.startJump(14);
+          this.spawnFloat("浮空", o.target.x, o.target.airY + ARENA.floorY - 74, "key", false);
+        }
+        if (tier === "ultimate" && !this.ended) {
+          o.target.knockdown(dir);
+        }
+      }
     }
 
     if (o.guard) {
@@ -493,7 +519,6 @@ export class Presenter {
   update(dtMs: number): void {
     this.time += dtMs / 1000;
     this.impact.update(dtMs);
-
     if (this.freezeMs > 0) {
       this.freezeMs -= dtMs;
       this.applyCamera();
@@ -504,6 +529,15 @@ export class Presenter {
     if (this.slowmoMs > 0) this.slowmoMs -= dtMs;
     const dt = (dtMs / 1000) * scale;
     this.clock += dt;
+
+    if (this.comboTimer > 0) {
+      this.comboTimer -= dt;
+      if (this.comboTimer <= 0 && this.combo > 0) {
+        this.combo = 0;
+        this.comboOwner = null;
+        this.hooks.onCombo?.(0);
+      }
+    }
 
     const snap = this.battle.snapshot();
     const heroHome = this.slotToX(snap.hero.slot);
@@ -735,6 +769,10 @@ export class Presenter {
     };
   }
 }
+
+
+
+
 
 
 
