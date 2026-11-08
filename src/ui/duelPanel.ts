@@ -1,41 +1,43 @@
-import type { DuelSession } from "../duel/session.ts";
-import type { SkillId } from "../engine/types.ts";
+﻿import { CARDS, type CardDef, type DuelSession } from "../duel/session.ts";
 
 interface Handlers {
-  onCompose: () => void;
+  onNewRun: (seed: number) => void;
   onResolve: () => void;
   onNext: () => void;
 }
 
-/**
- * 编排面板：敌方意图（公开）→ 手牌 → 4 槽 → 结算。
- * 支持拖拽与点击两种放置方式（移动端也能用）。
- */
+/** 8 槽编排面板：种子 → 禁用 → 分段编排 → 结算 → 复盘。 */
 export class DuelPanel {
   private readonly panel = document.getElementById("duel-ui") as HTMLElement;
   private readonly runEl = document.getElementById("duel-run") as HTMLElement;
+  private readonly seedInput = document.getElementById("duel-seed") as HTMLInputElement;
   private readonly intentsEl = document.getElementById("duel-intents") as HTMLElement;
+  private readonly bansEl = document.getElementById("duel-bans") as HTMLElement;
   private readonly cardsEl = document.getElementById("duel-cards") as HTMLElement;
   private readonly slotsEl = document.getElementById("duel-slots") as HTMLElement;
   private readonly statusEl = document.getElementById("duel-status") as HTMLElement;
-  private readonly composeBtn = document.getElementById("duel-compose") as HTMLButtonElement;
+  private readonly contextBtn = document.getElementById("duel-compose") as HTMLButtonElement;
   private readonly startBtn = document.getElementById("duel-start") as HTMLButtonElement;
   private readonly nextBtn = document.getElementById("duel-next") as HTMLButtonElement;
 
-  private selected: SkillId | null = null;
+  private selected: string | null = null;
+  private message = "";
 
   constructor(
     private readonly session: DuelSession,
     private readonly handlers: Handlers,
   ) {
-    this.composeBtn.addEventListener("click", () => {
-      this.session.beginCompose();
-      this.handlers.onCompose();
+    this.contextBtn.addEventListener("click", () => {
+      if (this.session.state === "SEED_REVEAL") this.session.revealBans();
+      else if (this.session.state === "BAN_REVEAL") this.session.beginCompose();
       this.render();
     });
     this.startBtn.addEventListener("click", () => {
       if (this.session.startResolution()) {
         this.handlers.onResolve();
+        this.render();
+      } else {
+        this.message = this.session.canStart().reason;
         this.render();
       }
     });
@@ -52,93 +54,120 @@ export class DuelPanel {
 
   render(): void {
     const s = this.session;
-    const locked = s.phase === "RESOLUTION";
-
+    if (document.activeElement !== this.seedInput) this.seedInput.value = String(s.seed);
     this.runEl.textContent = `run#${s.runId}`;
+
     this.intentsEl.innerHTML = s.intents
       .map(
-        (intent, i) =>
-          `<div class="intent"><b>${intent.icon}</b><span>${intent.name}</span><i>${i + 1}</i></div>`,
+        (i) =>
+          `<div class="intent ph-${this.phaseOf(i.slot)}"><b>${i.icon}</b><span>${i.name}</span><i>${i.slot}</i></div>`,
       )
       .join("");
 
-    this.cardsEl.innerHTML = s.cards
-      .map(
-        (card) => `
-        <div class="duel-card${card.disabled ? " disabled" : ""}${this.selected === card.skill ? " selected" : ""}"
-             data-skill="${card.skill}" draggable="${!card.disabled && !locked}">
-          <b>${card.name}</b>
-          <span>${card.disabled ? "本局禁用" : card.desc}</span>
-        </div>`,
-      )
-      .join("");
+    this.bansEl.innerHTML =
+      s.bans.skills
+        .map((id) => `<span class="ban">禁 ${this.nameOf(id)}</span>`)
+        .concat(`<span class="ban">禁 ${this.nameOf(s.bans.move)}</span>`)
+        .join("");
+
+    const locked = s.state !== "PLAYER_SEQUENCE";
+    this.cardsEl.innerHTML = CARDS.map((card) => {
+      const banned = s.isBanned(card.id);
+      const phaseText = card.phases === "any" ? "任意段" : card.phases.map((p) => this.phaseName(p)).join("/");
+      return `<div class="duel-card${banned ? " disabled" : ""}${this.selected === card.id ? " selected" : ""}"
+        data-card="${card.id}" draggable="${!banned && !locked}">
+        <b>${card.name}<em>${phaseText}</em></b>
+        <span>${banned ? "本局禁用" : card.desc}</span>
+      </div>`;
+    }).join("");
 
     this.slotsEl.innerHTML = s.slots
-      .map(
-        (skill, i) => `
-        <div class="duel-slot${skill ? " filled" : ""}" data-index="${i}">
-          <i>${i + 1}</i>
-          <span>${skill ? this.cardName(skill) : "拖入技能"}</span>
-        </div>`,
-      )
+      .map((cardId, i) => {
+        const slot = i + 1;
+        const phase = this.phaseOf(slot);
+        const card = cardId ? this.cardOf(cardId) : null;
+        return `<div class="duel-slot ph-${phase}${card ? " filled" : ""}" data-slot="${slot}">
+          <i>${slot}</i>
+          <span>${card ? card.name : this.phaseName(phase)}</span>
+        </div>`;
+      })
       .join("");
 
     this.bindDragAndDrop(locked);
 
-    this.composeBtn.classList.toggle("hidden", s.phase !== "ENEMY_INTENT_REVEAL");
-    this.startBtn.classList.toggle("hidden", s.phase !== "PLAYER_SEQUENCE");
-    this.nextBtn.classList.toggle("hidden", s.phase !== "TURN_END");
-    this.startBtn.disabled = s.slots.every((x) => x === null);
+    const startCheck = s.canStart();
+    this.contextBtn.classList.toggle("hidden", s.state !== "SEED_REVEAL" && s.state !== "BAN_REVEAL");
+    this.contextBtn.textContent = s.state === "SEED_REVEAL" ? "查看禁用" : "开始编排";
+    this.startBtn.classList.toggle("hidden", s.state !== "PLAYER_SEQUENCE");
+    this.startBtn.disabled = !startCheck.ok;
+    this.nextBtn.classList.toggle("hidden", s.state !== "TURN_END");
 
     this.statusEl.textContent =
-      s.phase === "ENEMY_INTENT_REVEAL"
-        ? "敌方意图已公开：先看牌，再编排"
-        : s.phase === "PLAYER_SEQUENCE"
-          ? "把技能放进 1-4 号槽位；相邻「裂伤→碎地锤」伤害 +50%"
-          : s.phase === "RESOLUTION"
-            ? "结算中…（输入已锁定）"
-            : s.winner === "hero"
-              ? `胜利 · 敌人剩余 ${s.enemyHp}`
-              : s.winner === "enemy"
-                ? `失败 · 英雄剩余 ${s.heroHp}`
-                : "平局";
+      this.message ||
+      (s.state === "SEED_REVEAL"
+        ? `seed=${s.seed} · 先看禁用`
+        : s.state === "BAN_REVEAL"
+          ? "禁用由种子派生；确认后开始编排"
+          : s.state === "PLAYER_SEQUENCE"
+            ? `起手 ${s.openerFrames()}f / 180f · ${startCheck.ok ? "可以结算" : startCheck.reason}`
+            : s.state === "RESOLUTION"
+              ? `结算中… 已完成 ${s.logs.length} 槽`
+              : s.summary ?? "本局结束");
+    this.message = "";
   }
 
-  private cardName(skill: SkillId): string {
-    return this.session.cards.find((c) => c.skill === skill)?.name ?? skill;
+  private phaseOf(slot: number): "windup" | "burst" | "finish" {
+    if (slot <= 3) return "windup";
+    if (slot <= 6) return "burst";
+    return "finish";
+  }
+
+  private phaseName(phase: string): string {
+    return phase === "WINDUP" || phase === "windup"
+      ? "起手"
+      : phase === "BURST" || phase === "burst"
+        ? "爆发"
+        : "收尾";
+  }
+
+  private cardOf(id: string): CardDef | undefined {
+    return CARDS.find((c) => c.id === id);
+  }
+
+  private nameOf(id: string): string {
+    return this.cardOf(id)?.name ?? id;
   }
 
   private bindDragAndDrop(locked: boolean): void {
     if (locked) return;
-
     for (const card of this.cardsEl.querySelectorAll<HTMLElement>(".duel-card")) {
       if (card.classList.contains("disabled")) continue;
-      const skill = card.dataset.skill as SkillId;
-
+      const id = card.dataset.card as string;
       card.addEventListener("click", () => {
-        this.selected = this.selected === skill ? null : skill;
+        this.selected = this.selected === id ? null : id;
         this.render();
       });
       card.addEventListener("dragstart", (event) => {
-        event.dataTransfer?.setData("text/plain", skill);
-        this.selected = skill;
+        event.dataTransfer?.setData("text/plain", id);
+        this.selected = id;
       });
     }
-
     for (const slot of this.slotsEl.querySelectorAll<HTMLElement>(".duel-slot")) {
-      const index = Number(slot.dataset.index);
+      const index = Number(slot.dataset.slot);
       slot.addEventListener("dragover", (event) => event.preventDefault());
       slot.addEventListener("drop", (event) => {
         event.preventDefault();
-        const skill = (event.dataTransfer?.getData("text/plain") || "") as SkillId;
-        if (!skill) return;
-        this.session.setSlot(index, skill);
+        const id = event.dataTransfer?.getData("text/plain") || "";
+        if (!id) return;
+        const err = this.session.setSlot(index, id);
+        if (err) this.message = err;
         this.selected = null;
         this.render();
       });
       slot.addEventListener("click", () => {
         if (this.selected) {
-          this.session.setSlot(index, this.selected);
+          const err = this.session.setSlot(index, this.selected);
+          if (err) this.message = err;
           this.selected = null;
         } else {
           this.session.setSlot(index, null);
@@ -148,3 +177,4 @@ export class DuelPanel {
     }
   }
 }
+

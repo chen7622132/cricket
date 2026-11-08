@@ -48,15 +48,21 @@
         <section id="stage-wrap">
           <div id="stage"></div>
           <div id="duel-ui" class="hidden">
-            <div class="duel-title">编排对决 <span id="duel-run">run#1</span></div>
-            <div class="duel-label">敌方意图（公开）</div>
+            <div class="duel-title">
+              编排对决 <span id="duel-run">run#1</span>
+              <input id="duel-seed" type="text" inputmode="numeric" value="20260101" />
+              <button id="duel-new" title="按输入种子开新一局">新一局</button>
+            </div>
+            <div class="duel-label">敌方意图（公开，8 拍）</div>
             <div id="duel-intents" class="duel-intents"></div>
-            <div class="duel-label">手牌（本局禁用 1 张）</div>
+            <div class="duel-label">本局禁用（种子派生）</div>
+            <div id="duel-bans" class="duel-bans"></div>
+            <div class="duel-label">手牌（10 张 = 8 技能 + 2 位移）</div>
             <div id="duel-cards" class="duel-cards"></div>
-            <div class="duel-label">槽位（从左到右结算）</div>
+            <div class="duel-label">8 槽：起手 1-3 / 爆发 4-6 / 收尾 7-8</div>
             <div id="duel-slots" class="duel-slots"></div>
             <div class="duel-actions">
-              <button id="duel-compose">开始编排</button>
+              <button id="duel-compose">查看禁用</button>
               <button id="duel-start" disabled>开始结算</button>
               <button id="duel-next" class="hidden">下一局</button>
               <span id="duel-status"></span>
@@ -123,5 +129,6 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+
 
 

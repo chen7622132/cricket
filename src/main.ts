@@ -159,20 +159,29 @@ async function boot(): Promise<void> {
     onRule: () => {},
   };
 
+  let duelSeed = 20260101;
+
   const duelPanel = new DuelPanel(duel, {
-    onCompose: () => {},
+    onNewRun: (seed) => startDuelRound(seed),
     onResolve: () => {},
-    onNext: () => startDuelRound(),
+    onNext: () => startDuelRound(duelSeed + 1),
   });
 
-  function startDuelRound(): void {
-    duel.newRound();
-    const disabled = duel.cards.find((c) => c.disabled)?.name ?? "-";
-    hud.reset(duel.runId, `编排对决 · run#${duel.runId}`);
+  const duelSeedInput = document.getElementById("duel-seed") as HTMLInputElement;
+  const duelNewBtn = document.getElementById("duel-new") as HTMLButtonElement;
+  duelNewBtn.addEventListener("click", () => {
+    const parsedSeed = Number.parseInt(duelSeedInput.value, 10);
+    startDuelRound(Number.isFinite(parsedSeed) && parsedSeed > 0 ? parsedSeed : duelSeed);
+  });
+
+  function startDuelRound(seed: number): void {
+    duelSeed = seed;
+    duel.newRun(seed);
+    hud.reset(seed, `编排对决 · seed ${seed} · run#${duel.runId}`);
     hud.pushLog({
       frame: 0,
       kind: "system",
-      text: `run#${duel.runId} 敌方意图：${duel.intents.map((i) => `${i.icon}${i.name}`).join(" → ")}；本局禁用「${disabled}」`,
+      text: `seed=${seed} run#${duel.runId} · 敌方意图：${duel.intents.map((i) => `${i.icon}${i.name}`).join(" → ")}`,
     });
     duelPanel.render();
     game.play(duel, duelHooks);
@@ -188,7 +197,8 @@ async function boot(): Promise<void> {
     modeBtn.classList.toggle("mode-active", isDuel);
     if (isDuel) {
       duelPanel.show();
-      startDuelRound();
+      const fromUrl = Number.parseInt(new URLSearchParams(window.location.search).get("seed") ?? "", 10);
+      startDuelRound(Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : duelSeed);
     } else {
       duelPanel.hide();
       start();
@@ -199,6 +209,7 @@ async function boot(): Promise<void> {
 
   Object.assign((window as unknown as Record<string, unknown>).__cricket as object, {
     duel,
+    duelPanel,
     startDuelRound,
     setMode,
     mode: () => mode,
@@ -215,7 +226,7 @@ async function boot(): Promise<void> {
     if (e.key === "Enter") start();
   });
   window.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "r") (mode === "duel" ? startDuelRound() : start());
+    if (e.key.toLowerCase() === "r") (mode === "duel" ? startDuelRound(duelSeed) : start());
     if (e.key.toLowerCase() === "t") hud.toggleRules();
   });
 
@@ -224,6 +235,10 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
+
+
+
 
 
 

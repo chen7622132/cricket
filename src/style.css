@@ -801,3 +801,94 @@ main {
 .hidden {
   display: none !important;
 }
+
+/* 8 槽分段样式 */
+.duel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#duel-seed {
+  width: 96px;
+  padding: 3px 6px;
+  font-size: 11px;
+}
+
+#duel-new {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.duel-bans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ban {
+  font-size: 10px;
+  color: #ff9f9f;
+  border: 1px solid #5a2a2a;
+  border-radius: 3px;
+  padding: 2px 6px;
+  background: #1a0f12;
+}
+
+.duel-cards {
+  grid-template-columns: 1fr 1fr;
+}
+
+.duel-card b em {
+  font-style: normal;
+  font-size: 9px;
+  color: #7d8ba3;
+  margin-left: 6px;
+}
+
+.duel-slots {
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.duel-slot {
+  min-height: 42px;
+  font-size: 9px;
+  padding: 2px;
+}
+
+.duel-slot.ph-windup {
+  border-color: #2f5d8a;
+}
+
+.duel-slot.ph-burst {
+  border-color: #8a5a2a;
+}
+
+.duel-slot.ph-finish {
+  border-color: #7a2a2a;
+}
+
+.duel-slot.ph-windup.filled {
+  background: #12233a;
+}
+
+.duel-slot.ph-burst.filled {
+  background: #241a10;
+}
+
+.duel-slot.ph-finish.filled {
+  background: #241012;
+}
+
+.intent.ph-windup b {
+  color: #6fb3ff;
+}
+
+.intent.ph-burst b {
+  color: #ffb35c;
+}
+
+.intent.ph-finish b {
+  color: #ff7b7b;
+}
