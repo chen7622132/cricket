@@ -38,6 +38,7 @@ let slowmoTicks = 0;
 const heroStates = new Set();
 const heroFrames = new Set();
 let maxHitFrames = 0;
+const xValues = [];
 
 while (Date.now() - started < 14000) {
   const s = await page.evaluate(() => {
@@ -58,6 +59,8 @@ while (Date.now() - started < 14000) {
   if (st.heroState) heroStates.add(st.heroState);
   if (typeof st.heroFrame === "number") heroFrames.add(st.heroFrame);
   if (typeof st.heroHits === "number") maxHitFrames = Math.max(maxHitFrames, st.heroHits);
+  if (typeof st.heroX === "number") xValues.push(st.heroX);
+  if (typeof st.enemyX === "number") xValues.push(st.enemyX);
 
   if (s.battle?.done) break;
   await new Promise((r) => setTimeout(r, 33));
@@ -84,6 +87,7 @@ const result = {
   heroStates: [...heroStates],
   heroFrameCount: heroFrames.size,
   attackHitFrames: maxHitFrames,
+  positionRange: xValues.length ? [Math.round(Math.min(...xValues)), Math.round(Math.max(...xValues))] : [],
   samples: samples.length,
   errors,
 };
@@ -101,6 +105,7 @@ const checks = {
   spriteStates: result.heroStates.length >= 2,
   spriteFramesAnimate: result.heroFrameCount >= 2,
   attackHitFrames: result.attackHitFrames > 0,
+  positionsSane: result.positionRange.length > 0 && result.positionRange[1] < 600 && result.positionRange[0] > -200,
   noErrors: result.errors.length === 0,
 };
 console.log("checks:", JSON.stringify(checks));
@@ -108,6 +113,7 @@ const ok = Object.values(checks).every(Boolean);
 console.log(ok ? "PROBE PASS" : "PROBE FAIL");
 process.exitCode = ok ? 0 : 1;
 await browser.close();
+
 
 
 

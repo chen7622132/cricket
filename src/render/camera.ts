@@ -42,7 +42,10 @@ export class CameraRig {
   apply(world: PIXI.Container, viewportW: number, viewportH: number, cover: number): void {
     const sx = Math.sin(this.time * 91) * this.shake;
     const sy = Math.cos(this.time * 73) * this.shake * 0.6;
-    world.pivot.set(ARENA.w / 2, ARENA.h / 2 + 10);
+    // 重心下移：保证地板与角色始终在画面内（宽而矮的窗口也不会把脚裁掉）
+    const visibleH = viewportH / Math.max(0.0001, cover);
+    const pivotY = Math.min(200, Math.max(110, ARENA.floorY - visibleH * 0.28));
+    world.pivot.set(ARENA.w / 2, pivotY);
     world.scale.set(cover * (1 + this.zoom));
     world.position.set(viewportW / 2 + sx + this.push * this.pushDir, viewportH / 2 + sy);
   }
@@ -55,4 +58,5 @@ export class CameraRig {
     return this.zoom;
   }
 }
+
 

@@ -60,12 +60,14 @@ export class Presenter {
   private ended = false;
 
   private viewport = { w: 960, h: 540 };
+  private cover = 3;
 
   // 前冲 / 物理分离
   private lunge: Record<Side, number> = { hero: 0, enemy: 0 };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
+  private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
 
   constructor(
     private readonly battle: Battle,
@@ -92,8 +94,10 @@ export class Presenter {
     this.world.addChild(this.flash);
 
     const snap = battle.snapshot();
-    this.hero.x = slotX(snap.hero.slot);
-    this.enemy.x = slotX(snap.enemy.slot);
+    this.baseX.hero = this.slotToX(snap.hero.slot);
+    this.baseX.enemy = this.slotToX(snap.enemy.slot);
+    this.hero.x = this.baseX.hero;
+    this.enemy.x = this.baseX.enemy;
     this.hero.update(0, this.hero.x, 1, snap.hero.statuses, ARENA.floorY);
     this.enemy.update(0, this.enemy.x, -1, snap.enemy.statuses, ARENA.floorY);
   }
@@ -126,7 +130,7 @@ export class Presenter {
           const foe = this.actor(side === "hero" ? "enemy" : "hero");
           const dir = Math.sign(foe.x - actor.x) || 1;
           const gap = Math.abs(foe.x - actor.x);
-          this.lungeTarget[side] = dir * Math.max(0, gap - 18);
+          this.lungeTarget[side] = dir * Math.max(0, gap - 40);
           this.pendingAttack[side] = attackForSkill(skill);
           actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
@@ -352,8 +356,8 @@ export class Presenter {
     const dt = (dtMs / 1000) * scale;
 
     const snap = this.battle.snapshot();
-    const heroHome = slotX(snap.hero.slot);
-    const enemyHome = slotX(snap.enemy.slot);
+    const heroHome = this.slotToX(snap.hero.slot);
+    const enemyHome = this.slotToX(snap.enemy.slot);
 
     // 前冲/退回收放
     for (const side of ["hero", "enemy"] as Side[]) {
@@ -369,8 +373,11 @@ export class Presenter {
       this.separation[side] *= Math.exp(-dt * 12);
     }
 
-    const heroX = this.approach(this.hero.x, heroHome, dt) + this.lunge.hero + this.separation.hero;
-    const enemyX = this.approach(this.enemy.x, enemyHome, dt) + this.lunge.enemy + this.separation.enemy;
+    // 基准位单独累积，绘制位 = 基准 + 前冲 + 分离（避免位移反馈叠加跑飞）
+    this.baseX.hero = this.approach(this.baseX.hero, heroHome, dt);
+    this.baseX.enemy = this.approach(this.baseX.enemy, enemyHome, dt);
+    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero;
+    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy;
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
@@ -415,8 +422,15 @@ export class Presenter {
   }
 
   private applyCamera(): void {
-    const cover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
-    this.camera.apply(this.world, this.viewport.w, this.viewport.h, cover);
+    this.cover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
+    this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover);
+  }
+
+  /** 格点 → 屏幕世界坐标：视口越窄，间距越紧，保证双方永远在画面里。 */
+  private slotToX(slot: number): number {
+    const visibleW = this.viewport.w / Math.max(0.0001, this.cover);
+    const spacing = Math.max(34, Math.min(56, (visibleW - 90) / 5));
+    return ARENA.w / 2 + (slot - 2.5) * spacing;
   }
 
   get isSettling(): boolean {
@@ -442,6 +456,12 @@ export class Presenter {
     heroHits: number;
     enemyHits: number;
     cover: number;
+    heroX: number;
+    enemyX: number;
+    heroVisible: boolean;
+    enemyVisible: boolean;
+    worldScale: number;
+    pivotY: number;
   } {
     return {
       frozen: this.freezeMs > 0,
@@ -457,10 +477,20 @@ export class Presenter {
       enemyFrame: this.enemy.sprite.currentFrame,
       heroHits: this.hero.hitFrameCount,
       enemyHits: this.enemy.hitFrameCount,
-      cover: Number(Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h).toFixed(2)),
+      cover: Number(this.cover.toFixed(2)),
+      heroX: Math.round(this.hero.x),
+      enemyX: Math.round(this.enemy.x),
+      heroVisible: this.hero.sprite.visible && this.hero.sprite.alpha > 0,
+      enemyVisible: this.enemy.sprite.visible && this.enemy.sprite.alpha > 0,
+      worldScale: Number(this.world.scale.x.toFixed(2)),
+      pivotY: Math.round((this.world.pivot.y as number) ?? 0),
     };
   }
 }
+
+
+
+
 
 
 

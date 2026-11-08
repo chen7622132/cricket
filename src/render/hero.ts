@@ -39,6 +39,7 @@ export class HeroActor {
   readonly ghosts = new PIXI.Container();
   private readonly icons = new PIXI.Container();
   private readonly shadow = new PIXI.Graphics();
+  private readonly outlines: PIXI.Sprite[] = [];
   private readonly iconMap = new Map<StatusId, PIXI.Container>();
   private readonly sheet: PIXI.Spritesheet;
 
@@ -65,7 +66,7 @@ export class HeroActor {
     this.sprite.roundPixels = true;
     if (tint !== undefined) this.sprite.tint = tint;
 
-    this.sprite.filters = [new OutlineFilter({ thickness: 2, color: outlineColor, alpha: 1 })];
+
 
     this.sprite.onFrameChange = (frame) => {
       if (this.state === "ATTACK_1" || this.state === "ATTACK_2") {
@@ -84,7 +85,20 @@ export class HeroActor {
     this.shadow.ellipse(0, 0, 17, 5).fill({ color: 0x000000, alpha: 0.5 });
     this.shadow.ellipse(0, 0, 10, 3).fill({ color: 0x000000, alpha: 0.35 });
 
-    this.root.addChild(this.shadow, this.ghosts, this.sprite, this.icons);
+    // 手工描边：4 向 + 4 斜向偏移的染色副本，不依赖 GPU filter，任何设备都能渲染
+    const offsets: Array<[number, number]> = [
+      [-1.8, 0], [1.8, 0], [0, -1.8], [0, 1.8],
+      [-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3],
+    ];
+    for (const [dx, dy] of offsets) {
+      const copy = new PIXI.Sprite(this.sprite.texture);
+      copy.anchor.set(ANCHOR_X, ANCHOR_Y);
+      copy.tint = outlineColor;
+      copy.position.set(dx, dy);
+      copy.roundPixels = true;
+      this.outlines.push(copy);
+    }
+    this.root.addChild(this.shadow, this.ghosts, ...this.outlines, this.sprite, this.icons);
   }
 
   play(state: HeroState, force = false): void {
@@ -153,6 +167,10 @@ export class HeroActor {
     this.squashX += (1 - this.squashX) * k;
     this.squashY += (1 - this.squashY) * k;
     this.sprite.scale.set(BASE_SCALE * this.squashX * facing, BASE_SCALE * this.squashY);
+    for (const copy of this.outlines) {
+      copy.texture = this.sprite.texture;
+      copy.scale.copyFrom(this.sprite.scale);
+    }
 
     if (this.actionKind) {
       this.actionTimer += dt;
@@ -218,4 +236,5 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
