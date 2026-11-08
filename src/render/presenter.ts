@@ -8,6 +8,7 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { HitParticles } from "./particles.ts";
+import { ImpactFx } from "./impact.ts";
 
 export interface PresenterHooks {
   onLog(entry: LogEntry): void;
@@ -46,7 +47,7 @@ export class Presenter {
   private readonly camera = new CameraRig();
   private readonly floatLayer = new PIXI.Container();
   private readonly markLayer = new PIXI.Container();
-  private readonly flash: PIXI.Graphics;
+  private readonly impact: ImpactFx;
   private readonly hooks: PresenterHooks;
 
   private floats: FloatText[] = [];
@@ -75,14 +76,11 @@ export class Presenter {
     hooks: PresenterHooks,
   ) {
     this.hooks = hooks;
-    this.fxLayer = new PixelFxLayer(0.55);
+    this.fxLayer = new PixelFxLayer(0.45);
     this.hero = new HeroActor(sheet, 0x6fd3ff);
     this.enemy = new HeroActor(sheet, 0xff5c5c, 0xffb9b9);
 
-    this.flash = new PIXI.Graphics();
-    this.flash.rect(0, 0, ARENA.w, ARENA.h).fill({ color: 0xffffff, alpha: 1 });
-    this.flash.alpha = 0;
-    this.flash.blendMode = "add";
+    this.impact = new ImpactFx(ARENA.w, ARENA.h);
 
     this.world.addChild(createArena());
     this.world.addChild(this.markLayer);
@@ -91,7 +89,7 @@ export class Presenter {
     for (const emitter of this.particles.emitters) this.world.addChild(emitter);
     this.world.addChild(this.fxLayer.container);
     this.world.addChild(this.floatLayer);
-    this.world.addChild(this.flash);
+    this.world.addChild(this.impact.container);
 
     const snap = battle.snapshot();
     this.baseX.hero = this.slotToX(snap.hero.slot);
@@ -105,6 +103,7 @@ export class Presenter {
   /** 对局结束后清空残留特效，保证下一局从干净状态开始。 */
   clearEffects(): void {
     this.fxLayer.clear();
+    this.impact.clear();
     for (const f of this.floats) f.text.destroy();
     this.floats = [];
     for (const m of this.marks) m.g.destroy();
@@ -215,7 +214,6 @@ export class Presenter {
       case "EXECUTE":
         this.pushLog(ev, "clash");
         this.hooks.onBanner("处决", "end");
-        this.flash.alpha = 0.28;
         break;
       case "SWAP":
         this.hero.spawnGhost();
@@ -313,6 +311,8 @@ export class Presenter {
     const y = ARENA.floorY - 30;
     const count = tier === "normal" ? 8 : tier === "key" ? 10 : 12;
     this.particles.burst(x, y, count);
+    this.impact.trigger(x, y, dir, tier);
+    if (!o.guard) o.target.flashWhite(0.07);
 
     if (o.guard) {
       this.fxLayer.spawn("impacts/shield-block", x, y, { flip: dir < 0 }, 0.8);
@@ -330,7 +330,6 @@ export class Presenter {
       }
       if (tier === "ultimate") {
         this.fxLayer.spawn("impacts/ground-slam", x, ARENA.floorY, {}, 0.7);
-        this.flash.alpha = 0.2;
       }
     }
 
@@ -374,7 +373,7 @@ export class Presenter {
 
   update(dtMs: number): void {
     this.time += dtMs / 1000;
-    this.flash.alpha = Math.max(0, this.flash.alpha - (dtMs / 1000) * 3.2);
+    this.impact.update(dtMs);
 
     if (this.freezeMs > 0) {
       this.freezeMs -= dtMs;
@@ -487,6 +486,7 @@ export class Presenter {
     heroHits: number;
     enemyHits: number;
     fxKeys: string[];
+    impactActive: boolean;
     cover: number;
     heroX: number;
     enemyX: number;
@@ -510,6 +510,7 @@ export class Presenter {
       heroHits: this.hero.hitFrameCount,
       enemyHits: this.enemy.hitFrameCount,
       fxKeys: this.fxLayer.spawnLog,
+      impactActive: this.impact.active,
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -520,6 +521,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

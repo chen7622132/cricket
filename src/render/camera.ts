@@ -25,6 +25,7 @@ export class CameraRig {
       this.pushDir = dir;
     }
     this.shake = Math.max(this.shake, p.shake);
+    if (p.camera === "push") this.zoom = Math.max(this.zoom, 0.03);
     if (p.camera === "crash-zoom") this.zoom = Math.max(this.zoom, 0.12);
   }
 
@@ -58,5 +59,6 @@ export class CameraRig {
     return this.zoom;
   }
 }
+
 
 

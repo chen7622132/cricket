@@ -179,6 +179,16 @@ hitstop 只冻结表现层时间（`Presenter.freezeMs`），引擎 `step()` 照
 
 所有命中只走一个入口 `Presenter.impactCue()`：顿帧、推镜、粒子、pixelfx、飘字、受击动画从同一调用发出。
 
+### 打击层（火柴人式）
+
+参考 Alan Becker《火柴人 VS 数学》的做法，新增 `src/render/impact.ts`：
+
+- **impact frame**：重击 1 帧全屏闪白 → 1 帧闪黑 → 1 帧余闪；中击 1 帧闪白 + 1 帧闪黑（读取 60fps 帧，不做柔光淡出）
+- **放射速度线**：命中点向外 7-10 条硬直线（重击 72px / 中击 50px），120ms 消失
+- **硬边碎屑**：2-3px 白色/青色方块抛射 + 重力，不用柔边粒子
+- **受击闪白**：目标 sprite 短暂 tint 白
+- pixelfx 整体缩到 0.45 并降 alpha，避免光斑盖住角色
+
 ## 7.1 角色：Martial Hero 序列帧（CC0）
 
 - 素材：LuizMelo《Martial Hero 2》，CC0，署名与来源见 `public/assets/martial-hero/CREDITS.md`
@@ -296,6 +306,7 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 - hit/miss：瞬移绕后给一次闪避，敌方该拍 `hit=0`；其余攻击必中
 - 禁用池：7 张技能（不含错位牌）+ 2 位移；架势与格挡不会同时被禁，否则按序替换，保证起手可玩
 - 同一张牌允许重复放入多个槽（用户要求：重复放置合法）
+
 
 
 

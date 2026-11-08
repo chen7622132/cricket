@@ -49,6 +49,8 @@ export class HeroActor {
   hitFrameCount = 0;
   onHitFrame?: () => void;
 
+  private flashMs = 0;
+  private readonly baseTint: number;
   private squashX = 1;
   private squashY = 1;
   private actionTimer = 0;
@@ -57,6 +59,7 @@ export class HeroActor {
 
   constructor(sheet: PIXI.Spritesheet, outlineColor: number, tint?: number) {
     this.sheet = sheet;
+    this.baseTint = tint ?? 0xffffff;
 
     this.sprite = new PIXI.AnimatedSprite(sheet.animations.idle);
     this.sprite.anchor.set(ANCHOR_X, ANCHOR_Y);
@@ -130,6 +133,12 @@ export class HeroActor {
     this.sprite.gotoAndPlay(0);
   }
 
+  /** 受击闪白：1-2 帧高对比，比柔光更像火柴人动画。 */
+  flashWhite(seconds = 0.07): void {
+    this.flashMs = Math.max(this.flashMs, seconds);
+    this.sprite.tint = 0xffffff;
+  }
+
   /** 挤压回弹：命中瞬间给质量感。 */
   setSquash(sx: number, sy: number): void {
     this.squashX = sx;
@@ -164,6 +173,10 @@ export class HeroActor {
     this.facing = facing;
     this.root.position.set(x, floorY);
     this.bob += dt;
+    if (this.flashMs > 0) {
+      this.flashMs -= dt;
+      if (this.flashMs <= 0) this.sprite.tint = this.baseTint;
+    }
 
     // 挤压回弹
     const k = Math.min(1, dt * 7);
@@ -238,6 +251,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
