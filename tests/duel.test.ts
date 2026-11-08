@@ -121,14 +121,17 @@ describe("8 槽分段约束", () => {
     expect(b.logs.some((l) => l.affinity.reason.includes("错位"))).toBe(true);
   });
 
-  it("同一张牌不能重复放进两个槽", () => {
+  it("同一张牌可以重复放进多个槽", () => {
     const s = new DuelSession();
     s.newRun(20260101);
     s.revealBans();
     s.beginCompose();
     const first = CARDS.find((c) => s.canPlace(1, c.id).ok)!;
     s.setSlot(1, first.id);
-    expect(s.canPlace(2, first.id).ok).toBe(false);
+    expect(s.canPlace(2, first.id).ok).toBe(true);
+    s.setSlot(2, first.id);
+    expect(s.slots[0]).toBe(first.id);
+    expect(s.slots[1]).toBe(first.id);
   });
 
   it("清空起手任一一格就无法开始", () => {
@@ -141,6 +144,7 @@ describe("8 槽分段约束", () => {
     expect(s.canStart().ok).toBe(false);
   });
 });
+
 
 
 

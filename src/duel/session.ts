@@ -236,9 +236,6 @@ export class DuelSession implements CombatSource {
     const card = CARD_BY_ID.get(cardId);
     if (!card) return { ok: false, reason: "未知卡牌" };
     if (this.isBanned(cardId)) return { ok: false, reason: "本局禁用" };
-    if (this.slots.includes(cardId) && this.slots[slot - 1] !== cardId) {
-      return { ok: false, reason: "同一张牌只能放一次" };
-    }
     const phase = phaseOfSlot(slot);
     if (card.phases !== "any" && !card.phases.includes(phase)) {
       return { ok: false, reason: `${card.name} 只能放 ${card.phases.join("/")}` };
@@ -746,6 +743,7 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
 
 
 

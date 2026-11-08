@@ -88,6 +88,13 @@ export class Game {
     this.root.addChild(this.presenter.world);
   }
 
+  /** 容器尺寸变化（例如收起日志栏）后重算画布与 cover 缩放。 */
+  resize(): void {
+    if (!this.app) return;
+    this.app.resize();
+    this.presenter?.setViewport(this.app.screen.width, this.app.screen.height);
+  }
+
   setSpeed(speed: number): void {
     this.speed = speed;
   }
@@ -134,6 +141,7 @@ export class Game {
     }
   }
 }
+
 
 
 

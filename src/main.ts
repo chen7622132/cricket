@@ -215,6 +215,19 @@ async function boot(): Promise<void> {
     mode: () => mode,
   });
 
+  // 日志边栏收起/展开（记住选择）
+  const logToggle = document.getElementById("log-toggle") as HTMLButtonElement;
+  let sidebarCollapsed = localStorage.getItem("cricket-sidebar") === "collapsed";
+  const applySidebar = (collapsed: boolean, persist = true): void => {
+    sidebarCollapsed = collapsed;
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    logToggle.textContent = collapsed ? "展开日志" : "收起日志";
+    if (persist) localStorage.setItem("cricket-sidebar", collapsed ? "collapsed" : "open");
+    requestAnimationFrame(() => game.resize());
+  };
+  logToggle.addEventListener("click", () => applySidebar(!sidebarCollapsed));
+  applySidebar(sidebarCollapsed, false);
+
   runBtn.addEventListener("click", start);
   speedBtn.addEventListener("click", () => {
     speedIdx = (speedIdx + 1) % speeds.length;
@@ -228,6 +241,7 @@ async function boot(): Promise<void> {
   window.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "r") (mode === "duel" ? startDuelRound(duelSeed) : start());
     if (e.key.toLowerCase() === "t") hud.toggleRules();
+    if (e.key.toLowerCase() === "l") applySidebar(!sidebarCollapsed);
   });
 
   if (params.get("mode") === "duel") setMode("duel");
@@ -235,6 +249,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

@@ -892,3 +892,16 @@ main {
 .intent.ph-finish b {
   color: #ff7b7b;
 }
+
+/* 右侧日志边栏可收起 */
+body.sidebar-collapsed main {
+  grid-template-columns: 1fr 0;
+}
+
+body.sidebar-collapsed #side {
+  display: none;
+}
+
+#log-toggle {
+  min-width: 78px;
+}
