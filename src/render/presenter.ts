@@ -478,8 +478,9 @@ export class Presenter {
       this.launchVx[side] *= Math.exp(-dt * 3.2);
       if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
     }
-    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero;
-    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy;
+    const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
+    const heroX = clampX(this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero);
+    const enemyX = clampX(this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy);
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
@@ -621,6 +622,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

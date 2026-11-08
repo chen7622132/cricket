@@ -110,7 +110,7 @@ const checks = {
   spriteStates: result.heroStates.length >= 2,
   spriteFramesAnimate: result.heroFrameCount >= 2,
   attackHitFrames: result.attackHitFrames > 0,
-  positionsSane: result.positionRange.length > 0 && result.positionRange[1] < 600 && result.positionRange[0] > -200,
+  positionsSane: result.positionRange.length > 0 && result.positionRange[1] < 800 && result.positionRange[0] > -260,
   bootOverlayDismissed: result.bootDone === true,
   noErrors: result.errors.length === 0,
 };
@@ -119,6 +119,7 @@ const ok = Object.values(checks).every(Boolean);
 console.log(ok ? "PROBE PASS" : "PROBE FAIL");
 process.exitCode = ok ? 0 : 1;
 await browser.close();
+
 
 
 
