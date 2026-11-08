@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js";
+﻿import * as PIXI from "pixi.js";
 import type { Tier } from "../engine/types.ts";
 
 export type ImpactKind =
@@ -108,18 +108,17 @@ export class ImpactFx {
         break;
       }
       case "hammer": {
-        // 地面冲击环 + 竖直尘柱
+        // 地面冲击环 + 竖直尘柱（同一个 Graphics 只注册一次）
+        const gy = this.h - 62;
         g.setStrokeStyle({ width: 3 * scale, color: 0xffffff, alpha: 0.9 });
-        g.ellipse(0, 0, 26, 8);
+        g.ellipse(x, gy, 26, 8);
         g.stroke();
-        g.position.set(x, this.h - 58);
-        this.addShape(g, 0.22, 1.9);
         g.setStrokeStyle({ width: 2, color: 0xffe27a, alpha: 0.85 });
         for (const off of [-10, 0, 10]) {
-          g.moveTo(x + off, this.h - 58).lineTo(x + off * 1.4, this.h - 90);
+          g.moveTo(x + off, gy).lineTo(x + off * 1.4, gy - 32);
         }
         g.stroke();
-        this.addShape(g, 0.18, 0);
+        this.addShape(g, 0.2, 1.4);
         this.star(x, y, 10 * scale);
         break;
       }
@@ -288,3 +287,4 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+

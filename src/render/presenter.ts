@@ -324,7 +324,10 @@ export class Presenter {
         this.fxLayer.spawn("impacts/hit-spark", x, y, { flip: dir < 0 }, 0.35);
       } else {
         const fxKey = o.fx || SKILLS[o.skill as keyof typeof SKILLS]?.fx;
-        if (fxKey) this.fxLayer.spawn(fxKey, x, y, { flip: dir < 0, palette: this.paletteFor(fxKey) }, 0.9);
+        if (fxKey) {
+          const palette = this.paletteFor(fxKey);
+          this.fxLayer.spawn(fxKey, x, y, palette ? { flip: dir < 0, palette } : { flip: dir < 0 }, 0.9);
+        }
       }
       if (tier === "key" && o.crit) {
         this.fxLayer.spawn("impacts/crit-hit", x + dir * 6, y - 4, { flip: dir < 0 }, 0.9);
@@ -546,6 +549,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
