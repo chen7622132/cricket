@@ -24,6 +24,7 @@ async function boot(): Promise<void> {
 
   const seedInput = document.getElementById("seed-input") as HTMLInputElement;
   const rulesetSelect = document.getElementById("ruleset-select") as HTMLSelectElement;
+  const enemySelect = document.getElementById("enemy-ruleset-select") as HTMLSelectElement;
   const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
   const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
@@ -39,12 +40,15 @@ async function boot(): Promise<void> {
     const parsed = Number.parseInt(seedInput.value, 10);
     const seed = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     const ruleset = rulesetSelect.value === "B" ? "B" : "A";
-    const battle = new Battle({ seed, heroRuleset: ruleset });
+    const enemyRuleset = enemySelect.value === "ENEMY_B" ? "ENEMY_B" : "ENEMY";
+    const battle = new Battle({ seed, heroRuleset: ruleset, enemyRuleset });
 
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
-    const forecast = new Battle({ seed, heroRuleset: ruleset }).run();
+    const forecast = new Battle({ seed, heroRuleset: ruleset, enemyRuleset }).run();
 
-    hud.reset(seed, `${ruleset} ${ruleset === "A" ? "突刺优先" : "全格挡流"}`);
+    const heroLabel = ruleset === "A" ? "突刺优先" : "全格挡流";
+    const enemyLabel = enemyRuleset === "ENEMY_B" ? "压制连锤" : "碎地重锤";
+    hud.reset(seed, `${ruleset} ${heroLabel} · 敌方 ${enemyLabel}`);
     const forecastName = forecast.winner === "hero" ? "英雄" : forecast.winner === "enemy" ? "敌人" : "平局";
     hud.pushLog({
       frame: 0,
@@ -59,7 +63,7 @@ async function boot(): Promise<void> {
       onEnd: (winner, frames) => hud.end(winner, frames, seed),
       onRule: (index, _text, side) => hud.flashRule(side, index),
     };
-    hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `${ruleset} ${ruleset === "A" ? "突刺优先" : "全格挡流"}`);
+    hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${ruleset} ${heroLabel} · 敌方 ${enemyLabel}`);
     game.play(battle, hooks);
   };
 

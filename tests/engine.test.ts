@@ -121,8 +121,29 @@ describe("演出分层表", () => {
   });
 });
 
-describe("空间转换", () => {
-  it("换位后双方仍在 0..5 格点内且不重叠", () => {
+describe("敌方规则表", () => {
+  const firstCharge = (ruleset: "ENEMY" | "ENEMY_B") => {
+    const r = new Battle({ seed: 20260101, heroRuleset: "A", enemyRuleset: ruleset }).run();
+    return r.events.find((e) => e.type === "SKILL_START" && e.skill === "enemy_charge")?.frame ?? Infinity;
+  };
+
+  it("同 seed 换敌方规则表，结果改变", () => {
+    const a = new Battle({ seed: 20260101, heroRuleset: "A", enemyRuleset: "ENEMY" }).run();
+    const b = new Battle({ seed: 20260101, heroRuleset: "A", enemyRuleset: "ENEMY_B" }).run();
+    expect(a.digest).not.toBe(b.digest);
+  });
+
+  it("压制连锤表更早进入蓄力", () => {
+    expect(firstCharge("ENEMY_B")).toBeLessThan(firstCharge("ENEMY"));
+  });
+
+  it("换敌方规则表后仍然完全可复现", () => {
+    const run = () => new Battle({ seed: 424242, heroRuleset: "A", enemyRuleset: "ENEMY_B" }).run();
+    expect(run().digest).toBe(run().digest);
+  });
+});
+
+describe("空间转换", () => {  it("换位后双方仍在 0..5 格点内且不重叠", () => {
     const r = run(20260101);
     const swaps = r.events.filter((e) => e.type === "SWAP");
     expect(swaps.length).toBeGreaterThan(0);

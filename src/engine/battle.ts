@@ -12,7 +12,7 @@ import {
   JUDGE_TOLERANCE_FRAMES,
   SKILLS,
 } from "./skills.ts";
-import { ENEMY_RULES, HERO_RULESETS, type Ruleset } from "./rules.ts";
+import { ENEMY_RULESETS, HERO_RULESETS, type Ruleset } from "./rules.ts";
 import type {
   ActorView,
   BattleEvent,
@@ -30,6 +30,8 @@ export interface BattleConfig {
   seed: number;
   /** 英雄规则表：A 突刺优先 / B 全格挡流 */
   heroRuleset: "A" | "B";
+  /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
+  enemyRuleset?: "ENEMY" | "ENEMY_B";
   maxFrames?: number;
 }
 
@@ -109,6 +111,7 @@ export interface BattleStats {
 export interface BattleResult {
   seed: number;
   heroRuleset: "A" | "B";
+  enemyRuleset: "ENEMY" | "ENEMY_B";
   winner: "hero" | "enemy" | "draw";
   frames: number;
   heroHp: number;
@@ -195,7 +198,7 @@ export class Battle {
   constructor(cfg: BattleConfig) {
     this.rng = new Rng(cfg.seed);
     this.heroRuleset = HERO_RULESETS[cfg.heroRuleset];
-    this.enemyRuleset = ENEMY_RULES;
+    this.enemyRuleset = ENEMY_RULESETS[cfg.enemyRuleset ?? "ENEMY"];
     this.maxFrames = cfg.maxFrames ?? 4800;
 
     this.hero = this.makeActor("hero", "英雄", HERO_MAX_HP, HERO_START_SLOT, 2);
@@ -937,6 +940,7 @@ export class Battle {
       JSON.stringify({
         seed: this.rng.seed,
         rules: this.heroRuleset.id,
+        enemyRules: this.enemyRuleset.id,
         events: this.events.map((e) => [e.frame, e.type, e.side, e.skill, e.tier]),
         log: this.log.map((l) => [l.frame, l.text]),
       }),
@@ -944,6 +948,7 @@ export class Battle {
     return {
       seed: this.rng.seed,
       heroRuleset: this.heroRuleset.id as "A" | "B",
+      enemyRuleset: this.enemyRuleset.id as "ENEMY" | "ENEMY_B",
       winner: this.winner ?? "draw",
       frames: this.frame,
       heroHp: this.hero.hp,

@@ -20,7 +20,7 @@ export interface Ruleset {
   rules: RuleDef[];
 }
 
-export type RulesetId = "A" | "B" | "ENEMY";
+export type RulesetId = "A" | "B" | "ENEMY" | "ENEMY_B";
 
 function makeRuleset(
   id: RulesetId,
@@ -325,12 +325,107 @@ export const ENEMY_RULES = makeRuleset(
   ],
 );
 
+/**
+ * 敌方规则表 B：压制连锤。
+ * 更早进入蓄力、重锤冷却更短，并且会主动「破防」英雄的格挡。
+ * 用于验证：同一套英雄规则下，换敌方规则表也会改变结果。
+ */
+export const ENEMY_RULES_B = makeRuleset(
+  "ENEMY_B",
+  "压制连锤",
+  "enemy",
+  "战斗 1.5s 后就蓄力，重锤冷却更短；英雄一开格挡就提前破防。",
+  [
+    {
+      id: "EB_release",
+      side: "enemy",
+      name: "重锤释放",
+      when: "蓄力剩余≤12帧",
+      skill: "enemy_slam",
+      priority: 96,
+      cost: { kind: "none" },
+      tags: tag("attack"),
+      reveal: "敌方规则触发：蓄力末端 → 碎地重锤",
+      test: ({ self }) => self.has("charge") && self.frames("charge") <= 12,
+    },
+    {
+      id: "EB_punish_guard",
+      side: "enemy",
+      name: "破防重锤",
+      when: "英雄格挡中 且 距离≤1 且 未蓄力",
+      skill: "enemy_slam",
+      priority: 90,
+      cost: { kind: "none" },
+      cooldown: 180,
+      tags: tag("attack"),
+      reveal: "敌方规则触发：英雄格挡 → 破防重锤",
+      test: ({ self, foe }) => foe.has("guard") && self.distance <= 1 && !self.charging,
+    },
+    {
+      id: "EB_charge",
+      side: "enemy",
+      name: "蓄力",
+      when: "战斗≥1.5s 或 血量<55% 且 未蓄力",
+      skill: "enemy_charge",
+      priority: 85,
+      cost: { kind: "none" },
+      cooldown: 220,
+      tags: tag("attack"),
+      reveal: "敌方规则触发：战斗≥1.5s（或血<55%）→ 蓄力碎地锤",
+      test: ({ self, frame }) =>
+        (frame >= 90 || self.hp / self.maxHp < 0.55) && !self.charging,
+    },
+    {
+      id: "EB_slam",
+      side: "enemy",
+      name: "碎地重锤",
+      when: "距离≤1 且 未蓄力",
+      skill: "enemy_slam",
+      priority: 60,
+      cost: { kind: "none" },
+      cooldown: 140,
+      tags: tag("attack"),
+      reveal: "敌方规则触发：距离≤1 → 碎地重锤",
+      test: ({ self }) => self.distance <= 1 && !self.charging,
+    },
+    {
+      id: "EB_swipe",
+      side: "enemy",
+      name: "横扫",
+      when: "距离≤1 且 未蓄力",
+      skill: "enemy_swipe",
+      priority: 25,
+      cost: { kind: "none" },
+      cooldown: 50,
+      tags: tag("attack"),
+      reveal: "敌方规则触发：距离≤1 → 横扫",
+      test: ({ self }) => self.distance <= 1 && !self.charging,
+    },
+    {
+      id: "EB_step",
+      side: "enemy",
+      name: "压上",
+      when: "距离>1",
+      skill: "enemy_step",
+      priority: 40,
+      cost: { kind: "none" },
+      tags: tag("move"),
+      test: ({ self }) => self.distance > 1,
+    },
+  ],
+);
+
+export const ENEMY_RULESETS: Record<"ENEMY" | "ENEMY_B", Ruleset> = {
+  ENEMY: ENEMY_RULES,
+  ENEMY_B: ENEMY_RULES_B,
+};
+
 export const HERO_RULESETS: Record<"A" | "B", Ruleset> = {
   A: HERO_RULES_A,
   B: HERO_RULES_B,
 };
 
 export function getRuleset(id: RulesetId): Ruleset {
-  if (id === "ENEMY") return ENEMY_RULES;
+  if (id === "ENEMY" || id === "ENEMY_B") return ENEMY_RULESETS[id];
   return HERO_RULESETS[id];
 }
