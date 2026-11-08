@@ -14,9 +14,12 @@ npm install
 
 npm run dev        # 浏览器 demo（Vite，默认 http://localhost:5273）
 npm run accept     # 4 条最小验收（Node headless，输出日志到 logs/）
+npm test           # 15 个单元测试（确定性 / 规则仲裁 / combo / 演出分层 / 空间转换）
 npm run build      # tsc --noEmit + vite build
 npm run probe      # 无头浏览器运行时探针（hitstop / 镜头 / 慢放 / 位移）
 ```
+
+CI（`.github/workflows/ci.yml`）在每次 push 到 `main` 时跑：`npm ci → build → test → accept`。
 
 demo 里可以：改 seed、切规则表 A/B、开打、1×/2×/4×、按 `R` 重开。
 开场日志第一行是**同 seed 预演出来的预测结果**，实况结束时帧数/剩余血量完全一致——这是确定性的现场自证。

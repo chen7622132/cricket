@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "accept": "tsx src/cli/acceptance.ts",
     "accept:report": "tsx src/cli/acceptance.ts > logs/acceptance.txt 2>&1",
+    "test": "vitest run",
     "probe": "node scripts/probe.mjs",
     "capture": "node scripts/capture.mjs"
   },
@@ -22,6 +23,7 @@
     "puppeteer-core": "^25.16.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "vite": "^7.1.14"
+    "vite": "^7.1.14",
+    "vitest": "^5.1.0"
   }
 }
