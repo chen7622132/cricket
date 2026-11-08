@@ -10,6 +10,7 @@ export class Game {
   private readonly root = new PIXI.Container();
   private presenter: Presenter | null = null;
   private battle: Battle | null = null;
+  private sheet: PIXI.Spritesheet | null = null;
   private acc = 0;
   private speed = 1;
 
@@ -28,13 +29,17 @@ export class Game {
     app.stage.addChild(this.root);
     app.ticker.add((ticker) => this.tick(ticker.deltaMS));
     this.app = app;
+
+    // Martial Hero 序列帧（CC0）打包成的 atlas + animations
+    this.sheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/martial-hero/hero.json");
   }
 
   play(battle: Battle, hooks: PresenterHooks): void {
+    if (!this.sheet) throw new Error("spritesheet not loaded");
     this.battle = battle;
     this.acc = 0;
     for (const child of this.root.removeChildren()) child.destroy({ children: true });
-    this.presenter = new Presenter(battle, hooks);
+    this.presenter = new Presenter(battle, this.sheet, hooks);
     this.root.addChild(this.presenter.world);
   }
 

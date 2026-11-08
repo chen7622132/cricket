@@ -12,14 +12,17 @@
     "accept:report": "tsx src/cli/acceptance.ts > logs/acceptance.txt 2>&1",
     "test": "vitest run",
     "probe": "node scripts/probe.mjs",
-    "capture": "node scripts/capture.mjs"
+    "capture": "node scripts/capture.mjs",
+    "sprites": "node scripts/build-spritesheet.mjs"
   },
   "dependencies": {
     "pixelfx": "github:patch-gg/pixelfx",
+    "pixi-particles-engine": "^0.1.10",
     "pixi.js": "^8.22.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "pngjs": "^7.0.0",
     "puppeteer-core": "^25.16.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",

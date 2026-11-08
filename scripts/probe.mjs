@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 运行时探针：验证演出层真的发生了 hitstop / 镜头推拉 / 空间转换，
  * 而不是"代码里写了但没跑起来"。
  */
@@ -33,6 +33,9 @@ let maxShake = 0;
 let maxEffects = 0;
 let settleTicks = 0;
 let slowmoTicks = 0;
+const heroStates = new Set();
+const heroFrames = new Set();
+let maxHitFrames = 0;
 
 while (Date.now() - started < 14000) {
   const s = await page.evaluate(() => {
@@ -50,6 +53,9 @@ while (Date.now() - started < 14000) {
   maxEffects = Math.max(maxEffects, st.effects);
   if (st.settleMs > 0) settleTicks++;
   if (st.slowmoMs > 0) slowmoTicks++;
+  if (st.heroState) heroStates.add(st.heroState);
+  if (typeof st.heroFrame === "number") heroFrames.add(st.heroFrame);
+  if (typeof st.heroHits === "number") maxHitFrames = Math.max(maxHitFrames, st.heroHits);
 
   if (s.battle?.done) break;
   await new Promise((r) => setTimeout(r, 33));
@@ -73,6 +79,9 @@ const result = {
   maxLiveEffects: maxEffects,
   settleTicks,
   slowmoTicks,
+  heroStates: [...heroStates],
+  heroFrameCount: heroFrames.size,
+  attackHitFrames: maxHitFrames,
   samples: samples.length,
   errors,
 };
@@ -87,6 +96,9 @@ const checks = {
   effectsCapped: result.maxLiveEffects <= 16,
   spaceTransitionSettle: result.settleTicks > 0,
   slowmo: result.slowmoTicks > 0,
+  spriteStates: result.heroStates.length >= 2,
+  spriteFramesAnimate: result.heroFrameCount >= 2,
+  attackHitFrames: result.attackHitFrames > 0,
   noErrors: result.errors.length === 0,
 };
 console.log("checks:", JSON.stringify(checks));

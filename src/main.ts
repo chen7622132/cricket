@@ -1,7 +1,9 @@
 import "./style.css";
 import { Battle } from "./engine/battle.ts";
+import { applyRuleOverrides, getRuleset, type Ruleset } from "./engine/rules.ts";
 import type { PresenterHooks } from "./render/presenter.ts";
 import { Game } from "./render/game.ts";
+import { RuleEditor } from "./ui/editor.ts";
 import { Hud } from "./ui/hud.ts";
 
 async function boot(): Promise<void> {
@@ -30,9 +32,27 @@ async function boot(): Promise<void> {
   const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
   const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
   const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
+  const editBtn = document.getElementById("edit-btn") as HTMLButtonElement;
 
   rulesBtn.addEventListener("click", () => hud.toggleRules());
   rulesClose.addEventListener("click", () => hud.toggleRules(false));
+
+  const currentHeroId = (): "A" | "B" | "C" =>
+    rulesetSelect.value === "B" ? "B" : rulesetSelect.value === "C" ? "C" : "A";
+
+  let customRuleset: Ruleset | null = null;
+  const editor = new RuleEditor((overrides, base) => {
+    customRuleset = applyRuleOverrides(base, overrides);
+    start();
+  });
+
+  editBtn.addEventListener("click", () => {
+    editor.open(customRuleset ?? getRuleset(currentHeroId()));
+  });
+  rulesetSelect.addEventListener("change", () => {
+    // 换基准表后旧的覆盖不再适用
+    customRuleset = null;
+  });
 
   const speeds = [1, 2, 4];
   let speedIdx = 0;
@@ -65,8 +85,9 @@ async function boot(): Promise<void> {
   const start = (): void => {
     const parsed = Number.parseInt(seedInput.value, 10);
     const seed = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-    const ruleset = rulesetSelect.value === "B" ? "B" : rulesetSelect.value === "C" ? "C" : "A";
+    const ruleset = currentHeroId();
     const enemyRuleset = enemySelect.value === "ENEMY_B" ? "ENEMY_B" : "ENEMY";
+    const heroRules = customRuleset ?? ruleset;
 
     // 把当前对局写进 URL，刷新/分享都能还原
     const query = new URLSearchParams({
@@ -77,14 +98,15 @@ async function boot(): Promise<void> {
     });
     window.history.replaceState(null, "", `?${query.toString()}`);
 
-    const battle = new Battle({ seed, heroRuleset: ruleset, enemyRuleset });
+    const battle = new Battle({ seed, heroRuleset: heroRules, enemyRuleset });
 
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
-    const forecast = new Battle({ seed, heroRuleset: ruleset, enemyRuleset }).run();
+    const forecast = new Battle({ seed, heroRuleset: heroRules, enemyRuleset }).run();
 
-    const heroLabel = ruleset === "A" ? "突刺优先" : ruleset === "B" ? "全格挡流" : "识破流";
+    const baseHeroLabel = ruleset === "A" ? "突刺优先" : ruleset === "B" ? "全格挡流" : "识破流";
     const enemyLabel = enemyRuleset === "ENEMY_B" ? "压制连锤" : "碎地重锤";
-    hud.reset(seed, `${ruleset} ${heroLabel} · 敌方 ${enemyLabel}`);
+    const heroTag = customRuleset ? `自定义（基于 ${ruleset} ${baseHeroLabel}）` : `${ruleset} ${baseHeroLabel}`;
+    hud.reset(seed, `${heroTag} · 敌方 ${enemyLabel}`);
     const forecastName = forecast.winner === "hero" ? "英雄" : forecast.winner === "enemy" ? "敌人" : "平局";
     hud.pushLog({
       frame: 0,
@@ -99,7 +121,7 @@ async function boot(): Promise<void> {
       onEnd: (winner, frames) => hud.end(winner, frames, seed),
       onRule: (index, _text, side) => hud.flashRule(side, index),
     };
-    hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${ruleset} ${heroLabel} · 敌方 ${enemyLabel}`);
+    hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${heroTag} · 敌方 ${enemyLabel}`);
     game.play(battle, hooks);
   };
 

@@ -29,6 +29,7 @@
             </select></label
           >
           <button id="run-btn">开打</button>
+          <button id="edit-btn" title="编辑规则表（priority / 代价 / 禁用）">改规则</button>
           <button id="share-btn" title="复制当前对局链接">复制链接</button>
           <button id="rules-btn" title="查看当前规则表">规则表</button>
           <button id="speed-btn" title="播放速度">1×</button>
@@ -61,6 +62,21 @@
       </main>
 
       <div id="banner"></div>
+
+      <section id="editor-panel" class="hidden" aria-hidden="true">
+        <header>
+          <b>规则编辑器</b>
+          <span id="editor-sub"></span>
+          <button id="editor-close" title="关闭">×</button>
+        </header>
+        <textarea id="editor-json" spellcheck="false"></textarea>
+        <div class="editor-actions">
+          <button id="editor-apply">应用并开打</button>
+          <button id="editor-reset">恢复基准</button>
+          <span id="editor-error"></span>
+        </div>
+        <footer>可改 priority / cost / cooldown / disabled；规则[n] 序号保持基准表不变</footer>
+      </section>
 
       <section id="rules-panel" class="hidden" aria-hidden="true">
         <header>
