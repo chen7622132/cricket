@@ -22,6 +22,7 @@ npm run probe      # 无头浏览器运行时探针（hitstop / 镜头 / 慢放 
 CI（`.github/workflows/ci.yml`）在每次 push 到 `main` 时跑：`npm ci → build → test → accept`。
 
 demo 里可以：改 seed、切规则表 A/B、开打、1×/2×/4×、按 `R` 重开。
+点「规则表」按钮（或按 `T`）打开规则面板：列出双方每条规则的序号、priority、代价与条件，**当前触发的规则行会实时高亮**——「优先级抢断」不再只存在于日志里。
 开场日志第一行是**同 seed 预演出来的预测结果**，实况结束时帧数/剩余血量完全一致——这是确定性的现场自证。
 
 ---
@@ -193,4 +194,4 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 
 - 完整日志：`logs/battle-seed*-rules*.log`
 - 验收汇总：`logs/acceptance.txt`
-- 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（换位后）、`shots/final-03.png`（结算）
+- 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（角色描边/状态图标）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）

@@ -26,6 +26,11 @@ async function boot(): Promise<void> {
   const rulesetSelect = document.getElementById("ruleset-select") as HTMLSelectElement;
   const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
+  const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
+  const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
+
+  rulesBtn.addEventListener("click", () => hud.toggleRules());
+  rulesClose.addEventListener("click", () => hud.toggleRules(false));
 
   const speeds = [1, 2, 4];
   let speedIdx = 0;
@@ -52,7 +57,9 @@ async function boot(): Promise<void> {
       onSnapshot: (snapshot) => hud.updateSnapshot(snapshot),
       onBanner: (text, kind) => hud.banner(text, kind),
       onEnd: (winner, frames) => hud.end(winner, frames, seed),
+      onRule: (index, _text, side) => hud.flashRule(side, index),
     };
+    hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `${ruleset} ${ruleset === "A" ? "突刺优先" : "全格挡流"}`);
     game.play(battle, hooks);
   };
 
@@ -68,6 +75,7 @@ async function boot(): Promise<void> {
   });
   window.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "r") start();
+    if (e.key.toLowerCase() === "t") hud.toggleRules();
   });
 
   start();

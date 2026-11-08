@@ -22,6 +22,7 @@
             </select></label
           >
           <button id="run-btn">开打</button>
+          <button id="rules-btn" title="查看当前规则表">规则表</button>
           <button id="speed-btn" title="播放速度">1×</button>
         </div>
       </header>
@@ -52,6 +53,25 @@
       </main>
 
       <div id="banner"></div>
+
+      <section id="rules-panel" class="hidden" aria-hidden="true">
+        <header>
+          <b>规则表</b>
+          <span id="rules-sub"></span>
+          <button id="rules-close" title="关闭">×</button>
+        </header>
+        <div class="rules-body">
+          <div class="rule-col">
+            <h4 class="hero">英雄</h4>
+            <ul id="rules-hero"></ul>
+          </div>
+          <div class="rule-col">
+            <h4 class="enemy">敌方</h4>
+            <ul id="rules-enemy"></ul>
+          </div>
+        </div>
+        <footer>同帧多条成立时只执行 priority 最高的一条；数字相同时按表内序号靠前优先</footer>
+      </section>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

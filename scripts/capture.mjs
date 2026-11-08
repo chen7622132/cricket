@@ -29,6 +29,11 @@ page.on("pageerror", (err) => logs.push(`[pageerror] ${err.message}`));
 const resp = await page.goto(URL, { waitUntil: "networkidle0", timeout: 60000 });
 console.log("http status:", resp?.status());
 
+if (process.env.OPEN_RULES) {
+  await page.click("#rules-btn");
+  await new Promise((r) => setTimeout(r, 300));
+}
+
 const shots = process.env.SHOT_PLAN
   ? JSON.parse(process.env.SHOT_PLAN)
   : [

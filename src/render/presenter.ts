@@ -13,6 +13,8 @@ export interface PresenterHooks {
   onSnapshot(snapshot: BattleSnapshot): void;
   onBanner(text: string, kind: "clash" | "combo" | "reveal" | "end"): void;
   onEnd(winner: string, frames: number): void;
+  /** 规则触发时回调，用于在规则表面板上高亮当前规则 */
+  onRule?: (ruleIndex: number, text: string, side: "hero" | "enemy") => void;
 }
 
 interface FloatText {
@@ -109,7 +111,7 @@ export class Presenter {
         const dir = Math.sign(target.x - attacker.x) || 1;
         this.camera.kick(tier, dir);
 
-        if (!d.guard) target.flashHit();
+        if (!d.guard) target.flashHit(dir);
 
         const x = target.x;
         const y = ARENA.floorY - 24;
@@ -147,6 +149,7 @@ export class Presenter {
       }
       case "RULE_TRIGGER": {
         this.pushLog(ev, "rule");
+        this.hooks.onRule?.(Number(d.ruleIndex ?? 0), ev.text, ev.side === "enemy" ? "enemy" : "hero");
         if (ev.side === "enemy" && typeof d.reveal === "string") {
           this.hooks.onBanner(d.reveal, "reveal");
         }

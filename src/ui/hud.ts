@@ -1,5 +1,6 @@
 import type { BattleSnapshot } from "../engine/battle.ts";
-import type { LogEntry, StatusId } from "../engine/types.ts";
+import { describeCost } from "../engine/battle.ts";
+import type { LogEntry, RuleDef, Side, StatusId } from "../engine/types.ts";
 
 const STATUS_LABEL: Record<StatusId, string> = {
   bleed: "流血",
@@ -34,6 +35,11 @@ export class Hud {
   private log = document.getElementById("log") as HTMLElement;
   private bannerEl = document.getElementById("banner") as HTMLElement;
   private seedLabel = document.getElementById("seed-label") as HTMLElement;
+  private rulesPanel = document.getElementById("rules-panel") as HTMLElement;
+  private rulesSub = document.getElementById("rules-sub") as HTMLElement;
+  private rulesHero = document.getElementById("rules-hero") as HTMLElement;
+  private rulesEnemy = document.getElementById("rules-enemy") as HTMLElement;
+  private ruleRows = new Map<string, HTMLElement>();
   private bannerTimer = 0;
 
   reset(seed: number, ruleset: string): void {
@@ -92,5 +98,47 @@ export class Hud {
   end(winner: string, frames: number, seed: number): void {
     const name = winner === "hero" ? "英雄获胜" : winner === "enemy" ? "敌人获胜" : "平局";
     this.banner(`${name} · ${(frames / 60).toFixed(2)}s · seed ${seed}`, "end");
+  }
+
+  // ---------------------------------------------------------------- rules
+
+  setRules(hero: RuleDef[], enemy: RuleDef[], label: string): void {
+    this.rulesSub.textContent = label;
+    for (const key of [...this.ruleRows.keys()]) this.ruleRows.delete(key);
+    this.renderRules(this.rulesHero, hero, "hero");
+    this.renderRules(this.rulesEnemy, enemy, "enemy");
+  }
+
+  private renderRules(el: HTMLElement, rules: RuleDef[], side: Side): void {
+    el.innerHTML = "";
+    for (const r of rules) {
+      const li = document.createElement("li");
+      li.className = "rule-row";
+      li.innerHTML =
+        `<span class="r-idx">[${r.index}]</span>` +
+        `<span class="r-pri" title="priority">${r.priority}</span>` +
+        `<span class="r-name">${r.name}</span>` +
+        `<span class="r-cost">${describeCost(r)}</span>` +
+        `<span class="r-when">${r.when}</span>`;
+      el.appendChild(li);
+      this.ruleRows.set(`${side}:${r.index}`, li);
+    }
+  }
+
+  /** 规则触发时高亮对应行——让「优先级抢断」在 UI 上看得见。 */
+  flashRule(side: Side, index: number): void {
+    const row = this.ruleRows.get(`${side}:${index}`);
+    if (!row) return;
+    row.classList.remove("fired");
+    // 强制重排，让动画可以重复触发
+    void row.offsetWidth;
+    row.classList.add("fired");
+    window.setTimeout(() => row.classList.remove("fired"), 900);
+  }
+
+  toggleRules(force?: boolean): void {
+    const open = force ?? this.rulesPanel.classList.contains("hidden");
+    this.rulesPanel.classList.toggle("hidden", !open);
+    this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }

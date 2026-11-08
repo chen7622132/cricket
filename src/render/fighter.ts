@@ -52,12 +52,31 @@ const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
   read: { label: "破", color: 0xff7ae0 },
 };
 
-export interface Ghost {
-  x: number;
-  pose: Pose;
-  life: number;
-  maxLife: number;
-  color: number;
+const INK = 0x05070c;
+
+interface Geo {
+  hip: [number, number];
+  shoulder: [number, number];
+  head: [number, number];
+  hands: [[number, number], [number, number]];
+  weaponEnd: [number, number];
+}
+
+/** 火柴人几何：绘制与残影共用同一套点，保证残影是"那一帧的姿态"。 */
+function geometry(pose: Pose, ox = 0): Geo {
+  const hip: [number, number] = [ox, -14 - pose.crouch];
+  const shoulder: [number, number] = [ox + pose.lean * 0.6, -26 - pose.crouch];
+  const head: [number, number] = [ox + pose.lean, -33 - pose.crouch];
+  const hand = (ang: number): [number, number] => [
+    shoulder[0] + Math.sin(ang) * 9,
+    shoulder[1] + Math.cos(ang) * 9,
+  ];
+  const hands: [[number, number], [number, number]] = [hand(pose.frontArm), hand(pose.backArm)];
+  const weaponEnd: [number, number] = [
+    hands[0][0] + Math.cos(pose.weapon) * pose.weaponLen,
+    hands[0][1] + Math.sin(pose.weapon) * pose.weaponLen,
+  ];
+  return { hip, shoulder, head, hands, weaponEnd };
 }
 
 export class FighterView {
@@ -66,7 +85,7 @@ export class FighterView {
   private readonly body = new PIXI.Graphics();
   private readonly shadow = new PIXI.Graphics();
   private readonly icons = new PIXI.Container();
-  private readonly iconMap = new Map<StatusId, PIXI.Text>();
+  private readonly iconMap = new Map<StatusId, PIXI.Container>();
   private readonly color: number;
   private readonly accent: number;
   private readonly side: Side;
@@ -78,13 +97,11 @@ export class FighterView {
   pose: Pose = { ...IDLE_POSE };
   weaponKind: Pose["weaponKind"] = "spear";
   weaponLen = 22;
+
+  /** 受击方向（+1 向右推，-1 向左推），后仰沿这个方向。 */
+  private hitDir = 1;
   private action: { skill: string; windup: number; recovery: number; t: number } | null = null;
   private bob = 0;
-
-  setWeapon(kind: Pose["weaponKind"], len: number): void {
-    this.weaponKind = kind;
-    this.weaponLen = len;
-  }
 
   constructor(side: Side) {
     this.side = side;
@@ -97,13 +114,19 @@ export class FighterView {
     this.root.scale.set(1.35);
   }
 
+  setWeapon(kind: Pose["weaponKind"], len: number): void {
+    this.weaponKind = kind;
+    this.weaponLen = len;
+  }
+
   startAction(skill: string, windup: number, recovery: number): void {
     this.action = { skill, windup, recovery, t: 0 };
   }
 
-  flashHit(): void {
+  flashHit(dir = 1): void {
     this.flash = 0.12;
     this.recoil = 1;
+    this.hitDir = dir === 0 ? 1 : dir;
   }
 
   spawnGhost(x: number, color = this.accent): void {
@@ -117,7 +140,7 @@ export class FighterView {
     this.bob += dt;
 
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt);
-    if (this.recoil > 0) this.recoil = Math.max(0, this.recoil - dt * 4);
+    if (this.recoil > 0) this.recoil = Math.max(0, this.recoil - dt * 3.2);
 
     const act = this.action;
     if (act) {
@@ -140,12 +163,12 @@ export class FighterView {
 
     this.pose.weaponKind = this.weaponKind;
     this.pose.weaponLen = this.weaponLen;
-    this.draw(floorY);
+    this.draw();
     this.updateIcons(statuses);
     this.updateGhosts(dt);
   }
 
-  private draw(floorY: number): void {
+  private draw(): void {
     const g = this.body;
     g.clear();
 
@@ -153,104 +176,108 @@ export class FighterView {
     const bodyColor = flash ? 0xffffff : this.color;
     const accent = flash ? 0xffffff : this.accent;
 
-    // 影子
+    // 地面影子
     this.shadow.clear();
-    this.shadow
-      .ellipse(0, 0, 11, 3.2)
-      .fill({ color: 0x000000, alpha: 0.35 });
+    this.shadow.ellipse(0, 0, 11, 3.2).fill({ color: 0x000000, alpha: 0.35 });
 
     const pose = this.pose;
-    const recoilX = -this.facing * this.recoil * 5;
-    const hipY = -14 - pose.crouch;
-    const shoulderX = recoilX + pose.lean * 0.6;
-    const shoulderY = -26 - pose.crouch;
-    const headX = recoilX + pose.lean;
-    const headY = -33 - pose.crouch;
+    // 后仰沿受击方向，而不是固定的"背向"
+    const recoilX = this.hitDir * this.recoil * 6;
+    const geo = geometry(pose, recoilX);
+    const [h0, h1] = geo.hands;
 
-    g.setStrokeStyle({ width: 2.2, color: bodyColor, alpha: 1, cap: "round" });
-    // 腿
-    g.moveTo(recoilX, hipY).lineTo(-5, 0);
-    g.moveTo(recoilX, hipY).lineTo(5, 0);
-    // 躯干
-    g.moveTo(recoilX, hipY).lineTo(shoulderX, shoulderY);
-    g.stroke();
-
-    // 手臂
-    const arms: Array<[number, number, number]> = [
-      [shoulderX, shoulderY, pose.frontArm],
-      [shoulderX, shoulderY, pose.backArm],
+    const segments: Array<[number, number, number, number]> = [
+      [geo.hip[0], geo.hip[1], -5, 0],
+      [geo.hip[0], geo.hip[1], 5, 0],
+      [geo.hip[0], geo.hip[1], geo.shoulder[0], geo.shoulder[1]],
+      [geo.shoulder[0], geo.shoulder[1], h0[0], h0[1]],
+      [geo.shoulder[0], geo.shoulder[1], h1[0], h1[1]],
     ];
-    g.setStrokeStyle({ width: 1.8, color: bodyColor, alpha: 0.95, cap: "round" });
-    const hands: Array<[number, number]> = [];
-    for (const [sx, sy, ang] of arms) {
-      const hx = sx + Math.sin(ang) * 9;
-      const hy = sy + Math.cos(ang) * 9;
-      g.moveTo(sx, sy).lineTo(hx, hy);
-      hands.push([hx, hy]);
-    }
+
+    // 先描黑边：亮特效背景下角色轮廓仍然可读
+    g.setStrokeStyle({ width: 4.2, color: INK, alpha: 0.9, cap: "round" });
+    for (const [x1, y1, x2, y2] of segments) g.moveTo(x1, y1).lineTo(x2, y2);
+    g.moveTo(h0[0], h0[1]).lineTo(geo.weaponEnd[0], geo.weaponEnd[1]);
     g.stroke();
 
-    // 武器（前手）
-    const [hx, hy] = hands[0];
-    const wLen = pose.weaponLen;
-    const wx = hx + Math.cos(pose.weapon) * wLen;
-    const wy = hy + Math.sin(pose.weapon) * wLen;
+    // 身体
+    g.setStrokeStyle({ width: 2.2, color: bodyColor, alpha: 1, cap: "round" });
+    for (const [x1, y1, x2, y2] of segments) g.moveTo(x1, y1).lineTo(x2, y2);
+    g.stroke();
+
+    // 武器
     g.setStrokeStyle({ width: 2, color: accent, alpha: 1, cap: "round" });
-    g.moveTo(hx, hy).lineTo(wx, wy);
+    g.moveTo(h0[0], h0[1]).lineTo(geo.weaponEnd[0], geo.weaponEnd[1]);
     g.stroke();
+
     if (pose.weaponKind === "hammer") {
-      g.circle(wx, wy, 4.5).fill({ color: accent });
+      g.circle(geo.weaponEnd[0], geo.weaponEnd[1], 6).fill({ color: INK });
+      g.circle(geo.weaponEnd[0], geo.weaponEnd[1], 4.6).fill({ color: accent });
     } else if (pose.weaponKind === "blade") {
-      g.circle(wx, wy, 1.6).fill({ color: accent });
+      g.circle(geo.weaponEnd[0], geo.weaponEnd[1], 2).fill({ color: accent });
+    } else {
+      g.circle(geo.weaponEnd[0], geo.weaponEnd[1], 1.2).fill({ color: accent });
     }
 
-    // 头
-    g.circle(headX, headY, 4.2).fill({ color: bodyColor });
-    g.circle(headX + this.facing * 1.4, headY - 0.4, 0.9).fill({ color: 0x111318 });
+    // 头（黑边 + 身体色）
+    g.circle(geo.head[0], geo.head[1], 5.5).fill({ color: INK });
+    g.circle(geo.head[0], geo.head[1], 4.2).fill({ color: bodyColor });
+    g.circle(geo.head[0] + this.facing * 1.4, geo.head[1] - 0.4, 0.9).fill({ color: 0x111318 });
 
-    // 受击白闪
     if (flash) {
-      g.circle(headX, headY, 6).fill({ color: 0xffffff, alpha: 0.25 });
+      g.circle(geo.head[0], geo.head[1], 7).fill({ color: 0xffffff, alpha: 0.22 });
     }
   }
 
   private updateIcons(statuses: Partial<Record<StatusId, number>>): void {
-    const entries = Object.entries(statuses) as Array<[StatusId, number]>;
+    const entries = (Object.entries(statuses) as Array<[StatusId, number]>).filter(
+      ([, frames]) => (frames ?? 0) > 0,
+    );
+
     let i = 0;
-    for (const [id, frames] of entries) {
-      if (!frames || frames <= 0) continue;
-      let label = this.iconMap.get(id);
-      if (!label) {
-        const style = STATUS_STYLE[id];
-        label = new PIXI.Text({
-          text: style.label,
-          style: {
-            fontFamily: "monospace",
-            fontSize: 9,
-            fill: style.color,
-            stroke: { color: 0x090b10, width: 3 },
-          },
-        });
-        label.anchor.set(0.5);
-        this.iconMap.set(id, label);
-        this.icons.addChild(label);
+    for (const [id] of entries) {
+      let chip = this.iconMap.get(id);
+      if (!chip) {
+        chip = this.makeChip(id);
+        this.iconMap.set(id, chip);
+        this.icons.addChild(chip);
       }
-      label.visible = true;
-      label.position.set((i - (entries.length - 1) / 2) * 11, -50 - this.pose.crouch);
+      chip.visible = true;
+      const bob = Math.sin(this.bob * 6 + i) * 0.8;
+      chip.position.set((i - (entries.length - 1) / 2) * 13, -52 - this.pose.crouch + bob);
       i++;
     }
-    for (const [id, label] of this.iconMap) {
-      if (!statuses[id]) label.visible = false;
+    for (const [id, chip] of this.iconMap) {
+      if (!statuses[id]) chip.visible = false;
     }
+  }
+
+  private makeChip(id: StatusId): PIXI.Container {
+    const style = STATUS_STYLE[id];
+    const container = new PIXI.Container();
+    const bg = new PIXI.Graphics();
+    bg.roundRect(-6, -5.5, 12, 11, 2).fill({ color: 0x0b1018, alpha: 0.85 });
+    bg.roundRect(-6, -5.5, 12, 11, 2).stroke({ color: style.color, width: 0.8, alpha: 0.8 });
+    const label = new PIXI.Text({
+      text: style.label,
+      style: {
+        fontFamily: "monospace",
+        fontSize: 8,
+        fontWeight: "bold",
+        fill: style.color,
+      },
+    });
+    label.anchor.set(0.5);
+    container.addChild(bg, label);
+    return container;
   }
 
   private updateGhosts(dt: number): void {
     for (const child of [...this.ghosts.children]) {
-      const ghost = child as PIXI.Graphics & { life?: number };
-      const life = (ghost as unknown as { life: number }).life - dt;
-      (ghost as unknown as { life: number }).life = life;
-      ghost.alpha = Math.max(0, life * 2.2);
-      if (life <= 0) ghost.destroy();
+      const ghost = child as PIXI.Graphics & { life: number };
+      ghost.life -= dt;
+      ghost.alpha = Math.max(0, ghost.life * 2.2);
+      if (ghost.life <= 0) ghost.destroy();
     }
   }
 }
@@ -258,11 +285,21 @@ export class FighterView {
 function makeGhost(x: number, pose: Pose, color: number): PIXI.Graphics {
   const g = new PIXI.Graphics() as PIXI.Graphics & { life: number };
   g.life = 0.45;
-  g.setStrokeStyle({ width: 2, color, alpha: 0.5 });
-  g.moveTo(0, -14 - pose.crouch).lineTo(0, 0);
-  g.moveTo(-5, 0).lineTo(0, -14 - pose.crouch).lineTo(5, 0);
-  g.circle(0, -33 - pose.crouch, 4).fill({ color, alpha: 0.35 });
+
+  const geo = geometry(pose, 0);
+  const [h0, h1] = geo.hands;
+
+  g.setStrokeStyle({ width: 2, color, alpha: 0.6, cap: "round" });
+  g.moveTo(geo.hip[0], geo.hip[1]).lineTo(-5, 0);
+  g.moveTo(geo.hip[0], geo.hip[1]).lineTo(5, 0);
+  g.moveTo(geo.hip[0], geo.hip[1]).lineTo(geo.shoulder[0], geo.shoulder[1]);
+  g.moveTo(geo.shoulder[0], geo.shoulder[1]).lineTo(h0[0], h0[1]);
+  g.moveTo(geo.shoulder[0], geo.shoulder[1]).lineTo(h1[0], h1[1]);
+  // 武器残影
+  g.moveTo(h0[0], h0[1]).lineTo(geo.weaponEnd[0], geo.weaponEnd[1]);
   g.stroke();
+
+  g.circle(geo.head[0], geo.head[1], 4).fill({ color, alpha: 0.35 });
   g.position.set(x, 0);
   return g;
 }
