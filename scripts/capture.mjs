@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+﻿import { mkdirSync } from "node:fs";
 import puppeteer from "puppeteer-core";
 
 const OUT = "shots";
@@ -26,8 +26,10 @@ const logs = [];
 page.on("console", (m) => logs.push(`[${m.type()}] ${m.text()}`));
 page.on("pageerror", (err) => logs.push(`[pageerror] ${err.message}`));
 
-const resp = await page.goto(URL, { waitUntil: "networkidle0", timeout: 60000 });
+const resp = await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
 console.log("http status:", resp?.status());
+await page.waitForSelector("#stage canvas", { timeout: 20000 });
+await new Promise((r) => setTimeout(r, 400));
 
 if (process.env.ENEMY_RULES) {
   await page.select("#enemy-ruleset-select", process.env.ENEMY_RULES);
@@ -73,3 +75,5 @@ console.log("errors:", errors.length ? JSON.stringify(errors, null, 2) : "none")
 if (logs.length) console.log("warnings:", logs.filter((l) => l.startsWith("[warning]")).slice(0, 2).join(" | ") || "none");
 
 await browser.close();
+
+

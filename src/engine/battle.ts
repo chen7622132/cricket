@@ -1,4 +1,4 @@
-import { Rng, type RngDraw } from "./rng.ts";
+﻿import { Rng, type RngDraw } from "./rng.ts";
 import {
   ARENA_MAX_SLOT,
   ARENA_MIN_SLOT,
@@ -970,7 +970,7 @@ export class Battle {
 
 /** 演出层级 → hitstop 帧数（与 src/presentation/tiers.ts 保持一致）。 */
 export function hitstopForTier(tier: Tier): number {
-  return tier === "normal" ? 4 : tier === "key" ? 10 : 20;
+  return tier === "normal" ? 3 : tier === "key" ? 8 : 16;
 }
 
 export function describeCost(rule: RuleDef): string {
@@ -985,3 +985,4 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+

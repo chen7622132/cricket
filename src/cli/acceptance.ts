@@ -1,4 +1,4 @@
-/**
+﻿/**
  * P0 最小验收（headless，不需要浏览器）。
  *
  * 1) 同一套规则，换 3 个 seed：日志/结局不同，且能给出"为什么不一样"的因果说明
@@ -261,7 +261,7 @@ console.log(story(runsA[0]).join("\n"));
 
   const normalClean = normalHits.every((h) => {
     const p = TIERS.normal;
-    return p.camera === "none" && p.shake === 0 && p.displacement === "none";
+    return p.camera === "none" && p.shake <= 2 && p.displacement === "none";
   });
   const keyStronger = keyHits.every((h) => TIERS.key.hitstopFrames > TIERS.normal.hitstopFrames);
   const ultStrongest = ultHits.every((h) => TIERS.ultimate.hitstopFrames > TIERS.key.hitstopFrames);
@@ -284,7 +284,7 @@ console.log(story(runsA[0]).join("\n"));
     id: "A4",
     name: "普通命中 / 关键判定 / 全场最重 三层明显分层",
     pass,
-    detail: `hitstop ${TIERS.normal.hitstopFrames}/${TIERS.key.hitstopFrames}/${TIERS.ultimate.hitstopFrames} 帧（区间 3-5 / 8-12 / 15-25）；命中数 normal ${normalHits.length}｜key ${keyHits.length}｜ultimate ${ultHits.length}；处决 ${executeEvents.length} 次、换位 ${swapEvents.length} 次均为 ultimate；普通命中无镜头无震动`,
+    detail: `hitstop ${TIERS.normal.hitstopFrames}/${TIERS.key.hitstopFrames}/${TIERS.ultimate.hitstopFrames} 帧（区间 3-5 / 8-12 / 15-25）；命中数 normal ${normalHits.length}｜key ${keyHits.length}｜ultimate ${ultHits.length}；处决 ${executeEvents.length} 次、换位 ${swapEvents.length} 次均为 ultimate；普通命中不推镜`,
   });
 }
 
@@ -312,3 +312,5 @@ console.log(
   `\n${failed.length === 0 ? "全部通过" : `${failed.length} 项未通过`}｜完整日志已写入 ${OUT_DIR}`,
 );
 process.exitCode = failed.length === 0 ? 0 : 1;
+
+

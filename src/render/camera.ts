@@ -1,10 +1,11 @@
 ﻿import * as PIXI from "pixi.js";
 import type { Tier } from "../engine/types.ts";
 import { TIERS } from "../presentation/tiers.ts";
+import { ARENA } from "./arena.ts";
 
 /**
  * 固定广角镜头：不旋转、不跟拍。
- * 只有关键判定才轻推，处决/换位才 crash-zoom。
+ * 画布铺满游戏区（cover 缩放，不留黑边），只有关键判定才轻推、重击才 crash-zoom。
  */
 export class CameraRig {
   private time = 0;
@@ -15,32 +16,35 @@ export class CameraRig {
 
   kick(tier: Tier, dir = 1): void {
     const p = TIERS[tier];
-    if (p.camera === "none") return;
+    if (p.camera === "none") {
+      this.shake = Math.max(this.shake, p.shake);
+      return;
+    }
     if (p.cameraPush > 0) {
       this.push = Math.max(this.push, p.cameraPush);
       this.pushDir = dir;
     }
     this.shake = Math.max(this.shake, p.shake);
-    if (p.camera === "crash-zoom") this.zoom = Math.max(this.zoom, 0.16);
+    if (p.camera === "crash-zoom") this.zoom = Math.max(this.zoom, 0.12);
   }
 
   update(dt: number): void {
     this.time += dt;
-    this.push *= Math.exp(-dt * 7);
-    this.shake *= Math.exp(-dt * 9);
-    this.zoom *= Math.exp(-dt * 6);
-    if (this.push < 0.05) this.push = 0;
-    if (this.shake < 0.05) this.shake = 0;
+    this.push *= Math.exp(-dt * 9);
+    this.shake *= Math.exp(-dt * 10);
+    this.zoom *= Math.exp(-dt * 7);
+    if (this.shake < 0.3) this.shake = 0;
+    if (this.push < 0.4) this.push = 0;
     if (this.zoom < 0.002) this.zoom = 0;
   }
 
-  apply(world: PIXI.Container, w: number, h: number): void {
+  /** cover 缩放：max(viewport/world)，铺满游戏区、裁边而不留黑边。 */
+  apply(world: PIXI.Container, viewportW: number, viewportH: number, cover: number): void {
     const sx = Math.sin(this.time * 91) * this.shake;
     const sy = Math.cos(this.time * 73) * this.shake * 0.6;
-    world.pivot.set(w / 2, h / 2);
-    world.position.set(w / 2 + sx + this.push * this.pushDir, h / 2 + sy);
-    // 固定广角 + 1.22 基础裁切：不跟拍，只把 6 个格点压进构图中心
-    world.scale.set((1 + this.zoom) * 1.25);
+    world.pivot.set(ARENA.w / 2, ARENA.h / 2 + 10);
+    world.scale.set(cover * (1 + this.zoom));
+    world.position.set(viewportW / 2 + sx + this.push * this.pushDir, viewportH / 2 + sy);
   }
 
   get shakeAmount(): number {

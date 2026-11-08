@@ -1,4 +1,4 @@
-# cricket · 规则表驱动自动战斗（P0 切片）
+﻿# cricket · 规则表驱动自动战斗（P0 切片）
 
 > 目标不是完整游戏，是验证一件事：**同一套规则换种子过程不同，同种子换规则结果变。**
 
@@ -23,12 +23,12 @@ npm run probe      # 无头浏览器运行时探针（hitstop / 镜头 / 慢放 
 
 CI（`.github/workflows/ci.yml`）在每次 push 到 `main` 时跑：`npm ci → build → test → accept`。
 
-### 像素清晰度
+### 自适应布局与像素清晰度
 
-- `TextureSource.defaultOptions.scaleMode = "nearest"`，atlas 每个纹理再强制 nearest + 关闭 mipmap
-- 画布按**整数倍**放大（480×270 → 960×540），不做 2.05× 这种非整数拉伸
-- 世界缩放 1.25 × 精灵 1.2 × 画布 2 = **3 屏幕像素 / 美术像素**，像素边缘是硬边
-- 所有精灵 `roundPixels = true`
+- 左侧游戏区 `flex:1` 铺满，右侧日志固定 380px 独立滚动，互不挤占
+- Pixi `resizeTo` 父容器 + `autoDensity` + `resolution = min(2, devicePixelRatio)`
+- 舞台用 **cover 缩放** `max(视口/世界)`：铺满游戏区、不留黑边（只裁掉少量边缘）
+- `TextureSource.defaultOptions.scaleMode = "nearest"`，所有精灵 `roundPixels = true`
 
 demo 里可以：改 seed、切英雄规则表 A/B/C、切敌方规则表（碎地重锤 / 压制连锤）、开打、1×/2×/4×、按 `R` 重开。
 每一局都编码在 URL 里：`?seed=7&rules=C&enemy=ENEMY_B&speed=2`，点「复制链接」发给别人，打开就是同一局（确定性保证复现）。
@@ -46,7 +46,7 @@ demo 里可以：改 seed、切英雄规则表 A/B/C、切敌方规则表（碎�
 | A2b | 同一个 seed，换敌方规则表结果也改变 | ✅ | ENEMY → 19.45s/英雄剩 55；ENEMY_B → 21.95s/英雄剩 28 |
 | A3 | ≥3 条 combo 链在日志里被识别为链 | ✅ | 打断链 3 次、流血处决链 12 次、格挡还击链 10 次、看破暴击链 6 次，共 31 次链路成立（日志里有 `combo 链[名] n/m ✓`） |
 | A4 | 普通命中 / 关键判定 / 全场最重 三层分层 | ✅ | hitstop 4 / 10 / 20 帧（区间 3–5 / 8–12 / 15–25）；普通命中无镜头无震动；处决 15 次、换位 6 次均为 ultimate |
-| A5 | 角色是序列帧动画（非贴图平移），位移有前冲/击退/换位 | ✅ | `npm run probe` 实测：AnimatedSprite 状态出现 ATTACK_1/ATTACK_2/HIT、帧序列推进、攻击命中帧回调累计 23 次、位移落定 63 个采样帧 |
+| A5 | 角色是序列帧动画（非贴图平移），位移有前冲/击退/换位 | ✅ | `npm run probe` 实测：状态出现 RUN/ATTACK_1/ATTACK_2/HIT、帧序列推进、攻击命中帧回调、位移落定采样 |
 | D1 | 同 seed 同规则完全可复现（附加） | ✅ | 两次运行 digest `db72d67a` 一致 |
 
 `npm run probe` 的实测（4× 速播放一整局）：hitstop 三档都触发、crash-zoom 最大 1.415、慢放 66 个采样帧、位移落定 59 帧、特效并发封顶 16、无 console 错误。
@@ -166,11 +166,11 @@ src/
 
 ## 7. 演出分层（`src/presentation/tiers.ts`）
 
-| tier | hitstop | 镜头 | 粒子 | 特效 | 位移 |
-|---|---|---|---|---|---|
-| normal | 4 帧 | 不动 | 12 颗 | `impacts/hit-spark` | 无 |
-| key | 10 帧 | 轻推 6px + shake 2 | 34 颗 | 整套招式特效；暴击再叠 crit-hit | 无 |
-| ultimate | 20 帧 | crash-zoom（≈1.16）+ 慢放 0.35× | 64 颗 | 招式特效 + ground-slam | 换位 |
+| tier | hitstop | 镜头 | 粒子（≤12） | 特效 | 位移 |
+|---|---|---|---|---|
+| normal | 3 帧 | 1-2px 微震 | 8 颗 | `impacts/hit-spark` | 无 |
+| key | 8 帧 | 定向推 4px + shake 3 | 10 颗 | 整套招式特效；暴击再叠 crit-hit | 无 |
+| ultimate | 16 帧 | crash-zoom（+12%）+ 0.3s 慢放 0.3× | 12 颗 | 招式特效 + ground-slam | 换位 |
 
 hitstop 只冻结表现层时间（`Presenter.freezeMs`），引擎 `step()` 照常推进——运行时探针验证了冻结期间战斗帧继续增长。
 
@@ -182,7 +182,9 @@ hitstop 只冻结表现层时间（`Presenter.freezeMs`），引擎 `step()` 照
 - `npm run sprites` 把 6 组横排帧合成 `hero.png` + `hero.json`（含 `animations`）
 - 运行时：`Assets.load` → `Spritesheet` → `AnimatedSprite`，状态机 `IDLE / RUN / ATTACK_1 / ATTACK_2 / HIT / DEATH`
 - 攻击动画第 2 帧触发 `onFrameChange` 命中回调（与引擎的 HIT 事件对齐），受击/死亡播对应序列帧
-- 粒子：`pixi-particles-engine`（manual 模式 + `RadialBurstBehaviour`），按 tier 决定爆发数量
+- 粒子：`pixi-particles-engine`（manual + 环形出生 `CircleSpawnBehaviour(22,11)`，中心留空），add 混合、8-12 颗、寿命 ≤0.28s
+- 描边：`OutlineFilter` 2px，英雄蓝、敌人红；脚下黑色投影盘
+- 攻击前先 RUN 冲刺到对方 30px 处才出招，命中瞬间分离 1.5px 再回弹
 
 ---
 
@@ -236,3 +238,4 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 - 完整日志：`logs/battle-seed*-rules*.log`
 - 验收汇总：`logs/acceptance.txt`
 - 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（Martial Hero 序列帧 + 整数倍像素）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）
+

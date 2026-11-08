@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js";
+﻿import * as PIXI from "pixi.js";
 import { createFrame, clearFrame, createFx, composite, type Frame, type Fx, type FxMod } from "pixelfx";
 
 import * as thrust from "pixelfx/fx/melee/thrust";
@@ -91,7 +91,7 @@ export class PixelFxLayer {
     sprite.eventMode = "none";
     sprite.scale.set(this.scale);
     sprite.position.set(x - ORIGIN_X * this.scale, y - ORIGIN_Y * this.scale);
-    sprite.alpha = 0.92;
+    sprite.alpha = 0.78;
     this.container.addChild(sprite);
 
     const fx = createFx(mod, { x: ORIGIN_X, y: ORIGIN_Y, seed: 7, ...opts });
@@ -139,3 +139,4 @@ export class PixelFxLayer {
     }
   }
 }
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 运行时探针：验证演出层真的发生了 hitstop / 镜头推拉 / 空间转换，
  * 而不是"代码里写了但没跑起来"。
  */
@@ -20,7 +20,9 @@ page.on("console", (m) => {
   if (m.type() === "error" && !m.text().includes("favicon")) errors.push(m.text());
 });
 
-await page.goto(URL, { waitUntil: "networkidle0", timeout: 60000 });
+await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
+await page.waitForSelector("#stage canvas", { timeout: 20000 });
+await new Promise((r) => setTimeout(r, 400));
 await page.click("#speed-btn"); // 2x
 await page.click("#speed-btn"); // 4x
 
@@ -63,7 +65,7 @@ while (Date.now() - started < 14000) {
 
 const battle = samples[samples.length - 1]?.battle;
 const freezeBuckets = frozenStarts.reduce((acc, ms) => {
-  const key = ms >= 280 ? "ultimate(20f=333ms)" : ms >= 130 ? "key(10f=167ms)" : "normal(4f=67ms)";
+  const key = ms >= 220 ? "ultimate(16f=267ms)" : ms >= 100 ? "key(8f=133ms)" : "normal(3f=50ms)";
   acc[key] = (acc[key] ?? 0) + 1;
   return acc;
 }, {});
@@ -106,4 +108,7 @@ const ok = Object.values(checks).every(Boolean);
 console.log(ok ? "PROBE PASS" : "PROBE FAIL");
 process.exitCode = ok ? 0 : 1;
 await browser.close();
+
+
+
 

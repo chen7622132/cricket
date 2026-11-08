@@ -1,4 +1,5 @@
 ﻿import * as PIXI from "pixi.js";
+import { OutlineFilter } from "pixi-filters";
 import type { Side, StatusId } from "../engine/types.ts";
 
 export type HeroState = "IDLE" | "RUN" | "ATTACK_1" | "ATTACK_2" | "HIT" | "DEATH";
@@ -14,7 +15,6 @@ const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
   read: { label: "破", color: 0xff7ae0 },
 };
 
-/** 帧内角色锚点：脚底在 128/200，身体中心在 97/200（据素材 alpha 包围盒实测）。 */
 const ANCHOR_X = 0.485;
 const ANCHOR_Y = 0.64;
 const BASE_SCALE = 1.2;
@@ -30,17 +30,17 @@ const SPEED: Record<HeroState, number> = {
 
 /**
  * Martial Hero 序列帧角色。
- * 状态集驱动 AnimatedSprite：切状态只换纹理数组 + animationSpeed，不硬切贴图。
- * 攻击动画的命中帧（第 2 帧）通过 onFrameChange 回调抛出，供特效/顿帧对齐。
+ * 状态集驱动 AnimatedSprite；攻击命中帧通过 onFrameChange 抛出。
+ * 描边 + 落地投影保证在任何特效下都能一眼定位角色。
  */
 export class HeroActor {
   readonly root = new PIXI.Container();
   readonly sprite: PIXI.AnimatedSprite;
   readonly ghosts = new PIXI.Container();
   private readonly icons = new PIXI.Container();
+  private readonly shadow = new PIXI.Graphics();
   private readonly iconMap = new Map<StatusId, PIXI.Container>();
   private readonly sheet: PIXI.Spritesheet;
-  private readonly tint?: number;
 
   x = 0;
   facing = 1;
@@ -48,13 +48,14 @@ export class HeroActor {
   hitFrameCount = 0;
   onHitFrame?: () => void;
 
+  private squashX = 1;
+  private squashY = 1;
   private actionTimer = 0;
   private actionKind: "attack1" | "attack2" | null = null;
   private bob = 0;
 
-  constructor(sheet: PIXI.Spritesheet, tint?: number) {
+  constructor(sheet: PIXI.Spritesheet, outlineColor: number, tint?: number) {
     this.sheet = sheet;
-    this.tint = tint;
 
     this.sprite = new PIXI.AnimatedSprite(sheet.animations.idle);
     this.sprite.anchor.set(ANCHOR_X, ANCHOR_Y);
@@ -63,6 +64,8 @@ export class HeroActor {
     this.sprite.loop = true;
     this.sprite.roundPixels = true;
     if (tint !== undefined) this.sprite.tint = tint;
+
+    this.sprite.filters = [new OutlineFilter({ thickness: 2, color: outlineColor, alpha: 1 })];
 
     this.sprite.onFrameChange = (frame) => {
       if (this.state === "ATTACK_1" || this.state === "ATTACK_2") {
@@ -73,19 +76,23 @@ export class HeroActor {
       }
     };
     this.sprite.onComplete = () => {
-      // 攻击/受击播完回 IDLE；死亡保持最后一帧
       if (this.state !== "DEATH") this.play("IDLE", true);
     };
     this.sprite.play();
 
-    this.root.addChild(this.ghosts, this.sprite, this.icons);
-    this.root.scale.set(1);
+    // 落地投影：明确站立位置
+    this.shadow.ellipse(0, 0, 17, 5).fill({ color: 0x000000, alpha: 0.5 });
+    this.shadow.ellipse(0, 0, 10, 3).fill({ color: 0x000000, alpha: 0.35 });
+
+    this.root.addChild(this.shadow, this.ghosts, this.sprite, this.icons);
   }
 
   play(state: HeroState, force = false): void {
     if (this.state === state && !force) return;
     this.state = state;
-    this.sprite.textures = this.sheet.animations[state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state.toLowerCase()];
+    const key =
+      state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state.toLowerCase();
+    this.sprite.textures = this.sheet.animations[key];
     this.sprite.animationSpeed = SPEED[state];
     this.sprite.loop = state === "IDLE" || state === "RUN";
     this.sprite.gotoAndPlay(0);
@@ -109,7 +116,12 @@ export class HeroActor {
     this.sprite.gotoAndPlay(0);
   }
 
-  /** 大位移时播 RUN；结束时由 update 的 moving 标志切回 IDLE。 */
+  /** 挤压回弹：命中瞬间给质量感。 */
+  setSquash(sx: number, sy: number): void {
+    this.squashX = sx;
+    this.squashY = sy;
+  }
+
   setMoving(moving: boolean): void {
     if (this.state === "DEATH" || this.actionKind) return;
     if (moving && this.state !== "RUN") this.play("RUN", true);
@@ -120,13 +132,12 @@ export class HeroActor {
     const ghost = new PIXI.AnimatedSprite(this.sprite.textures);
     ghost.anchor.copyFrom(this.sprite.anchor);
     ghost.scale.copyFrom(this.sprite.scale);
-    ghost.position.copyFrom(this.sprite.position);
     ghost.gotoAndStop(this.sprite.currentFrame);
-    ghost.alpha = 0.42;
+    ghost.alpha = 0.35;
     ghost.tint = 0x9fd8ff;
     ghost.roundPixels = true;
     const holder = new PIXI.Container() as PIXI.Container & { life: number };
-    holder.life = 0.42;
+    holder.life = 0.35;
     holder.addChild(ghost);
     this.ghosts.addChild(holder);
   }
@@ -135,12 +146,16 @@ export class HeroActor {
     this.x = x;
     this.facing = facing;
     this.root.position.set(x, floorY);
-    this.sprite.scale.x = Math.abs(this.sprite.scale.y) * facing;
     this.bob += dt;
+
+    // 挤压回弹
+    const k = Math.min(1, dt * 7);
+    this.squashX += (1 - this.squashX) * k;
+    this.squashY += (1 - this.squashY) * k;
+    this.sprite.scale.set(BASE_SCALE * this.squashX * facing, BASE_SCALE * this.squashY);
 
     if (this.actionKind) {
       this.actionTimer += dt;
-      // 动画结束后清掉 action 标记，允许回到 IDLE/RUN
       if (this.actionTimer > 0.9) this.actionKind = null;
     }
 
@@ -161,7 +176,7 @@ export class HeroActor {
         this.icons.addChild(chip);
       }
       chip.visible = true;
-      chip.position.set((i - (entries.length - 1) / 2) * 13, -74 + Math.sin(this.bob * 6 + i) * 0.8);
+      chip.position.set((i - (entries.length - 1) / 2) * 13, -76 + Math.sin(this.bob * 6 + i) * 0.8);
       i++;
     }
     for (const [id, chip] of this.iconMap) {
@@ -173,12 +188,13 @@ export class HeroActor {
     const style = STATUS_STYLE[id];
     const container = new PIXI.Container();
     const bg = new PIXI.Graphics();
-    bg.roundRect(-6, -5.5, 12, 11, 2).fill({ color: 0x0b1018, alpha: 0.85 });
-    bg.roundRect(-6, -5.5, 12, 11, 2).stroke({ color: style.color, width: 0.8, alpha: 0.8 });
+    bg.roundRect(-6, -5.5, 12, 11, 2).fill({ color: 0x0b1018, alpha: 0.9 });
+    bg.roundRect(-6, -5.5, 12, 11, 2).stroke({ color: style.color, width: 0.8, alpha: 0.9 });
     const label = new PIXI.Text({
       text: style.label,
       style: { fontFamily: "monospace", fontSize: 8, fontWeight: "bold", fill: style.color },
     });
+    label.resolution = 2;
     label.anchor.set(0.5);
     container.addChild(bg, label);
     return container;
@@ -188,7 +204,7 @@ export class HeroActor {
     for (const child of [...this.ghosts.children]) {
       const holder = child as PIXI.Container & { life: number };
       holder.life -= dt;
-      holder.alpha = Math.max(0, holder.life * 2.2);
+      holder.alpha = Math.max(0, holder.life * 2.4);
       if (holder.life <= 0) holder.destroy({ children: true });
     }
   }

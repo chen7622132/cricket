@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "pixelfx": "github:patch-gg/pixelfx",
+    "pixi-filters": "^6.1.5",
     "pixi-particles-engine": "^0.1.10",
     "pixi.js": "^8.22.0"
   },

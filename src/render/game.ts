@@ -4,7 +4,7 @@ import { Presenter, type PresenterHooks } from "./presenter.ts";
 
 const FIXED_MS = 1000 / 60;
 
-/** 固定 60Hz 逻辑 + 可变帧率渲染。 */
+/** 固定 60Hz 逻辑 + 可变帧率渲染。画布铺满左侧游戏区。 */
 export class Game {
   private app: PIXI.Application | null = null;
   private readonly root = new PIXI.Container();
@@ -15,18 +15,17 @@ export class Game {
   private speed = 1;
 
   async init(container: HTMLElement): Promise<void> {
-    // 像素游戏：所有纹理默认最近邻采样，禁止线性过滤把像素糊掉
+    // 像素游戏：所有纹理默认最近邻采样
     PIXI.TextureSource.defaultOptions.scaleMode = "nearest";
     PIXI.TextureSource.defaultOptions.autoGenerateMipmaps = false;
 
     const app = new PIXI.Application();
     await app.init({
-      width: 480,
-      height: 270,
+      resizeTo: container,
       background: 0x05070c,
       antialias: false,
-      resolution: 1,
-      autoDensity: false,
+      autoDensity: true,
+      resolution: Math.min(2, window.devicePixelRatio || 1),
       preference: "webgl",
     });
     container.appendChild(app.canvas);
@@ -42,27 +41,19 @@ export class Game {
       texture.source.update();
     }
 
-    // 画布按整数倍放大（480×270 → 960×540 / 1440×810），避免 2.05× 这种非整数拉伸
-    const measure = container.parentElement ?? container;
-    const resize = (): void => {
-      const rect = measure.getBoundingClientRect();
-      const availW = Math.max(480, rect.width - 32);
-      const availH = Math.max(270, rect.height - 32);
-      const scale = Math.max(1, Math.min(Math.floor(availW / 480), Math.floor(availH / 270)));
-      app.canvas.style.width = `${480 * scale}px`;
-      app.canvas.style.height = `${270 * scale}px`;
-      app.canvas.style.imageRendering = "pixelated";
-    };
-    new ResizeObserver(resize).observe(measure);
-    resize();
+    // 画布跟随父容器（resizeTo），渲染器尺寸变化时同步世界 cover 缩放
+    app.renderer.on("resize", (w: number, h: number) => {
+      this.presenter?.setViewport(w, h);
+    });
   }
 
   play(battle: Battle, hooks: PresenterHooks): void {
-    if (!this.sheet) throw new Error("spritesheet not loaded");
+    if (!this.sheet || !this.app) throw new Error("game not initialised");
     this.battle = battle;
     this.acc = 0;
     for (const child of this.root.removeChildren()) child.destroy({ children: true });
     this.presenter = new Presenter(battle, this.sheet, hooks);
+    this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
     this.root.addChild(this.presenter.world);
   }
 
