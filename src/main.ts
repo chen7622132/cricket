@@ -29,6 +29,7 @@ async function boot(): Promise<void> {
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
   const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
   const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
+  const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
 
   rulesBtn.addEventListener("click", () => hud.toggleRules());
   rulesClose.addEventListener("click", () => hud.toggleRules(false));
@@ -36,11 +37,46 @@ async function boot(): Promise<void> {
   const speeds = [1, 2, 4];
   let speedIdx = 0;
 
+  // URL 参数：?seed=7&rules=C&enemy=ENEMY_B&speed=2 —— 一局就是一个可分享的链接
+  const params = new URLSearchParams(window.location.search);
+  const seedParam = Number.parseInt(params.get("seed") ?? "", 10);
+  if (Number.isFinite(seedParam) && seedParam > 0) seedInput.value = String(seedParam);
+  const rulesParam = params.get("rules");
+  if (rulesParam === "A" || rulesParam === "B" || rulesParam === "C") rulesetSelect.value = rulesParam;
+  const enemyParam = params.get("enemy");
+  if (enemyParam === "ENEMY" || enemyParam === "ENEMY_B") enemySelect.value = enemyParam;
+  const speedParam = Number.parseInt(params.get("speed") ?? "", 10);
+  if (speeds.includes(speedParam)) {
+    speedIdx = speeds.indexOf(speedParam);
+    game.setSpeed(speedParam);
+    speedBtn.textContent = `${speedParam}×`;
+  }
+
+  shareBtn.addEventListener("click", async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      hud.banner("链接已复制，发给别人即可复现这一局", "reveal");
+    } catch {
+      window.prompt("复制这个链接：", url);
+    }
+  });
+
   const start = (): void => {
     const parsed = Number.parseInt(seedInput.value, 10);
     const seed = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
     const ruleset = rulesetSelect.value === "B" ? "B" : rulesetSelect.value === "C" ? "C" : "A";
     const enemyRuleset = enemySelect.value === "ENEMY_B" ? "ENEMY_B" : "ENEMY";
+
+    // 把当前对局写进 URL，刷新/分享都能还原
+    const query = new URLSearchParams({
+      seed: String(seed),
+      rules: ruleset,
+      enemy: enemyRuleset,
+      speed: String(speeds[speedIdx]),
+    });
+    window.history.replaceState(null, "", `?${query.toString()}`);
+
     const battle = new Battle({ seed, heroRuleset: ruleset, enemyRuleset });
 
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
