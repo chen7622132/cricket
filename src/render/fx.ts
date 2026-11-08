@@ -16,6 +16,9 @@ import * as bleeding from "pixelfx/fx/status/bleeding";
 import * as stunned from "pixelfx/fx/status/stunned";
 import * as chargeUp from "pixelfx/fx/lightning/charge-up";
 import * as exclamation from "pixelfx/fx/ui/exclamation";
+import * as blinkIn from "pixelfx/fx/arcane/blink-in";
+import * as heavyCleave from "pixelfx/fx/melee/heavy-cleave";
+import * as uppercut from "pixelfx/fx/melee/uppercut";
 
 /**
  * 招式 → pixelfx 资源映射。引擎只给键（SKILLS[].fx），这里负责落地。
@@ -37,6 +40,9 @@ export const FX_MODULES: Record<string, FxMod> = {
   "status/stunned": stunned as unknown as FxMod,
   "lightning/charge-up": chargeUp as unknown as FxMod,
   "ui/exclamation": exclamation as unknown as FxMod,
+  "arcane/blink-in": blinkIn as unknown as FxMod,
+  "melee/heavy-cleave": heavyCleave as unknown as FxMod,
+  "melee/uppercut": uppercut as unknown as FxMod,
 };
 
 const CW = 256;
@@ -139,4 +145,5 @@ export class PixelFxLayer {
     }
   }
 }
+
 
