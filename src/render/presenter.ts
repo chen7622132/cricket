@@ -3,7 +3,7 @@
 import { SKILLS } from "../engine/skills.ts";
 import type { BattleEvent, BattleSnapshot, CombatSource, LogEntry, StatusId, Tier } from "../engine/types.ts";
 import { TIERS } from "../presentation/tiers.ts";
-import { ARENA, createArena, slotX, terrainY } from "./arena.ts";
+import { ARENA, createArena, SLOT_X, slotX, terrainY } from "./arena.ts";
 import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
@@ -71,6 +71,9 @@ export class Presenter {
   private dodge: Record<Side, number> = { hero: 0, enemy: 0 };
   private insetLeft = 0;
   private camX = ARENA.w / 2;
+  private footY: Record<Side, number> = { hero: ARENA.floorY, enemy: ARENA.floorY };
+  private footV: Record<Side, number> = { hero: 0, enemy: 0 };
+  private fallFrom: Record<Side, number> = { hero: ARENA.floorY, enemy: ARENA.floorY };
   private launchX: Record<Side, number> = { hero: 0, enemy: 0 };
   private launchVx: Record<Side, number> = { hero: 0, enemy: 0 };
   private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -201,7 +204,7 @@ export class Presenter {
         }
         const key = String(d.fx ?? "");
         if (key) {
-          const mul = key.includes("blink") ? 0.5 : key.includes("uppercut") ? 0.8 : 1;
+          const mul = key.includes("blink") ? 0.28 : key.includes("uppercut") ? 0.8 : 1;
           this.fxLayer.spawn(key, actor.x, terrainY(actor.x) - 30, { flip: side === "enemy" }, 0.9, mul);
         }
         break;
@@ -481,13 +484,52 @@ export class Presenter {
     const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
     const heroX = clampX(this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero);
     const enemyX = clampX(this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy);
+
+    // 高低柱：走出柱顶会掉落，落地给压缩/尘屑/硬直提示
+    const feet: Record<Side, number> = { hero: heroX, enemy: enemyX };
+    for (const side of ["hero", "enemy"] as Side[]) {
+      const x = feet[side];
+      const target = terrainY(x);
+      const actor = this.actor(side);
+      let fy = this.footY[side];
+      if (actor.airborne) {
+        fy = target;
+        this.footV[side] = 0;
+        this.fallFrom[side] = target;
+      } else if (target < fy - 0.5) {
+        // 走上更高的柱子：直接抬脚
+        fy = target;
+        this.footV[side] = 0;
+        this.fallFrom[side] = target;
+      } else if (target > fy + 0.5) {
+        // 柱边掉落
+        if (this.footV[side] === 0) this.fallFrom[side] = fy;
+        this.footV[side] += 900 * dt;
+        fy += this.footV[side] * dt;
+        if (fy >= target) {
+          const drop = target - this.fallFrom[side];
+          fy = target;
+          this.footV[side] = 0;
+          actor.setSquash(1.22, 0.8);
+          this.particles.burst(x, target - 2, 4);
+          if (drop > 16) {
+            this.spawnFloat("落地硬直", x, target - 58, "key", false);
+            this.camera.kick("key", side === "hero" ? 1 : -1);
+          }
+        }
+      } else {
+        this.footV[side] = 0;
+      }
+      this.footY[side] = fy;
+    }
+
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
     this.enemy.setMoving(Math.abs(this.lungeTarget.enemy - this.lunge.enemy) > 2);
 
-    this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, terrainY(heroX));
-    this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, terrainY(enemyX));
+    this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, this.footY.hero);
+    this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, this.footY.enemy);
 
     for (const side of ["hero", "enemy"] as Side[]) {
       const a = this.actor(side);
@@ -550,8 +592,9 @@ export class Presenter {
   /** 格点 → 屏幕世界坐标：视口越窄，间距越紧，保证双方永远在画面里。 */
   private slotToX(slot: number): number {
     const visibleW = this.viewport.w / Math.max(0.0001, this.cover);
-    const spacing = Math.max(90, Math.min(112, (visibleW - 60) / 3.4));
-    return ARENA.w / 2 + (slot - 1.5) * spacing;
+    const i = Math.max(0, Math.min(SLOT_X.length - 1, Math.round(slot)));
+    void visibleW;
+    return SLOT_X[i];
   }
 
   get isSettling(): boolean {
@@ -610,8 +653,8 @@ export class Presenter {
       smears: this.hero.smearCount + this.enemy.smearCount,
       airborne: this.hero.airborne || this.enemy.airborne,
       airY: Math.max(this.hero.airY, this.enemy.airY),
-      heroY: terrainY(this.hero.x),
-      enemyY: terrainY(this.enemy.x),
+      heroY: this.footY.hero,
+      enemyY: this.footY.enemy,
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -622,6 +665,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

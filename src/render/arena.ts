@@ -4,21 +4,26 @@ export const ARENA = {
   w: 640,
   h: 270,
   floorY: 208,
-  platformX: 440,
-  platformTop: 176,
   slotCount: 6,
 };
 
-/** 右侧高台：给战斗一个 Y 轴地形（走上台阶就抬高）。 */
+/** 场地中央的三根高低立柱：角色可以站上不同柱子，形成 Y 轴高低差。 */
+export const PILLARS = [
+  { x0: 210, x1: 262, top: 172 },
+  { x0: 296, x1: 352, top: 150 },
+  { x0: 386, x1: 438, top: 184 },
+];
+
+/** 格点落在柱子上或地面：决定落脚高度。 */
 export function terrainY(x: number): number {
-  if (x <= 420) return ARENA.floorY;
-  if (x >= 470) return ARENA.platformTop;
-  const t = (x - 420) / 50;
-  return Math.round(ARENA.floorY + (ARENA.platformTop - ARENA.floorY) * t);
+  for (const p of PILLARS) {
+    if (x >= p.x0 && x <= p.x1) return p.top;
+  }
+  return ARENA.floorY;
 }
 
 /** 场地的 6 个离散格点：位移只在格点之间补间，不做持续漂移。 */
-export const SLOT_X = [120, 168, 216, 264, 312, 360];
+export const SLOT_X = [170, 236, 324, 412, 500, 560];
 
 export function slotX(slot: number): number {
   const i = Math.max(0, Math.min(SLOT_X.length - 1, slot));
@@ -103,32 +108,27 @@ export function createArena(): PIXI.Container {
   }
   root.addChild(braziers);
 
-  // 右侧高台：地面之上的一层台阶，角色站上去会自然抬高
-  const platform = new PIXI.Graphics();
-  // 台阶（420-470 斜坡），让上台有可读的过渡
-  for (let i = 0; i < 3; i++) {
-    const y = ARENA.floorY - (i + 1) * 10;
-    platform.rect(420 + i * 14, y, 20, 12).fill({ color: 0x28344a });
-    platform.rect(420 + i * 14, y, 20, 2).fill({ color: 0x6f8db3, alpha: 0.8 });
+  // 中央三根高低立柱：接近正方形的石柱，顶部有亮面
+  const pillars = new PIXI.Graphics();
+  for (const p of PILLARS) {
+    const w = p.x1 - p.x0;
+    const cx = (p.x0 + p.x1) / 2;
+    // 柱身
+    pillars.rect(p.x0, p.top + 5, w, ARENA.floorY - p.top + 46).fill({ color: 0x1d2738 });
+    // 柱顶亮面
+    pillars.rect(p.x0 - 3, p.top, w + 6, 7).fill({ color: 0x3d5170 });
+    pillars.rect(p.x0 - 3, p.top, w + 6, 2).fill({ color: 0x93b4da });
+    // 侧面阴影
+    pillars.rect(p.x1 - 4, p.top + 6, 4, ARENA.floorY - p.top + 44).fill({ color: 0x0f1726 });
+    // 竖向纹路
+    pillars.setStrokeStyle({ width: 1, color: 0x2b3a52, alpha: 0.8 });
+    pillars.moveTo(cx, p.top + 10).lineTo(cx, ARENA.floorY + 40);
+    pillars.stroke();
+    // 底部投影
+    pillars.ellipse(cx, ARENA.floorY + 44, w * 0.55, 5).fill({ color: 0x000000, alpha: 0.35 });
   }
-  // 台体
-  platform.rect(ARENA.platformX, ARENA.platformTop + 6, ARENA.w - ARENA.platformX, ARENA.floorY - ARENA.platformTop + 40)
-    .fill({ color: 0x1c2637 });
-  // 台面（更亮，明确"站得上去"）
-  platform.rect(ARENA.platformX, ARENA.platformTop, ARENA.w - ARENA.platformX, 6)
-    .fill({ color: 0x3a4e6b });
-  platform.rect(ARENA.platformX, ARENA.platformTop, ARENA.w - ARENA.platformX, 2)
-    .fill({ color: 0x8fb0d6 });
-  platform.rect(ARENA.platformX - 4, ARENA.platformTop, 4, ARENA.floorY - ARENA.platformTop + 46)
-    .fill({ color: 0x0f1726 });
-  platform.setStrokeStyle({ width: 1, color: 0x2f4059, alpha: 0.9 });
-  for (let i = 1; i <= 2; i++) {
-    platform.moveTo(ARENA.platformX, ARENA.platformTop + i * 18).lineTo(ARENA.w, ARENA.platformTop + i * 18);
-  }
-  platform.stroke();
-  root.addChild(platform);
+  root.addChild(pillars);
 
   return root;
 }
-
 
