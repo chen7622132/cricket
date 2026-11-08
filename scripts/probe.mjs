@@ -66,6 +66,10 @@ while (Date.now() - started < 14000) {
   await new Promise((r) => setTimeout(r, 33));
 }
 
+const boot = await page.evaluate(() => ({
+  done: !!document.getElementById("boot")?.classList.contains("done"),
+  text: document.getElementById("boot-text")?.textContent ?? "",
+}));
 const battle = samples[samples.length - 1]?.battle;
 const freezeBuckets = frozenStarts.reduce((acc, ms) => {
   const key = ms >= 220 ? "ultimate(16f=267ms)" : ms >= 100 ? "key(8f=133ms)" : "normal(3f=50ms)";
@@ -88,6 +92,7 @@ const result = {
   heroFrameCount: heroFrames.size,
   attackHitFrames: maxHitFrames,
   positionRange: xValues.length ? [Math.round(Math.min(...xValues)), Math.round(Math.max(...xValues))] : [],
+  bootDone: boot.done,
   samples: samples.length,
   errors,
 };
@@ -106,6 +111,7 @@ const checks = {
   spriteFramesAnimate: result.heroFrameCount >= 2,
   attackHitFrames: result.attackHitFrames > 0,
   positionsSane: result.positionRange.length > 0 && result.positionRange[1] < 600 && result.positionRange[0] > -200,
+  bootOverlayDismissed: result.bootDone === true,
   noErrors: result.errors.length === 0,
 };
 console.log("checks:", JSON.stringify(checks));
@@ -113,6 +119,7 @@ const ok = Object.values(checks).every(Boolean);
 console.log(ok ? "PROBE PASS" : "PROBE FAIL");
 process.exitCode = ok ? 0 : 1;
 await browser.close();
+
 
 
 

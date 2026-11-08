@@ -29,6 +29,8 @@ CI（`.github/workflows/ci.yml`）在每次 push 到 `main` 时跑：`npm ci →
 - Pixi `resizeTo` 父容器 + `autoDensity` + `resolution = min(2, devicePixelRatio)`
 - 舞台用 **cover 缩放** `max(视口/世界)`：铺满游戏区、不留黑边（只裁掉少量边缘）
 - `TextureSource.defaultOptions.scaleMode = "nearest"`，所有精灵 `roundPixels = true`
+- 启动遮罩 + 资源加载失败提示（不会黑屏）；WebGL 上下文丢失会明确提示刷新
+- 切后台暂停 ticker，回来不补帧；单帧 dt 上限 100ms；DPR 变化自动重建分辨率
 
 demo 里可以：改 seed、切英雄规则表 A/B/C、切敌方规则表（碎地重锤 / 压制连锤）、开打、1×/2×/4×、按 `R` 重开。
 每一局都编码在 URL 里：`?seed=7&rules=C&enemy=ENEMY_B&speed=2`，点「复制链接」发给别人，打开就是同一局（确定性保证复现）。
@@ -238,5 +240,6 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 - 完整日志：`logs/battle-seed*-rules*.log`
 - 验收汇总：`logs/acceptance.txt`
 - 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（Martial Hero 序列帧 + 整数倍像素）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）
+
 
 

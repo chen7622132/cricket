@@ -1,4 +1,4 @@
-import "./style.css";
+﻿import "./style.css";
 import { Battle } from "./engine/battle.ts";
 import { applyRuleOverrides, getRuleset, type Ruleset } from "./engine/rules.ts";
 import type { PresenterHooks } from "./render/presenter.ts";
@@ -10,9 +10,26 @@ async function boot(): Promise<void> {
   const stage = document.getElementById("stage");
   if (!stage) throw new Error("#stage missing");
 
+  const bootEl = document.getElementById("boot") as HTMLElement;
+  const bootText = document.getElementById("boot-text") as HTMLElement;
+  const showFatal = (message: string): void => {
+    bootEl.classList.remove("done");
+    bootEl.classList.add("error");
+    bootText.textContent = message;
+  };
+  window.addEventListener("cricket-fatal", (event) => {
+    showFatal(String((event as CustomEvent).detail ?? "运行时错误，请刷新页面"));
+  });
+
   const hud = new Hud();
   const game = new Game();
-  await game.init(stage);
+  try {
+    await game.init(stage);
+  } catch (err) {
+    showFatal(`启动失败：${(err as Error).message}。请刷新重试。`);
+    return;
+  }
+  bootEl.classList.add("done");
 
   // 运行时探针：给无头验证脚本读 presenter 状态（hitstop / 镜头 / 特效）
   (window as unknown as Record<string, unknown>).__cricket = {
@@ -144,3 +161,4 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+

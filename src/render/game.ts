@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js";
+﻿import * as PIXI from "pixi.js";
 import type { Battle } from "../engine/battle.ts";
 import { Presenter, type PresenterHooks } from "./presenter.ts";
 
@@ -30,8 +30,35 @@ export class Game {
     });
     container.appendChild(app.canvas);
     app.stage.addChild(this.root);
+    app.ticker.maxFPS = 60;
     app.ticker.add((ticker) => this.tick(ticker.deltaMS));
     this.app = app;
+
+    // 切后台暂停，回来时不补帧（避免一睁眼战斗已经打完）
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        app.ticker.stop();
+      } else {
+        this.acc = 0;
+        app.ticker.start();
+      }
+    });
+
+    // 换显示器 / 调缩放时，同步渲染分辨率
+    window.addEventListener("resize", () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      if (Math.abs(app.renderer.resolution - dpr) > 0.01) {
+        app.renderer.resolution = dpr;
+        app.resize();
+        this.presenter?.setViewport(app.screen.width, app.screen.height);
+      }
+    });
+
+    // WebGL 上下文丢失（驱动崩溃/省电切换）：交给页面提示，而不是黑屏
+    app.canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      window.dispatchEvent(new CustomEvent("cricket-fatal", { detail: "WebGL 上下文丢失，请刷新页面" }));
+    });
 
     // Martial Hero 序列帧（CC0）打包成的 atlas + animations
     this.sheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/martial-hero/hero.json");
@@ -75,8 +102,11 @@ export class Game {
     const presenter = this.presenter;
     if (!battle || !presenter) return;
 
+    // 夹住异常大的帧间隔，防止切后台回来一次性快进
+    const dt = Math.min(100, dtMs);
+
     if (!battle.done) {
-      this.acc += dtMs * this.speed;
+      this.acc += dt * this.speed;
       let steps = 0;
       while (this.acc >= FIXED_MS && steps < 16) {
         battle.step();
@@ -88,6 +118,7 @@ export class Game {
 
     const events = battle.drainEvents();
     if (events.length) presenter.consume(events);
-    presenter.update(dtMs);
+    presenter.update(dt);
   }
 }
+
