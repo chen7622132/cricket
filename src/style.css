@@ -905,3 +905,29 @@ body.sidebar-collapsed #side {
 #log-toggle {
   min-width: 78px;
 }
+
+/* 左侧编排面板可收起 */
+#duel-ui.collapsed {
+  width: fit-content;
+  max-width: none;
+  padding: 8px 10px;
+}
+
+#duel-ui.collapsed #duel-seed,
+#duel-ui.collapsed #duel-new {
+  display: none;
+}
+
+#duel-ui.collapsed .duel-title {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+#duel-ui.collapsed > :not(.duel-title) {
+  display: none;
+}
+
+#duel-ui.collapsed .duel-title {
+  margin: 0;
+}
+

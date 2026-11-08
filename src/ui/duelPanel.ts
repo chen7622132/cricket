@@ -19,9 +19,11 @@ export class DuelPanel {
   private readonly contextBtn = document.getElementById("duel-compose") as HTMLButtonElement;
   private readonly startBtn = document.getElementById("duel-start") as HTMLButtonElement;
   private readonly nextBtn = document.getElementById("duel-next") as HTMLButtonElement;
+  private readonly collapseBtn = document.getElementById("duel-collapse") as HTMLButtonElement;
 
   private selected: string | null = null;
   private message = "";
+  private collapsed = localStorage.getItem("cricket-duel-panel") === "collapsed";
 
   constructor(
     private readonly session: DuelSession,
@@ -42,10 +44,22 @@ export class DuelPanel {
       }
     });
     this.nextBtn.addEventListener("click", () => this.handlers.onNext());
+    this.collapseBtn.addEventListener("click", () => {
+      this.collapsed = !this.collapsed;
+      localStorage.setItem("cricket-duel-panel", this.collapsed ? "collapsed" : "open");
+      this.applyCollapsed();
+    });
+    this.applyCollapsed();
+  }
+
+  private applyCollapsed(): void {
+    this.panel.classList.toggle("collapsed", this.collapsed);
+    this.collapseBtn.textContent = this.collapsed ? "展开" : "收起";
   }
 
   show(): void {
     this.panel.classList.remove("hidden");
+    this.applyCollapsed();
   }
 
   hide(): void {
@@ -177,4 +191,5 @@ export class DuelPanel {
     }
   }
 }
+
 
