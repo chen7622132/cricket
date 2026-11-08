@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // 相对路径：GitHub Pages 的 /cricket/ 子路径与本地 preview 都能用
+  base: "./",
   server: {
     port: 5273,
     watch: {

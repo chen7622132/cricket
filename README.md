@@ -4,6 +4,8 @@
 
 已落地：确定性 60Hz 战斗引擎 + 规则仲裁（priority / cost / interrupt）+ 事件总线 + 4 条 combo 链 + pixelfx 演出分层 + 三种空间转换 + 可复现验收脚本。
 
+**在线试玩：https://chen7622132.github.io/cricket/**（GitHub Pages，每次 push 自动部署）
+
 ---
 
 ## 1. 快速开始

@@ -1,7 +1,7 @@
 import {
   JUDGE_TOLERANCE_FRAMES,
 } from "./skills.ts";
-import type { RuleDef, RuleTag, Side, SkillId } from "./types.ts";
+import type { Cost, RuleDef, RuleTag, Side, SkillId } from "./types.ts";
 
 /**
  * 规则表：WHEN <condition> → DO <skill>，带 priority / cost / cooldown。
@@ -21,6 +21,73 @@ export interface Ruleset {
 }
 
 export type RulesetId = "A" | "B" | "C" | "ENEMY" | "ENEMY_B";
+
+export interface RuleOverride {
+  id: string;
+  /** 仅用于编辑器展示，应用时忽略 */
+  name?: string;
+  priority?: number;
+  cooldown?: number;
+  cost?: Cost;
+  disabled?: boolean;
+}
+
+function clampInt(n: number, lo: number, hi: number, fallback: number): number {
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(lo, Math.min(hi, Math.round(n)));
+}
+
+function normalizeCost(cost: Cost, fallback: Cost): Cost {
+  if (!cost || typeof cost !== "object") return fallback;
+  switch (cost.kind) {
+    case "none":
+      return { kind: "none" };
+    case "resource":
+      return { kind: "resource", insight: clampInt(cost.insight, 0, 3, 1) };
+    case "skip_next":
+      return { kind: "skip_next" };
+    case "hard_cc":
+      return { kind: "hard_cc", frames: clampInt(cost.frames, 0, 120, 30) };
+    default:
+      return fallback;
+  }
+}
+
+/**
+ * 把玩家的 JSON 覆盖应用到基准规则表上。
+ * index 保持不变 —— 日志里的「规则[n]」始终指基准表的序号，改优先级不会改序号。
+ */
+export function applyRuleOverrides(base: Ruleset, overrides: RuleOverride[]): Ruleset {
+  const byId = new Map<string, RuleOverride>();
+  for (const o of overrides) if (o && typeof o.id === "string") byId.set(o.id, o);
+
+  const rules = base.rules
+    .filter((r) => !byId.get(r.id)?.disabled)
+    .map((r) => {
+      const o = byId.get(r.id);
+      if (!o) return r;
+      return {
+        ...r,
+        priority: clampInt(o.priority ?? r.priority, 0, 999, r.priority),
+        cooldown: o.cooldown === undefined ? r.cooldown : clampInt(o.cooldown, 0, 999, r.cooldown ?? 0),
+        cost: normalizeCost(o.cost ?? r.cost, r.cost),
+      };
+    });
+
+  return { ...base, name: `${base.name}·自定义`, rules };
+}
+
+/** 导出可编辑的覆盖列表（编辑器初始化用）。 */
+export function exportRuleOverrides(base: Ruleset): RuleOverride[] {
+  return base.rules.map((r) => ({
+    id: r.id,
+    name: r.name,
+    priority: r.priority,
+    cost: r.cost,
+    cooldown: r.cooldown,
+    disabled: false,
+  }));
+}
 
 function makeRuleset(
   id: RulesetId,

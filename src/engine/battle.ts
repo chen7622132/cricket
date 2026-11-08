@@ -28,8 +28,8 @@ import type {
 
 export interface BattleConfig {
   seed: number;
-  /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流 */
-  heroRuleset: "A" | "B" | "C";
+  /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流，或一个自定义 Ruleset */
+  heroRuleset: "A" | "B" | "C" | Ruleset;
   /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
   enemyRuleset?: "ENEMY" | "ENEMY_B";
   maxFrames?: number;
@@ -197,7 +197,8 @@ export class Battle {
 
   constructor(cfg: BattleConfig) {
     this.rng = new Rng(cfg.seed);
-    this.heroRuleset = HERO_RULESETS[cfg.heroRuleset];
+    this.heroRuleset =
+      typeof cfg.heroRuleset === "string" ? HERO_RULESETS[cfg.heroRuleset] : cfg.heroRuleset;
     this.enemyRuleset = ENEMY_RULESETS[cfg.enemyRuleset ?? "ENEMY"];
     this.maxFrames = cfg.maxFrames ?? 4800;
 
@@ -940,6 +941,9 @@ export class Battle {
       JSON.stringify({
         seed: this.rng.seed,
         rules: this.heroRuleset.id,
+        ruleSig: this.heroRuleset.rules
+          .map((r) => `${r.id}:${r.priority}:${r.cost.kind}`)
+          .join("|"),
         enemyRules: this.enemyRuleset.id,
         events: this.events.map((e) => [e.frame, e.type, e.side, e.skill, e.tier]),
         log: this.log.map((l) => [l.frame, l.text]),
