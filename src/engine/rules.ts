@@ -20,7 +20,7 @@ export interface Ruleset {
   rules: RuleDef[];
 }
 
-export type RulesetId = "A" | "B" | "ENEMY" | "ENEMY_B";
+export type RulesetId = "A" | "B" | "C" | "ENEMY" | "ENEMY_B";
 
 function makeRuleset(
   id: RulesetId,
@@ -252,6 +252,130 @@ export const HERO_RULES_B = makeRuleset(
   ],
 );
 
+/**
+ * 英雄规则表 C：识破流。
+ * 不用突刺打断蓄力，而是用「看破」把识破换成必暴击；重锤用闪避躲，
+ * 识破耗尽后才退回格挡。用来验证：同一 seed 下换英雄规则表，战斗形状完全不同。
+ */
+export const HERO_RULES_C = makeRuleset(
+  "C",
+  "识破流",
+  "hero",
+  "不打断：蓄力时看破换暴击，重锤靠闪避，识破耗尽才格挡还击。",
+  [
+    {
+      id: "C_riposte",
+      side: "hero",
+      name: "后摇还击",
+      when: "敌方收招中 且 自己处于还击窗口 且 距离≤1",
+      skill: "hero_riposte",
+      priority: 90,
+      cost: { kind: "none" },
+      tags: tag("combo", "attack"),
+      test: ({ self, foe }) => foe.recovering && self.has("riposte") && self.distance <= 1,
+    },
+    {
+      id: "C_read",
+      side: "hero",
+      name: "看破",
+      when: "敌方蓄力 且 识破≥1",
+      skill: "hero_read",
+      priority: 92,
+      cost: { kind: "resource", insight: 1 },
+      tags: tag("defense"),
+      test: ({ self, foe }) => foe.charging && self.insight >= 1 && !self.read,
+    },
+    {
+      id: "C_execute",
+      side: "hero",
+      name: "处决",
+      when: "敌方被击晕 且 距离≤1",
+      skill: "hero_execute",
+      priority: 86,
+      cost: { kind: "hard_cc", frames: 36 },
+      cooldown: 120,
+      tags: tag("combo", "attack"),
+      test: ({ self, foe }) => foe.has("stun") && self.distance <= 1 && !self.has("guard"),
+    },
+    {
+      id: "C_dodge",
+      side: "hero",
+      name: "闪避",
+      when: "敌方重锤起手≤9帧 且 未格挡 且 距离≤1",
+      skill: "hero_dodge",
+      priority: 84,
+      cost: { kind: "skip_next" },
+      cooldown: 50,
+      tags: tag("defense"),
+      test: ({ self, foe }) =>
+        foe.windupSkill === "enemy_slam" &&
+        foe.windupLeft > 0 &&
+        foe.windupLeft <= JUDGE_TOLERANCE_FRAMES &&
+        !self.has("guard") &&
+        !self.has("iframes") &&
+        self.distance <= 1,
+    },
+    {
+      id: "C_hammer",
+      side: "hero",
+      name: "碎地锤",
+      when: "敌方流血 且 距离≤1",
+      skill: "hero_earthhammer",
+      priority: 82,
+      cost: { kind: "none" },
+      cooldown: 200,
+      tags: tag("combo", "attack"),
+      test: ({ self, foe }) => foe.has("bleed") && self.distance <= 1 && !self.has("guard"),
+    },
+    {
+      id: "C_rend",
+      side: "hero",
+      name: "裂伤",
+      when: "敌方未流血 且 距离≤1",
+      skill: "hero_rend",
+      priority: 60,
+      cost: { kind: "none" },
+      tags: tag("combo", "attack"),
+      test: ({ self, foe }) => !foe.has("bleed") && self.distance <= 1 && !self.has("guard"),
+    },
+    {
+      id: "C_guard",
+      side: "hero",
+      name: "格挡",
+      when: "敌方蓄力 且 识破=0 且 距离≤2",
+      skill: "hero_guard",
+      priority: 56,
+      cost: { kind: "none" },
+      cooldown: 30,
+      tags: tag("defense"),
+      test: ({ self, foe }) =>
+        foe.charging && self.insight === 0 && self.distance <= 2 && !self.has("guard"),
+    },
+    {
+      id: "C_step",
+      side: "hero",
+      name: "垫步",
+      when: "距离>1",
+      skill: "hero_step",
+      priority: 30,
+      cost: { kind: "none" },
+      tags: tag("move"),
+      test: ({ self }) => self.distance > 1,
+    },
+    {
+      id: "C_attack",
+      side: "hero",
+      name: "突刺",
+      when: "距离≤1",
+      skill: "hero_thrust",
+      priority: 12,
+      cost: { kind: "none" },
+      tags: tag("attack"),
+      test: ({ self }) => self.distance <= 1 && !self.has("guard"),
+    },
+  ],
+);
+
 /** 敌方规则表：血线 → 蓄力 → 重锤，其余时间横扫/逼近。 */
 export const ENEMY_RULES = makeRuleset(
   "ENEMY",
@@ -420,9 +544,10 @@ export const ENEMY_RULESETS: Record<"ENEMY" | "ENEMY_B", Ruleset> = {
   ENEMY_B: ENEMY_RULES_B,
 };
 
-export const HERO_RULESETS: Record<"A" | "B", Ruleset> = {
+export const HERO_RULESETS: Record<"A" | "B" | "C", Ruleset> = {
   A: HERO_RULES_A,
   B: HERO_RULES_B,
+  C: HERO_RULES_C,
 };
 
 export function getRuleset(id: RulesetId): Ruleset {

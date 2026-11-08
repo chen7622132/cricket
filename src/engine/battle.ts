@@ -28,8 +28,8 @@ import type {
 
 export interface BattleConfig {
   seed: number;
-  /** 英雄规则表：A 突刺优先 / B 全格挡流 */
-  heroRuleset: "A" | "B";
+  /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流 */
+  heroRuleset: "A" | "B" | "C";
   /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
   enemyRuleset?: "ENEMY" | "ENEMY_B";
   maxFrames?: number;
@@ -110,7 +110,7 @@ export interface BattleStats {
 
 export interface BattleResult {
   seed: number;
-  heroRuleset: "A" | "B";
+  heroRuleset: "A" | "B" | "C";
   enemyRuleset: "ENEMY" | "ENEMY_B";
   winner: "hero" | "enemy" | "draw";
   frames: number;
@@ -947,7 +947,7 @@ export class Battle {
     );
     return {
       seed: this.rng.seed,
-      heroRuleset: this.heroRuleset.id as "A" | "B",
+      heroRuleset: this.heroRuleset.id as "A" | "B" | "C",
       enemyRuleset: this.enemyRuleset.id as "ENEMY" | "ENEMY_B",
       winner: this.winner ?? "draw",
       frames: this.frame,

@@ -121,8 +121,28 @@ describe("演出分层表", () => {
   });
 });
 
-describe("敌方规则表", () => {
-  const firstCharge = (ruleset: "ENEMY" | "ENEMY_B") => {
+describe("英雄规则表 C 识破流", () => {
+  const runC = () => new Battle({ seed: 20260101, heroRuleset: "C" }).run();
+
+  it("C 与 A 形状不同：不打断，靠看破/闪避", () => {
+    const a = run(20260101, "A");
+    const c = runC();
+    expect(c.digest).not.toBe(a.digest);
+    expect(c.stats.interrupts).toBe(0);
+    expect(c.stats.insightSpent).toBeGreaterThan(0);
+  });
+
+  it("C 仍然完全可复现", () => {
+    expect(runC().digest).toBe(runC().digest);
+  });
+
+  it("C 在日志里能看出「看破」规则链", () => {
+    const c = runC();
+    expect(c.events.some((e) => e.type === "COMBO_STEP" && e.data?.chain === "read_crit")).toBe(true);
+  });
+});
+
+describe("敌方规则表", () => {  const firstCharge = (ruleset: "ENEMY" | "ENEMY_B") => {
     const r = new Battle({ seed: 20260101, heroRuleset: "A", enemyRuleset: ruleset }).run();
     return r.events.find((e) => e.type === "SKILL_START" && e.skill === "enemy_charge")?.frame ?? Infinity;
   };

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * P0 最小验收（headless，不需要浏览器）。
  *
  * 1) 同一套规则，换 3 个 seed：日志/结局不同，且能给出"为什么不一样"的因果说明
@@ -136,9 +136,15 @@ mkdirSync(OUT_DIR, { recursive: true });
 const runsA = SEEDS.map((seed) => new Battle({ seed, heroRuleset: "A" }).run());
 const repeatA = new Battle({ seed: BASE_SEED, heroRuleset: "A" }).run();
 const runB = new Battle({ seed: BASE_SEED, heroRuleset: "B" }).run();
+const runC = new Battle({ seed: BASE_SEED, heroRuleset: "C" }).run();
+const runEnemyB = new Battle({ seed: BASE_SEED, heroRuleset: "A", enemyRuleset: "ENEMY_B" }).run();
 
-for (const r of [...runsA, runB]) {
-  writeFileSync(join(OUT_DIR, `battle-seed${r.seed}-rules${r.heroRuleset}.log`), logText(r), "utf8");
+for (const r of [...runsA, runB, runC, runEnemyB]) {
+  writeFileSync(
+    join(OUT_DIR, `battle-seed${r.seed}-hero${r.heroRuleset}-enemy${r.enemyRuleset}.log`),
+    logText(r),
+    "utf8",
+  );
 }
 
 console.log("\n【对局一览·规则表 A「突刺优先」】");
@@ -161,10 +167,13 @@ for (let i = 0; i < runsA.length; i++) {
   }
 }
 
-console.log(`【同 seed 换规则】seed ${BASE_SEED}：A「突刺优先」vs B「全格挡流」`);
+console.log(`【同 seed 换规则】seed ${BASE_SEED}：A「突刺优先」vs B「全格挡流」vs C「识破流」`);
 console.log(`  ${firstDivergence(runsA[0], runB)}`);
-console.log(`  结局：A → ${runsA[0].winner}（${sec(runsA[0].frames)}）｜B → ${runB.winner}（${sec(runB.frames)}）`);
-console.log(`  识破消耗：A ${runsA[0].stats.insightSpent}｜B ${runB.stats.insightSpent}；打断：A ${runsA[0].stats.interrupts}｜B ${runB.stats.interrupts}`);
+console.log(`  结局：A → ${runsA[0].winner}（${sec(runsA[0].frames)}）｜B → ${runB.winner}（${sec(runB.frames)}）｜C → ${runC.winner}（${sec(runC.frames)}）`);
+console.log(`  识破消耗：A ${runsA[0].stats.insightSpent}｜B ${runB.stats.insightSpent}｜C ${runC.stats.insightSpent}；打断：A ${runsA[0].stats.interrupts}｜B ${runB.stats.interrupts}｜C ${runC.stats.interrupts}`);
+console.log(
+  `  敌方规则表：ENEMY → ${runsA[0].winner}（${sec(runsA[0].frames)}，英雄剩 ${runsA[0].heroHp}）｜ENEMY_B → ${runEnemyB.winner}（${sec(runEnemyB.frames)}，英雄剩 ${runEnemyB.heroHp}）`,
+);
 
 console.log("\n【种子 20260101 · 规则表 A 的关键时间线】");
 console.log(story(runsA[0]).join("\n"));
@@ -191,9 +200,22 @@ console.log(story(runsA[0]).join("\n"));
   const pass = a.digest !== b.digest && (a.winner !== b.winner || Math.abs(a.frames - b.frames) > 30);
   checks.push({
     id: "A2",
-    name: "同一个 seed，换规则表结果改变",
+    name: "同一个 seed，换英雄规则表结果改变",
     pass,
-    detail: `A: ${a.winner}/${sec(a.frames)}/英雄${a.heroHp}｜B: ${b.winner}/${sec(b.frames)}/英雄${b.heroHp}；分叉点：${firstDivergence(a, b)}`,
+    detail: `A: ${a.winner}/${sec(a.frames)}/英雄${a.heroHp}｜B: ${b.winner}/${sec(b.frames)}/英雄${b.heroHp}｜C: ${runC.winner}/${sec(runC.frames)}/英雄${runC.heroHp}；分叉点：${firstDivergence(a, b)}`,
+  });
+}
+
+// 2b. 同 seed 只换敌方规则表
+{
+  const a = runsA[0];
+  const e = runEnemyB;
+  const pass = a.digest !== e.digest && (a.winner !== e.winner || Math.abs(a.frames - e.frames) > 30);
+  checks.push({
+    id: "A2b",
+    name: "同一个 seed，换敌方规则表结果也改变",
+    pass,
+    detail: `敌方 ENEMY: ${a.winner}/${sec(a.frames)}/英雄${a.heroHp}｜敌方 ENEMY_B: ${e.winner}/${sec(e.frames)}/英雄${e.heroHp}`,
   });
 }
 
