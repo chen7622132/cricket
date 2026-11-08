@@ -3,7 +3,7 @@
 import { SKILLS } from "../engine/skills.ts";
 import type { BattleEvent, BattleSnapshot, CombatSource, LogEntry, StatusId, Tier } from "../engine/types.ts";
 import { TIERS } from "../presentation/tiers.ts";
-import { ARENA, createArena, slotX } from "./arena.ts";
+import { ARENA, createArena, slotX, terrainY } from "./arena.ts";
 import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
@@ -70,6 +70,9 @@ export class Presenter {
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
   private dodge: Record<Side, number> = { hero: 0, enemy: 0 };
   private insetLeft = 0;
+  private camX = ARENA.w / 2;
+  private launchX: Record<Side, number> = { hero: 0, enemy: 0 };
+  private launchVx: Record<Side, number> = { hero: 0, enemy: 0 };
   private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
 
   constructor(
@@ -98,8 +101,8 @@ export class Presenter {
     this.baseX.enemy = this.slotToX(snap.enemy.slot);
     this.hero.x = this.baseX.hero;
     this.enemy.x = this.baseX.enemy;
-    this.hero.update(0, this.hero.x, 1, snap.hero.statuses, ARENA.floorY);
-    this.enemy.update(0, this.enemy.x, -1, snap.enemy.statuses, ARENA.floorY);
+    this.hero.update(0, this.hero.x, 1, snap.hero.statuses, terrainY(this.hero.x));
+    this.enemy.update(0, this.enemy.x, -1, snap.enemy.statuses, terrainY(this.enemy.x));
   }
 
   /** 对局结束后清空残留特效，保证下一局从干净状态开始。 */
@@ -185,7 +188,7 @@ export class Presenter {
         this.dodge[side] = dir * 58;
         actor.spawnGhost();
         actor.setSquash(1.06, 0.94);
-        this.spawnFloat("闪避", actor.x, ARENA.floorY - 62, "normal", false);
+        this.spawnFloat("闪避", actor.x, terrainY(actor.x) - 62, "normal", false);
         this.camera.kick("normal", dir);
         this.hooks.onBanner("闪避", "reveal");
         break;
@@ -199,7 +202,7 @@ export class Presenter {
         const key = String(d.fx ?? "");
         if (key) {
           const mul = key.includes("blink") ? 0.5 : key.includes("uppercut") ? 0.8 : 1;
-          this.fxLayer.spawn(key, actor.x, ARENA.floorY - 30, { flip: side === "enemy" }, 0.9, mul);
+          this.fxLayer.spawn(key, actor.x, terrainY(actor.x) - 30, { flip: side === "enemy" }, 0.9, mul);
         }
         break;
       }
@@ -329,11 +332,18 @@ export class Presenter {
     this.lungeTarget[o.attackerSide] = 0;
     this.pendingAttack[o.attackerSide] = null;
 
+    // 击飞：重击把目标打上天并向后推，落地由 actor 的重力结算
+    const launchable = tier === "ultimate" || (o.fx ?? "").includes("hammer") || (o.fx ?? "").includes("scythe");
+    if (launchable) {
+      o.target.startJump(tier === "ultimate" ? 46 : 26);
+      this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 150 : 80);
+    }
+
     o.target.setSquash(1.12, 0.9);
     o.attacker.setSquash(1.05, 0.95);
 
     const x = o.target.x;
-    const y = ARENA.floorY - 30;
+    const y = terrainY(o.target.x) - 30;
     const count = tier === "normal" ? 8 : tier === "key" ? 10 : 12;
     this.particles.burst(x, y, count);
     this.impact.trigger(x, y, dir, tier, this.impactKind(o.fx, o.skill));
@@ -360,7 +370,7 @@ export class Presenter {
         this.fxLayer.spawn("impacts/crit-hit", x + dir * 6, y - 4, { flip: dir < 0 }, 0.9);
       }
       if (tier === "ultimate") {
-        this.fxLayer.spawn("impacts/ground-slam", x, ARENA.floorY, {}, 0.7);
+        this.fxLayer.spawn("impacts/ground-slam", x, terrainY(o.target.x), {}, 0.7);
       }
     }
 
@@ -462,20 +472,26 @@ export class Presenter {
     // 基准位单独累积，绘制位 = 基准 + 前冲 + 分离（避免位移反馈叠加跑飞）
     this.baseX.hero = this.approach(this.baseX.hero, heroHome, dt);
     this.baseX.enemy = this.approach(this.baseX.enemy, enemyHome, dt);
-    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero;
-    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy;
+    // 击飞：水平位移积分 + 落地回弹
+    for (const side of ["hero", "enemy"] as Side[]) {
+      this.launchX[side] += this.launchVx[side] * dt;
+      this.launchVx[side] *= Math.exp(-dt * 3.2);
+      if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
+    }
+    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero;
+    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy;
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
     this.enemy.setMoving(Math.abs(this.lungeTarget.enemy - this.lunge.enemy) > 2);
 
-    this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, ARENA.floorY);
-    this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, ARENA.floorY);
+    this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, terrainY(heroX));
+    this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, terrainY(enemyX));
 
     for (const side of ["hero", "enemy"] as Side[]) {
       const a = this.actor(side);
       if (a.consumeLanded()) {
-        this.particles.burst(a.x, ARENA.floorY - 2, 4);
+        this.particles.burst(a.x, terrainY(a.x) - 2, 4);
         this.camera.kick("normal", side === "hero" ? 1 : -1);
       }
     }
@@ -523,15 +539,18 @@ export class Presenter {
 
   private applyCamera(): void {
     this.cover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
-    this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover);
+    const halfView = this.viewport.w / Math.max(0.0001, this.cover) / 2;
+    const target = Math.max(halfView, Math.min(ARENA.w - halfView, (this.hero.x + this.enemy.x) / 2));
+    this.camX += (target - this.camX) * Math.min(1, 0.12);
+    this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover, this.camX);
     if (this.insetLeft > 0) this.world.x += this.insetLeft / 2;
   }
 
   /** 格点 → 屏幕世界坐标：视口越窄，间距越紧，保证双方永远在画面里。 */
   private slotToX(slot: number): number {
     const visibleW = this.viewport.w / Math.max(0.0001, this.cover);
-    const spacing = Math.max(54, Math.min(84, (visibleW - 80) / 4.6));
-    return ARENA.w / 2 + (slot - 2.5) * spacing;
+    const spacing = Math.max(90, Math.min(112, (visibleW - 60) / 3.4));
+    return ARENA.w / 2 + (slot - 1.5) * spacing;
   }
 
   get isSettling(): boolean {
@@ -561,6 +580,8 @@ export class Presenter {
     smears: number;
     airborne: boolean;
     airY: number;
+    heroY: number;
+    enemyY: number;
     cover: number;
     heroX: number;
     enemyX: number;
@@ -588,6 +609,8 @@ export class Presenter {
       smears: this.hero.smearCount + this.enemy.smearCount,
       airborne: this.hero.airborne || this.enemy.airborne,
       airY: Math.max(this.hero.airY, this.enemy.airY),
+      heroY: terrainY(this.hero.x),
+      enemyY: terrainY(this.enemy.x),
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -598,6 +621,10 @@ export class Presenter {
     };
   }
 }
+
+
+
+
 
 
 
