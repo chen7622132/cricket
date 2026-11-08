@@ -104,6 +104,8 @@ export class Presenter {
   clearEffects(): void {
     this.fxLayer.clear();
     this.impact.clear();
+    this.hero.clearGhosts();
+    this.enemy.clearGhosts();
     for (const f of this.floats) f.text.destroy();
     this.floats = [];
     for (const m of this.marks) m.g.destroy();
@@ -313,7 +315,10 @@ export class Presenter {
     const count = tier === "normal" ? 8 : tier === "key" ? 10 : 12;
     this.particles.burst(x, y, count);
     this.impact.trigger(x, y, dir, tier, this.impactKind(o.fx, o.skill));
-    if (!o.guard) o.target.flashWhite(Math.max(0.07, this.freezeMs / 1000));
+    if (!o.guard) {
+      o.target.flashWhite(Math.max(0.07, this.freezeMs / 1000));
+      o.attacker.spawnSmear(dir, o.attackerSide === "hero" ? 0xffffff : 0xffd0d0);
+    }
 
     if (o.guard) {
       this.fxLayer.spawn("impacts/shield-block", x, y, { flip: dir < 0 }, 0.8);
@@ -515,6 +520,7 @@ export class Presenter {
     enemyHits: number;
     fxKeys: string[];
     impactActive: boolean;
+    smears: number;
     cover: number;
     heroX: number;
     enemyX: number;
@@ -539,6 +545,7 @@ export class Presenter {
       enemyHits: this.enemy.hitFrameCount,
       fxKeys: this.fxLayer.spawnLog,
       impactActive: this.impact.active,
+      smears: this.hero.smearCount + this.enemy.smearCount,
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -549,6 +556,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

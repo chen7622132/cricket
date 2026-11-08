@@ -168,6 +168,36 @@ export class HeroActor {
     }
   }
 
+  /** smear frame：命中瞬间 2 张横向拉伸的实心拖影，不做 alpha 渐隐。 */
+  spawnSmear(dir: number, tint = 0xffffff): void {
+    const tex = this.sprite.textures[this.sprite.currentFrame];
+    if (!tex) return;
+    const specs = [
+      { off: -7, stretch: 1.5, life: 0.05 },
+      { off: -16, stretch: 1.95, life: 0.034 },
+    ];
+    for (const spec of specs) {
+      const smear = new PIXI.Sprite(tex);
+      smear.anchor.copyFrom(this.sprite.anchor);
+      smear.scale.set(this.sprite.scale.x * spec.stretch, this.sprite.scale.y);
+      smear.tint = tint;
+      smear.roundPixels = true;
+      smear.position.set(spec.off * dir, 0);
+      const holder = new PIXI.Container() as PIXI.Container & { life: number };
+      holder.life = spec.life;
+      holder.addChild(smear);
+      this.ghosts.addChild(holder);
+    }
+  }
+
+  clearGhosts(): void {
+    for (const child of [...this.ghosts.children]) child.destroy({ children: true });
+  }
+
+  get smearCount(): number {
+    return this.ghosts.children.length;
+  }
+
   update(dt: number, x: number, facing: number, statuses: Partial<Record<StatusId, number>>, floorY: number): void {
     this.x = x;
     this.facing = facing;
@@ -251,6 +281,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
