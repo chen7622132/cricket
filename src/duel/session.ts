@@ -507,6 +507,7 @@ export class DuelSession implements CombatSource {
       item.hit = false;
       item.damage = 0;
       item.affinity = { triggered: true, reason: "绕后闪避：敌方攻击落空" };
+      this.emit("DODGE", "闪避", { side: "hero", data: { dir: this.heroPos <= this.enemyPos ? 1 : -1 } });
       return;
     }
     let dmg = item.cardId === "enemy_slam" ? 12 : 6;
@@ -750,6 +751,7 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
 
 
 

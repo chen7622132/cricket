@@ -197,15 +197,25 @@ async function boot(): Promise<void> {
     modeBtn.classList.toggle("mode-active", isDuel);
     if (isDuel) {
       duelPanel.show();
+      syncStageInset();
       const fromUrl = Number.parseInt(new URLSearchParams(window.location.search).get("seed") ?? "", 10);
       startDuelRound(Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : duelSeed);
     } else {
       duelPanel.hide();
+      syncStageInset();
       start();
     }
   }
 
   modeBtn.addEventListener("click", () => setMode(mode === "duel" ? "auto" : "duel"));
+
+  // 编排面板展开时，把镜头可视中心右移，避免角色被面板挡住
+  const duelUi = document.getElementById("duel-ui") as HTMLElement;
+  const syncStageInset = (): void => {
+    const visible = mode === "duel" && !duelUi.classList.contains("hidden");
+    game.setStageInset(visible ? duelUi.offsetWidth + 8 : 0);
+  };
+  new ResizeObserver(syncStageInset).observe(duelUi);
 
   Object.assign((window as unknown as Record<string, unknown>).__cricket as object, {
     duel,
@@ -249,6 +259,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

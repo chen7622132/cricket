@@ -95,6 +95,10 @@ export class Game {
     this.presenter?.setViewport(this.app.screen.width, this.app.screen.height);
   }
 
+  setStageInset(px: number): void {
+    this.presenter?.setInset(px);
+  }
+
   setSpeed(speed: number): void {
     this.speed = speed;
   }
@@ -141,6 +145,7 @@ export class Game {
     }
   }
 }
+
 
 
 

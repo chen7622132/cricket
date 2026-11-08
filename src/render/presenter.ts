@@ -31,7 +31,7 @@ interface Mark {
 
 type Side = "hero" | "enemy";
 const FIXED_MS = 1000 / 60;
-const LUNGE_SPEED = 180; // world px/s
+const LUNGE_SPEED = 320; // world px/s（冲刺速度，接近 BvN 的快速位移）
 
 /**
  * 演出层：订阅引擎事件，把它们翻译成 hitstop / 镜头 / 粒子 / 特效 / 位移。
@@ -68,6 +68,8 @@ export class Presenter {
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
+  private dodge: Record<Side, number> = { hero: 0, enemy: 0 };
+  private insetLeft = 0;
   private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
 
   constructor(
@@ -140,7 +142,8 @@ export class Presenter {
           const foe = this.actor(side === "hero" ? "enemy" : "hero");
           const dir = Math.sign(foe.x - actor.x) || 1;
           const gap = Math.abs(foe.x - actor.x);
-          this.lungeTarget[side] = dir * Math.max(0, gap - 40);
+          const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
+          this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           this.pendingAttack[side] = attackForSkill(skill);
           actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
@@ -172,12 +175,28 @@ export class Presenter {
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
         break;
+      case "DODGE": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        const dir = Math.sign(actor.x - this.actor(side === "hero" ? "enemy" : "hero").x) || 1;
+        this.dodge[side] = dir * 58;
+        actor.spawnGhost();
+        actor.setSquash(1.06, 0.94);
+        this.spawnFloat("闪避", actor.x, ARENA.floorY - 62, "normal", false);
+        this.camera.kick("normal", dir);
+        this.hooks.onBanner("闪避", "reveal");
+        break;
+      }
       case "FX_CUE": {
         const side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
+        if (String(d.fx ?? "").includes("uppercut") || String(d.fx ?? "").includes("blink")) {
+          actor.spawnGhost();
+        }
         const key = String(d.fx ?? "");
         if (key) {
-          this.fxLayer.spawn(key, actor.x, ARENA.floorY - 30, { flip: side === "enemy" }, 0.9);
+          const mul = key.includes("blink") ? 0.5 : key.includes("uppercut") ? 0.8 : 1;
+          this.fxLayer.spawn(key, actor.x, ARENA.floorY - 30, { flip: side === "enemy" }, 0.9, mul);
         }
         break;
       }
@@ -301,7 +320,7 @@ export class Presenter {
     }
 
     // 物理分离：攻击者后坐、受击者沿打击轴弹开，再弹回
-    const sep = tier === "ultimate" ? 4.5 : tier === "key" ? 2.5 : 1.2;
+    const sep = tier === "ultimate" ? 16 : tier === "key" ? 8 : 3;
     this.separation[o.targetSide] = dir * sep;
     this.separation[o.attackerSide] = -dir * sep * 0.5;
     this.lungeTarget[o.attackerSide] = 0;
@@ -434,13 +453,14 @@ export class Presenter {
       }
       // 分离回弹
       this.separation[side] *= Math.exp(-dt * 12);
+      this.dodge[side] *= Math.exp(-dt * 7);
     }
 
     // 基准位单独累积，绘制位 = 基准 + 前冲 + 分离（避免位移反馈叠加跑飞）
     this.baseX.hero = this.approach(this.baseX.hero, heroHome, dt);
     this.baseX.enemy = this.approach(this.baseX.enemy, enemyHome, dt);
-    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero;
-    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy;
+    const heroX = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero;
+    const enemyX = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy;
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
@@ -484,15 +504,22 @@ export class Presenter {
     return current + Math.sign(dx) * Math.min(Math.abs(dx), 620 * dt);
   }
 
+  /** 左侧被编排面板遮住时，把可视中心右移，避免角色跑到面板后面。 */
+  setInset(px: number): void {
+    this.insetLeft = Math.max(0, px);
+    this.applyCamera();
+  }
+
   private applyCamera(): void {
     this.cover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
     this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover);
+    if (this.insetLeft > 0) this.world.x += this.insetLeft / 2;
   }
 
   /** 格点 → 屏幕世界坐标：视口越窄，间距越紧，保证双方永远在画面里。 */
   private slotToX(slot: number): number {
     const visibleW = this.viewport.w / Math.max(0.0001, this.cover);
-    const spacing = Math.max(34, Math.min(56, (visibleW - 90) / 5));
+    const spacing = Math.max(54, Math.min(84, (visibleW - 80) / 4.6));
     return ARENA.w / 2 + (slot - 2.5) * spacing;
   }
 
@@ -556,6 +583,10 @@ export class Presenter {
     };
   }
 }
+
+
+
+
 
 
 

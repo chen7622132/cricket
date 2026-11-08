@@ -80,7 +80,7 @@ export class PixelFxLayer {
 
   constructor(private readonly scale = 0.7) {}
 
-  spawn(key: string, x: number, y: number, opts: Record<string, unknown> = {}, life = 1.4): void {
+  spawn(key: string, x: number, y: number, opts: Record<string, unknown> = {}, life = 1.4, scaleMul = 1): void {
     const mod = FX_MODULES[key];
     if (!mod) return;
     this.spawned.push(key);
@@ -102,8 +102,9 @@ export class PixelFxLayer {
 
     const sprite = new PIXI.Sprite(tex);
     sprite.eventMode = "none";
-    sprite.scale.set(this.scale);
-    sprite.position.set(x - ORIGIN_X * this.scale, y - ORIGIN_Y * this.scale);
+    const drawScale = this.scale * scaleMul;
+    sprite.scale.set(drawScale);
+    sprite.position.set(x - ORIGIN_X * drawScale, y - ORIGIN_Y * drawScale);
     sprite.alpha = 0.72;
     this.container.addChild(sprite);
 
@@ -156,6 +157,7 @@ export class PixelFxLayer {
     }
   }
 }
+
 
 
 
