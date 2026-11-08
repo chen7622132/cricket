@@ -29,13 +29,18 @@ describe("种子与禁用派生", () => {
     expect(a).not.toBe(b);
   });
 
-  it("禁用只来自 8 技能 + 2 位移（不会禁掉起手结构牌）", () => {
-    for (let seed = 1; seed < 30; seed++) {
+  it("禁用来自 8 技能 + 2 位移，且不会同时禁掉两张起手结构牌", () => {
+    for (let seed = 1; seed < 60; seed++) {
       const bans = deriveBans(seed);
       expect(bans.skills.length).toBe(2);
       expect(["dash", "blink"]).toContain(bans.move);
-      expect(bans.skills).not.toContain("stance");
+      expect(bans.skills.includes("stance") && bans.skills.includes("guard")).toBe(false);
       expect(bans.skills).not.toContain("gamble");
+      // 起手可用牌 ≥3（架势/格挡/错位/未禁位移）
+      const opener = ["stance", "guard", "gamble", "dash", "blink"].filter(
+        (id) => !bans.skills.includes(id) && id !== bans.move,
+      );
+      expect(opener.length).toBeGreaterThanOrEqual(3);
     }
   });
 });
@@ -113,8 +118,17 @@ describe("8 槽分段约束", () => {
     expect(skillsA).not.toBe(skillsB);
     const reasonsA = a.logs.filter((l) => l.affinity.triggered).map((l) => l.affinity.reason);
     expect(reasonsA.length).toBeGreaterThan(0);
-    expect(a.logs.some((l) => l.affinity.reason.includes("错位"))).toBe(false);
     expect(b.logs.some((l) => l.affinity.reason.includes("错位"))).toBe(true);
+  });
+
+  it("同一张牌不能重复放进两个槽", () => {
+    const s = new DuelSession();
+    s.newRun(20260101);
+    s.revealBans();
+    s.beginCompose();
+    const first = CARDS.find((c) => s.canPlace(1, c.id).ok)!;
+    s.setSlot(1, first.id);
+    expect(s.canPlace(2, first.id).ok).toBe(false);
   });
 
   it("清空起手任一一格就无法开始", () => {
@@ -127,5 +141,9 @@ describe("8 槽分段约束", () => {
     expect(s.canStart().ok).toBe(false);
   });
 });
+
+
+
+
 
 

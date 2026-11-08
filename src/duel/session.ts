@@ -47,7 +47,8 @@ export const CARDS: CardDef[] = [
 
 const CARD_BY_ID = new Map(CARDS.map((c) => [c.id, c]));
 const MOVE_IDS = ["dash", "blink"];
-const SKILL_BAN_POOL = ["thrust", "rend", "hammer", "execute", "disengage"];
+const ALL_SKILLS = ["stance", "guard", "thrust", "rend", "hammer", "execute", "disengage"];
+const NON_STRUCTURAL = ["thrust", "rend", "hammer", "execute", "disengage"];
 const OPENERS = [1, 2, 3];
 
 const ENEMY_TIMING: Record<string, { windup: number; recovery: number }> = {
@@ -118,10 +119,15 @@ export function deriveBans(seed: number): { skills: string[]; move: string } {
   const rng = mulberry32(seed);
   const banned: string[] = [];
   while (banned.length < 2) {
-    const pick = SKILL_BAN_POOL[Math.floor(rng() * SKILL_BAN_POOL.length)];
+    const pick = ALL_SKILLS[Math.floor(rng() * ALL_SKILLS.length)];
     if (!banned.includes(pick)) banned.push(pick);
   }
   const move = MOVE_IDS[Math.floor(rng() * MOVE_IDS.length)];
+  // 可行性修复：起手结构牌（架势/格挡）不能同时被禁，否则起手 3 格铺不满
+  if (banned.includes("stance") && banned.includes("guard")) {
+    const replacement = NON_STRUCTURAL.find((id) => !banned.includes(id)) ?? "thrust";
+    banned[banned.indexOf("guard")] = replacement;
+  }
   return { skills: banned, move };
 }
 
@@ -163,6 +169,7 @@ export class DuelSession implements CombatSource {
   private enemyCharged = false;
   private enemyStunSkip = false;
   private heroGuard = false;
+  private heroEvade = false;
   private firstBurstFreezeUsed = false;
   private lastBuff: { triggered: boolean; reason: string } = { triggered: false, reason: "无" };
 
@@ -196,6 +203,7 @@ export class DuelSession implements CombatSource {
     this.enemyCharged = false;
     this.enemyStunSkip = false;
     this.heroGuard = false;
+    this.heroEvade = false;
     this.firstBurstFreezeUsed = false;
     this.bans = deriveBans(this.seed);
     this.intents = this.buildIntents();
@@ -228,6 +236,9 @@ export class DuelSession implements CombatSource {
     const card = CARD_BY_ID.get(cardId);
     if (!card) return { ok: false, reason: "未知卡牌" };
     if (this.isBanned(cardId)) return { ok: false, reason: "本局禁用" };
+    if (this.slots.includes(cardId) && this.slots[slot - 1] !== cardId) {
+      return { ok: false, reason: "同一张牌只能放一次" };
+    }
     const phase = phaseOfSlot(slot);
     if (card.phases !== "any" && !card.phases.includes(phase)) {
       return { ok: false, reason: `${card.name} 只能放 ${card.phases.join("/")}` };
@@ -410,24 +421,25 @@ export class DuelSession implements CombatSource {
         item.displacement = { from, to: this.enemyPos, frames: item.windup };
         [this.heroPos, this.enemyPos] = [this.enemyPos, this.heroPos];
         this.moveBuff = true;
-        item.affinity = { triggered: true, reason: "绕后铺设：下一爆发 +10%" };
+        this.heroEvade = true;
+        item.affinity = { triggered: true, reason: "绕后铺设：下一爆发 +10% 且闪避一次" };
         break;
       }
       case "thrust":
         item.damage = this.consumeBurst(8);
         item.affinity = this.lastBuff;
-        this.damage("enemy", item.damage);
-        item.hit = true;
         this.maybeBurstFreeze(item);
+        this.damage("enemy", item.damage, item.freeze.frames);
+        item.hit = true;
         break;
       case "rend":
         item.damage = this.consumeBurst(5);
         item.affinity = this.lastBuff;
         this.statuses.enemy.set("bleed", 600);
         this.emit("STATUS_APPLY", "敌人流血", { side: "enemy", data: { status: "bleed" } });
-        this.damage("enemy", item.damage);
-        item.hit = true;
         this.maybeBurstFreeze(item);
+        this.damage("enemy", item.damage, item.freeze.frames);
+        item.hit = true;
         break;
       case "hammer": {
         const bleeding = (this.statuses.enemy.get("bleed") ?? 0) > 0;
@@ -444,7 +456,7 @@ export class DuelSession implements CombatSource {
         item.damage = dmg;
         item.hit = true;
         this.maybeBurstFreeze(item);
-        this.damage("enemy", dmg);
+        this.damage("enemy", dmg, item.freeze.frames);
         break;
       }
       case "execute": {
@@ -456,7 +468,7 @@ export class DuelSession implements CombatSource {
         item.affinity = vulnerable
           ? { triggered: true, reason: "目标流血/击晕：处决 24" }
           : { triggered: false, reason: "目标无破绽：仅 8" };
-        this.damage("enemy", item.damage);
+        this.damage("enemy", item.damage, item.freeze.frames);
         break;
       }
       case "disengage":
@@ -471,9 +483,9 @@ export class DuelSession implements CombatSource {
         item.affinity = offPhase
           ? { triggered: true, reason: "错位牌：16 伤害，自伤 4" }
           : { triggered: false, reason: "放在爆发段：仅 10" };
-        this.damage("enemy", item.damage);
-        if (offPhase) this.heroHp = Math.max(1, this.heroHp - 4);
         this.maybeBurstFreeze(item);
+        this.damage("enemy", item.damage, item.freeze.frames);
+        if (offPhase) this.heroHp = Math.max(1, this.heroHp - 4);
         break;
       }
       default:
@@ -485,6 +497,13 @@ export class DuelSession implements CombatSource {
     if (item.cardId === "enemy_charge") {
       this.enemyCharged = true;
       item.affinity = { triggered: false, reason: "敌方蓄力" };
+      return;
+    }
+    if (this.heroEvade) {
+      this.heroEvade = false;
+      item.hit = false;
+      item.damage = 0;
+      item.affinity = { triggered: true, reason: "绕后闪避：敌方攻击落空" };
       return;
     }
     let dmg = item.cardId === "enemy_slam" ? 12 : 6;
@@ -524,7 +543,7 @@ export class DuelSession implements CombatSource {
     }
   }
 
-  private damage(target: DuelActor, amount: number): void {
+  private damage(target: DuelActor, amount: number, freezeFrames = 0): void {
     if (target === "hero") this.heroHp = Math.max(0, this.heroHp - amount);
     else this.enemyHp = Math.max(0, this.enemyHp - amount);
     this.emit("DAMAGE", `${target === "hero" ? "英雄" : "敌人"} -${amount}`, {
@@ -533,8 +552,14 @@ export class DuelSession implements CombatSource {
     });
     this.emit("HIT", `${target === "hero" ? "英雄" : "敌人"} 受击 ${amount}`, {
       side: target === "hero" ? "enemy" : "hero",
-      tier: "normal",
-      data: { from: target === "hero" ? "enemy" : "hero", to: target, damage: amount, crit: false },
+      tier: freezeFrames >= 12 ? "ultimate" : freezeFrames > 0 ? "key" : "normal",
+      data: {
+        from: target === "hero" ? "enemy" : "hero",
+        to: target,
+        damage: amount,
+        crit: false,
+        freezeFrames,
+      },
     });
   }
 
@@ -721,5 +746,9 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
+
+
+
 
 

@@ -143,17 +143,20 @@ export class HeroActor {
   }
 
   spawnGhost(): void {
-    const ghost = new PIXI.AnimatedSprite(this.sprite.textures);
-    ghost.anchor.copyFrom(this.sprite.anchor);
-    ghost.scale.copyFrom(this.sprite.scale);
-    ghost.gotoAndStop(this.sprite.currentFrame);
-    ghost.alpha = 0.35;
-    ghost.tint = 0x9fd8ff;
-    ghost.roundPixels = true;
-    const holder = new PIXI.Container() as PIXI.Container & { life: number };
-    holder.life = 0.35;
-    holder.addChild(ghost);
-    this.ghosts.addChild(holder);
+    // 残影：2 帧纯色实心副本（不做 alpha 渐隐，避免脏色）
+    for (const offset of [-5, -11]) {
+      const ghost = new PIXI.AnimatedSprite(this.sprite.textures);
+      ghost.anchor.copyFrom(this.sprite.anchor);
+      ghost.scale.copyFrom(this.sprite.scale);
+      ghost.gotoAndStop(this.sprite.currentFrame);
+      ghost.tint = 0x2b4f73;
+      ghost.roundPixels = true;
+      ghost.position.set(offset * this.facing, 0);
+      const holder = new PIXI.Container() as PIXI.Container & { life: number };
+      holder.life = 0.05; // 3 帧后删除，不改 alpha
+      holder.addChild(ghost);
+      this.ghosts.addChild(holder);
+    }
   }
 
   update(dt: number, x: number, facing: number, statuses: Partial<Record<StatusId, number>>, floorY: number): void {
@@ -222,7 +225,6 @@ export class HeroActor {
     for (const child of [...this.ghosts.children]) {
       const holder = child as PIXI.Container & { life: number };
       holder.life -= dt;
-      holder.alpha = Math.max(0, holder.life * 2.4);
       if (holder.life <= 0) holder.destroy({ children: true });
     }
   }
@@ -236,5 +238,6 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 

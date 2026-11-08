@@ -162,6 +162,7 @@ export class Presenter {
           crit: d.crit === true,
           guard: d.guard === true,
           skill: String(ev.skill ?? ""),
+          freezeFrames: typeof d.freezeFrames === "number" ? d.freezeFrames : undefined,
         });
         this.pushLog(ev, "event");
         break;
@@ -273,12 +274,15 @@ export class Presenter {
       crit: boolean;
       guard: boolean;
       skill: string;
+      freezeFrames?: number;
     },
   ): void {
     const profile = TIERS[tier];
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
-    this.freezeMs = Math.max(this.freezeMs, profile.hitstopFrames * FIXED_MS);
+    // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
+    const freezeFrames = o.freezeFrames ?? profile.hitstopFrames;
+    this.freezeMs = Math.max(this.freezeMs, freezeFrames * FIXED_MS);
     this.camera.kick(tier, dir);
     if (profile.slowmoMs > 0) {
       this.slowmoMs = profile.slowmoMs;
@@ -503,6 +507,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
