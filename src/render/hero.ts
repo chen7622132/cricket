@@ -13,6 +13,7 @@ const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
   riposte: { label: "还", color: 0xffe066 },
   iframes: { label: "避", color: 0xb388ff },
   read: { label: "破", color: 0xff7ae0 },
+  evasion: { label: "游", color: 0x7ef2c4 },
 };
 
 const ANCHOR_X = 0.485;
@@ -320,6 +321,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

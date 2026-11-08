@@ -11,6 +11,7 @@ const STATUS_LABEL: Record<StatusId, string> = {
   riposte: "还击",
   iframes: "闪避",
   read: "看破",
+  evasion: "游走",
 };
 
 const LOG_CLASS: Record<LogEntry["kind"], string> = {
@@ -142,5 +143,6 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 

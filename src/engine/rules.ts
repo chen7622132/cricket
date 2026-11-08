@@ -12,11 +12,24 @@ import type { Cost, RuleDef, RuleTag, Side, SkillId } from "./types.ts";
 
 type RuleDraft = Omit<RuleDef, "index">;
 
+export type Mechanic =
+  | "interrupt"
+  | "guard"
+  | "insight"
+  | "bleed"
+  | "desperate"
+  | "heavy"
+  | "pressure"
+  | "early_charge"
+  | "fast"
+  | "kite";
+
 export interface Ruleset {
   id: RulesetId;
   name: string;
   side: Side;
   description: string;
+  mechanic: Mechanic;
   rules: RuleDef[];
 }
 
@@ -104,6 +117,7 @@ function makeRuleset(
   name: string,
   side: Side,
   description: string,
+  mechanic: Mechanic,
   drafts: RuleDraft[],
 ): Ruleset {
   return {
@@ -111,6 +125,7 @@ function makeRuleset(
     name,
     side,
     description,
+    mechanic,
     rules: drafts.map((d, i) => ({ ...d, index: i + 1 })),
   };
 }
@@ -123,6 +138,7 @@ export const HERO_RULES_A = makeRuleset(
   "突刺优先",
   "hero",
   "有识破就打断蓄力，没识破就格挡还击；流血→碎地→处决是主 combo 链。",
+  "interrupt",
   [
     {
       id: "A_interrupt",
@@ -257,6 +273,7 @@ export const HERO_RULES_B = makeRuleset(
   "全格挡流",
   "hero",
   "不打断、不处决：靠格挡吃蓄力，再靠后摇还击。规则改动应当改变结局。",
+  "guard",
   [
     {
       id: "B_riposte",
@@ -339,6 +356,7 @@ export const HERO_RULES_C = makeRuleset(
   "识破流",
   "hero",
   "不打断：蓄力时看破换暴击，重锤靠闪避，识破耗尽才格挡还击。",
+  "insight",
   [
     {
       id: "C_riposte",
@@ -459,6 +477,7 @@ export const ENEMY_RULES = makeRuleset(
   "碎地重锤",
   "enemy",
   "血<40% 开始蓄力，蓄力末端释放重锤；平时横扫与逼近。",
+  "heavy",
   [
     {
       id: "E_release",
@@ -536,6 +555,7 @@ export const ENEMY_RULES_B = makeRuleset(
   "压制连锤",
   "enemy",
   "战斗 1.5s 后就蓄力，重锤冷却更短；英雄一开格挡就提前破防。",
+  "pressure",
   [
     {
       id: "EB_release",
@@ -625,6 +645,7 @@ function variant(
   name: string,
   side: Side,
   description: string,
+  mechanic: Mechanic,
   tweaks: Record<string, { priority?: number; cooldown?: number; name?: string; disabled?: boolean }>,
 ): Ruleset {
   const rules = base.rules
@@ -640,7 +661,7 @@ function variant(
       };
     })
     .map((r, i) => ({ ...r, index: i + 1 }));
-  return { id, name, side, description, rules };
+  return { id, name, side, description, mechanic, rules };
 }
 
 /** D：裂伤处决流（先裂伤，再碎地，最后处决）。 */
@@ -650,6 +671,7 @@ export const HERO_RULES_D = variant(
   "裂伤处决",
   "hero",
   "优先铺裂伤→碎地→处决，打断与识破让位给 combo。",
+  "bleed",
   {
     A_interrupt: { priority: 55 },
     A_read: { priority: 50 },
@@ -667,6 +689,7 @@ export const HERO_RULES_E = variant(
   "守势反击",
   "hero",
   "先格挡/识破/闪避，等敌方收招再还击；伤害低但很难被一套打死。",
+  "desperate",
   {
     B_guard: { priority: 92 },
     B_dodge: { priority: 90 },
@@ -688,6 +711,7 @@ export const ENEMY_RULES_C = variant(
   "蓄力处决",
   "enemy",
   "更早进入蓄力，重锤释放优先级最高，横扫只做填充。",
+  "early_charge",
   {
     EB_charge: { priority: 94, cooldown: 160, name: "提前蓄力" },
     EB_release: { priority: 98 },
@@ -703,6 +727,7 @@ export const ENEMY_RULES_D = variant(
   "快刀压制",
   "enemy",
   "贴身连续横扫，蓄力极少；用高频小伤害压制英雄。",
+  "fast",
   {
     E_swipe: { priority: 96, cooldown: 24, name: "连扫" },
     E_slam: { priority: 55, cooldown: 200 },
@@ -718,6 +743,7 @@ export const ENEMY_RULES_E = variant(
   "游走消耗",
   "enemy",
   "先拉开距离再抓空档，重锤少但更突然。",
+  "kite",
   {
     EB_step: { priority: 92, name: "拉开距离" },
     EB_slam: { priority: 60, cooldown: 220 },
@@ -742,5 +768,8 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+
+
 
 

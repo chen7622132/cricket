@@ -12,7 +12,7 @@ import {
   JUDGE_TOLERANCE_FRAMES,
   SKILLS,
 } from "./skills.ts";
-import { ENEMY_RULESETS, HERO_RULESETS, type Ruleset } from "./rules.ts";
+import { ENEMY_RULESETS, HERO_RULESETS, type Mechanic, type Ruleset } from "./rules.ts";
 import type {
   ActorSnapshot,
   ActorView,
@@ -107,6 +107,19 @@ export interface BattleResult {
   digest: string;
 }
 
+const MECH_LABEL: Record<Mechanic, string> = {
+  interrupt: "打断专精（打断额外眩晕）",
+  guard: "铁壁（格挡减伤 90%，还击窗口 70f）",
+  insight: "识破经济（看破返还 1 识破）",
+  bleed: "裂伤处决（流血双跳，处决 +30%）",
+  desperate: "背水一战（血量 <40% 伤害 +35%）",
+  heavy: "蓄力重锤（重锤 +20%）",
+  pressure: "破防压制（对格挡目标 +30%）",
+  early_charge: "提前蓄力（重锤附带 30f 眩晕）",
+  fast: "快刀（横扫追加 50% 二段）",
+  kite: "游走（后撤获得 30f 闪避减伤）",
+};
+
 const CHAIN_DEFS: Omit<ChainState, "step" | "attempts" | "completions">[] = [
   {
     id: "interrupt_chase",
@@ -148,6 +161,7 @@ export class Battle {
   readonly heroRuleset: Ruleset;
   readonly enemyRuleset: Ruleset;
   readonly maxFrames: number;
+  private readonly mechSeen = new Set<string>();
 
   hero: ActorState;
   enemy: ActorState;
@@ -193,6 +207,7 @@ export class Battle {
     }
 
     this.logLine("system", `开局 seed=${cfg.seed}｜规则表 ${this.heroRuleset.id}「${this.heroRuleset.name}」｜敌方 ${this.enemyRuleset.id}「${this.enemyRuleset.name}」`);
+    this.logLine("system", `机制｜英雄：${MECH_LABEL[this.heroRuleset.mechanic]}｜敌方：${MECH_LABEL[this.enemyRuleset.mechanic]}`);
     this.logLine("system", `初始站位 英雄#${this.hero.slot} / 敌人#${this.enemy.slot}｜识破 ${this.hero.insight}/${this.hero.maxInsight}`);
   }
 
@@ -288,11 +303,12 @@ export class Battle {
   }
 
   private tickStatuses(a: ActorState) {
+    const bleedDouble = a.side === "enemy" && this.heroRuleset.mechanic === "bleed";
     for (const [id, frames] of [...a.statuses]) {
       if (id === "bleed") {
-        // 每 30 帧结算 1 点
+        // 每 30 帧结算；裂伤处决机制下双跳
         if (frames > 0 && frames % 30 === 0) {
-          this.applyDamage(a, 1, "bleed", null, "normal", "流血");
+          this.applyDamage(a, bleedDouble ? 2 : 1, "bleed", null, "normal", bleedDouble ? "流血（双跳）" : "流血");
         }
       }
       const left = frames - 1;
@@ -541,7 +557,13 @@ export class Battle {
     const def = att === this.hero ? this.enemy : this.hero;
     const skill = act.def;
     const base = DAMAGE[skill.id] ?? 0;
-    if (base <= 0) return;
+    if (base <= 0) {
+      if (skill.id === "enemy_step" && this.enemyRuleset.mechanic === "kite") {
+        att.statuses.set("evasion", 30);
+        this.logLine("event", `游走：${att.name} 后撤进入闪避姿态（30f 内下次受击减半）`);
+      }
+      return;
+    }
 
     const tags = act.rule?.tags ?? [];
 
@@ -562,14 +584,15 @@ export class Battle {
     let guardMult = 1;
     let guardSuccess = false;
 
-    // 格挡
+    // 格挡（铁壁机制：减伤 90%，还击窗口 70f）
     if (def.statuses.has("guard")) {
-      guardMult = 0.2;
+      const ironWall = def.side === "hero" && this.heroRuleset.mechanic === "guard";
+      guardMult = ironWall ? 0.1 : 0.2;
       guardSuccess = true;
       this.stats.guards++;
-      def.statuses.set("riposte", 50);
+      def.statuses.set("riposte", ironWall ? 70 : 50);
       tier = "key";
-      this.emit("GUARD", `格挡成功：${def.name} 吃下 ${skill.name}（伤害 ×0.2），还击窗口 50 帧`, {
+      this.emit("GUARD", `格挡成功：${def.name} 吃下 ${skill.name}（伤害 ×${ironWall ? "0.1" : "0.2"}），还击窗口 ${ironWall ? 70 : 50} 帧`, {
         side: def.side,
         skill: skill.id,
         tier: "key",
@@ -579,7 +602,13 @@ export class Battle {
     }
 
     const read = att.statuses.has("read");
-    if (read) att.statuses.delete("read");
+    if (read) {
+      att.statuses.delete("read");
+      if (att.side === "hero" && this.heroRuleset.mechanic === "insight" && att.insight < att.maxInsight) {
+        att.insight++;
+        this.logLine("event", `识破经济：看破返还 1 识破 → ${att.insight}/${att.maxInsight}`);
+      }
+    }
     const critChance = read ? 1 : att.side === "hero" ? 0.18 : 0.12;
     const crit = this.rng.chance(critChance, `crit.${att.side}.${skill.id}`, this.frame);
     if (crit) {
@@ -663,7 +692,34 @@ export class Battle {
     const variance = this.rng.range(0.9, 1.1, `dmg.${att.side}.${skill.id}`, this.frame);
     const critMult = crit ? 1.6 : 1;
     const interruptMult = isInterrupt ? 1.5 : 1;
-    const amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult));
+
+    // 机制增伤
+    const mech = att.side === "hero" ? this.heroRuleset.mechanic : this.enemyRuleset.mechanic;
+    let mechMult = 1;
+    if (att.side === "hero" && mech === "desperate" && att.hp / att.maxHp < 0.4) {
+      mechMult *= 1.35;
+      this.mechOnce("hero:desperate", "机制触发｜背水一战：血量 <40%，伤害 ×1.35");
+    }
+    if (att.side === "enemy" && mech === "pressure" && def.statuses.has("guard")) {
+      mechMult *= 1.3;
+      this.mechOnce("enemy:pressure", "机制触发｜破防压制：对格挡目标伤害 ×1.3");
+    }
+    if (att.side === "enemy" && mech === "heavy" && skill.id === "enemy_slam") {
+      mechMult *= 1.2;
+      this.mechOnce("enemy:heavy", "机制触发｜蓄力重锤：重锤伤害 ×1.2");
+    }
+    if (att.side === "hero" && mech === "bleed" && skill.id === "hero_execute" && def.statuses.has("bleed")) {
+      mechMult *= 1.3;
+      this.mechOnce("hero:bleed", "机制触发｜裂伤处决：处决流血目标伤害 ×1.3");
+    }
+
+    let amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult * mechMult));
+    // 游走机制：后撤后的第一次受击减半
+    if (def.side === "enemy" && def.statuses.has("evasion")) {
+      amount = Math.max(1, Math.round(amount * 0.5));
+      def.statuses.delete("evasion");
+      this.logLine("event", `游走闪避：${def.name} 卸掉一半伤害（${amount}）`);
+    }
 
     const hitTier: Tier = guardSuccess ? "key" : tier;
     this.emit(
@@ -687,6 +743,22 @@ export class Battle {
     );
 
     this.applyDamage(def, amount, "hit", skill.id, hitTier, skill.name, att);
+
+    // 提前蓄力机制：重锤附带眩晕
+    if (att.side === "enemy" && mech === "early_charge" && skill.id === "enemy_slam" && !def.statuses.has("stun")) {
+      def.statuses.set("stun", 30);
+      this.emit("STATUS_APPLY", `提前蓄力：${def.name} 被重锤震晕 30 帧`, {
+        side: def.side,
+        skill: skill.id,
+        data: { status: "stun", frames: 30, source: "early_charge" },
+      });
+    }
+
+    // 快刀机制：横扫追加 50% 二段
+    if (att.side === "enemy" && mech === "fast" && skill.id === "enemy_swipe") {
+      const second = Math.max(1, Math.round(amount * 0.5));
+      this.applyDamage(def, second, "hit", skill.id, "normal", "快刀二段", att);
+    }
 
     if (skill.id === "hero_riposte") this.advanceChain("guard_counter", 3);
 
@@ -725,6 +797,12 @@ export class Battle {
     if (target.hp <= 0) {
       this.finish(target.side === "hero" ? "enemy" : "hero");
     }
+  }
+
+  private mechOnce(key: string, text: string): void {
+    if (this.mechSeen.has(key)) return;
+    this.mechSeen.add(key);
+    this.logLine("event", text);
   }
 
   private finish(winner: "hero" | "enemy") {
@@ -967,6 +1045,10 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
+
+
 
 
 

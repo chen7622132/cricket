@@ -10,6 +10,7 @@ export type StatusId =
   | "guard" // 格挡：减伤 + 成功格挡后开还击窗口
   | "riposte" // 还击窗口
   | "iframes" // 闪避无敌帧
+  | "evasion" // 游走：下一次受击减半
   | "read"; // 看破：下一次命中必暴击
 
 export type Tier = "normal" | "key" | "ultimate";
@@ -173,6 +174,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 
