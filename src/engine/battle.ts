@@ -297,7 +297,8 @@ export class Battle {
       if (id === "bleed") {
         // 每 30 帧结算；裂伤处决机制下双跳
         if (frames > 0 && frames % 30 === 0) {
-          this.applyDamage(a, bleedDouble ? 2 : 1, "bleed", null, "normal", bleedDouble ? "流血（双跳）" : "流血");
+            this.applyDamage(a, bleedDouble ? 2 : 1, "bleed", null, "normal", bleedDouble ? "流血（双跳）" : "流血");
+          if (bleedDouble) this.mechOnce("hero:bleed_tick", "机制触发｜裂伤：流血双跳");
         }
       }
       const left = frames - 1;
@@ -748,6 +749,7 @@ export class Battle {
     if (att.side === "enemy" && mech === "fast" && skill.id === "enemy_swipe") {
       const second = Math.max(1, Math.round(amount * 0.5));
       this.applyDamage(def, second, "hit", skill.id, "normal", "快刀二段", att);
+      this.mechOnce("enemy:fast", "机制触发｜快刀：横扫追加二段");
     }
 
     if (skill.id === "hero_riposte") this.advanceChain("guard_counter", 3);
@@ -793,6 +795,10 @@ export class Battle {
     if (this.mechSeen.has(key)) return;
     this.mechSeen.add(key);
     this.logLine("event", text);
+    this.emit("MECHANIC", text, {
+      side: key.startsWith("hero") ? "hero" : "enemy",
+      data: { key },
+    });
   }
 
   private finish(winner: "hero" | "enemy") {
@@ -1035,6 +1041,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

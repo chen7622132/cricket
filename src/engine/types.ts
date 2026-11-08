@@ -125,6 +125,7 @@ export type EventType =
   | "DUEL_LOG"
   | "FX_CUE"
   | "DODGE"
+  | "MECHANIC"
   | "BATTLE_END";
 
 export interface BattleEvent {
@@ -174,6 +175,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 

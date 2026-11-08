@@ -1,4 +1,4 @@
-import type { SkillDef, SkillId, Tier } from "./types.ts";
+﻿import type { SkillDef, SkillId, Tier } from "./types.ts";
 
 /**
  * 招式表。
@@ -137,13 +137,13 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_read: 0,
   hero_step: 0,
   enemy_charge: 0,
-  enemy_slam: 16,
-  enemy_swipe: 6,
+  enemy_slam: 30,
+  enemy_swipe: 10,
   enemy_step: 0,
 };
 
 export const HERO_MAX_HP = 160;
-export const ENEMY_MAX_HP = 480;
+export const ENEMY_MAX_HP = 360;
 /** 识破回复：900 帧 = 15s 才回 1 点，强调"资源有限"。 */
 export const INSIGHT_REGEN_FRAMES = 900;
 export const HERO_START_SLOT = 2;
@@ -161,3 +161,6 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
+
+

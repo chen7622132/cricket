@@ -48,6 +48,8 @@ export class Presenter {
   private readonly floatLayer = new PIXI.Container();
   private readonly markLayer = new PIXI.Container();
   private readonly impact: ImpactFx;
+  private readonly aura = new PIXI.Graphics();
+  private clock = 0;
   private readonly hooks: PresenterHooks;
 
   private floats: FloatText[] = [];
@@ -89,6 +91,7 @@ export class Presenter {
     this.enemy = new HeroActor(sheet, 0xff5c5c, 0xffb9b9);
 
     this.impact = new ImpactFx(ARENA.w, ARENA.h);
+    this.world.addChildAt(this.aura, 0);
 
     this.world.addChild(createArena());
     this.world.addChild(this.markLayer);
@@ -184,6 +187,14 @@ export class Presenter {
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
         break;
+      case "MECHANIC": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        const text = this.mechanicShort(String(d.key ?? ""));
+        this.spawnFloat(text, actor.x, terrainY(actor.x) - 72, "key", false);
+        this.impact.trigger(actor.x, terrainY(actor.x) - 34, 1, "key", "guard");
+        break;
+      }
       case "DODGE": {
         const side: Side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
@@ -380,6 +391,46 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
+  private mechanicShort(key: string): string {
+    const map: Record<string, string> = {
+      "hero:desperate": "背水",
+      "hero:bleed": "裂伤强化",
+      "hero:bleed_tick": "流血双跳",
+      "hero:insight": "识破返还",
+      "hero:guard": "铁壁",
+      "hero:interrupt": "打断强化",
+      "enemy:heavy": "重锤强化",
+      "enemy:pressure": "破防",
+      "enemy:fast": "快刀二段",
+      "enemy:early_charge": "震晕",
+      "enemy:kite": "游走",
+    };
+    return map[key] ?? "机制";
+  }
+
+  /** 机制常驻提示：背水红光、格挡护盾、游走残影。 */
+  private drawAuras(snap: BattleSnapshot): void {
+    this.aura.clear();
+    const pulse = 0.5 + Math.sin(this.clock * 8) * 0.5;
+    const rules = this.battle as unknown as { heroRuleset?: { mechanic?: string } };
+    const heroMech = rules.heroRuleset?.mechanic;
+
+    if (heroMech === "desperate" && snap.hero.hp / snap.hero.maxHp < 0.4) {
+      this.aura.circle(this.hero.x, this.footY.hero - 26, 24 + pulse * 4)
+        .fill({ color: 0xff4d5e, alpha: 0.08 + pulse * 0.06 });
+    }
+    if (snap.hero.statuses.guard) {
+      this.aura.arc(this.hero.x, this.footY.hero - 26, 24, -1.1, 1.1)
+        .stroke({ width: 2, color: 0x7fd8ff, alpha: 0.55 });
+    }
+    if (snap.hero.statuses.evasion || snap.enemy.statuses.evasion) {
+      const side: Side = snap.hero.statuses.evasion ? "hero" : "enemy";
+      const actor = this.actor(side);
+      this.aura.circle(actor.x, this.footY[side] - 22, 20)
+        .stroke({ width: 2, color: 0x7ef2c4, alpha: 0.6 });
+    }
+  }
+
   /** 按特效键选择打击形状，避免所有技能共用一套放射线。 */
   private impactKind(fx?: string, skill?: string): ImpactKind {
     const key = fx ?? "";
@@ -452,6 +503,7 @@ export class Presenter {
     const scale = this.slowmoMs > 0 ? this.slowmoScale : 1;
     if (this.slowmoMs > 0) this.slowmoMs -= dtMs;
     const dt = (dtMs / 1000) * scale;
+    this.clock += dt;
 
     const snap = this.battle.snapshot();
     const heroHome = this.slotToX(snap.hero.slot);
@@ -556,6 +608,7 @@ export class Presenter {
       }
     }
 
+    this.drawAuras(snap);
     this.camera.update(dt);
     this.applyCamera();
     this.fxLayer.update(dt);
@@ -682,6 +735,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
