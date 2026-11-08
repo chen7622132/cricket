@@ -145,6 +145,9 @@ export class Presenter {
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           this.pendingAttack[side] = attackForSkill(skill);
+          // 远距离时用飞跃入场；碎地锤/处决跳得更高，形成空中攻击
+          const leap = skill === "hero_earthhammer" ? 34 : skill === "hero_execute" ? 40 : skill === "hero_thrust" ? 18 : 0;
+          if (leap > 0 && gap > 55) actor.startJump(leap);
           actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
         }
@@ -469,6 +472,14 @@ export class Presenter {
     this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, ARENA.floorY);
     this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, ARENA.floorY);
 
+    for (const side of ["hero", "enemy"] as Side[]) {
+      const a = this.actor(side);
+      if (a.consumeLanded()) {
+        this.particles.burst(a.x, ARENA.floorY - 2, 4);
+        this.camera.kick("normal", side === "hero" ? 1 : -1);
+      }
+    }
+
     this.camera.update(dt);
     this.applyCamera();
     this.fxLayer.update(dt);
@@ -548,6 +559,8 @@ export class Presenter {
     fxKeys: string[];
     impactActive: boolean;
     smears: number;
+    airborne: boolean;
+    airY: number;
     cover: number;
     heroX: number;
     enemyX: number;
@@ -573,6 +586,8 @@ export class Presenter {
       fxKeys: this.fxLayer.spawnLog,
       impactActive: this.impact.active,
       smears: this.hero.smearCount + this.enemy.smearCount,
+      airborne: this.hero.airborne || this.enemy.airborne,
+      airY: Math.max(this.hero.airY, this.enemy.airY),
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -583,6 +598,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

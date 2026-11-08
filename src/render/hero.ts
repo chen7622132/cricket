@@ -37,6 +37,7 @@ export class HeroActor {
   readonly root = new PIXI.Container();
   readonly sprite: PIXI.AnimatedSprite;
   readonly ghosts = new PIXI.Container();
+  private readonly body = new PIXI.Container();
   private readonly icons = new PIXI.Container();
   private readonly shadow = new PIXI.Graphics();
   private readonly outlines: PIXI.Sprite[] = [];
@@ -50,6 +51,9 @@ export class HeroActor {
   onHitFrame?: () => void;
 
   private flashMs = 0;
+  private airHeight = 0;
+  private airVel = 0;
+  private landedThisFrame = false;
   private readonly baseTint: number;
   private squashX = 1;
   private squashY = 1;
@@ -101,7 +105,8 @@ export class HeroActor {
       copy.roundPixels = true;
       this.outlines.push(copy);
     }
-    this.root.addChild(this.shadow, this.ghosts, ...this.outlines, this.sprite, this.icons);
+    this.body.addChild(this.ghosts, ...this.outlines, this.sprite, this.icons);
+    this.root.addChild(this.shadow, this.body);
   }
 
   play(state: HeroState, force = false): void {
@@ -168,6 +173,26 @@ export class HeroActor {
     }
   }
 
+  /** 程序化腾空：没有跳跃序列帧，用垂直位移 + 影子缩放表现滞空。 */
+  startJump(height: number): void {
+    if (this.airHeight > 2) return;
+    this.airVel = Math.sqrt(2 * 900 * Math.max(6, height));
+  }
+
+  get airborne(): boolean {
+    return this.airHeight > 0.5;
+  }
+
+  get airY(): number {
+    return this.airHeight;
+  }
+
+  consumeLanded(): boolean {
+    const landed = this.landedThisFrame;
+    this.landedThisFrame = false;
+    return landed;
+  }
+
   /** smear frame：命中瞬间 2 张横向拉伸的实心拖影，不做 alpha 渐隐。 */
   spawnSmear(dir: number, tint = 0xffffff): void {
     const tex = this.sprite.textures[this.sprite.currentFrame];
@@ -202,6 +227,20 @@ export class HeroActor {
     this.x = x;
     this.facing = facing;
     this.root.position.set(x, floorY);
+    if (this.airHeight > 0 || this.airVel > 0) {
+      this.airHeight += this.airVel * dt;
+      this.airVel -= 900 * dt;
+      if (this.airHeight <= 0) {
+        this.airHeight = 0;
+        this.airVel = 0;
+        this.landedThisFrame = true;
+        this.setSquash(1.18, 0.84);
+      }
+    }
+    this.body.y = -this.airHeight;
+    const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
+    this.shadow.scale.set(shadowScale);
+    this.shadow.alpha = 0.4 + shadowScale * 0.35;
     this.bob += dt;
     if (this.flashMs > 0) {
       this.flashMs -= dt;
@@ -281,6 +320,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
