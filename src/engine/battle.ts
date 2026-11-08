@@ -620,13 +620,14 @@ export class Battle {
       this.stats.interrupts++;
       tier = "key";
       def.statuses.delete("charge");
-      def.statuses.set("stun", 45);
+      const stunFrames = att.side === "hero" && this.heroRuleset.mechanic === "interrupt" ? 60 : 45;
+      def.statuses.set("stun", stunFrames);
       def.action = null;
-      this.emit("INTERRUPT_SUCCESS", `打断成功：${att.name} 的突刺打断 ${def.name} 的蓄力，眩晕 45 帧`, {
+      this.emit("INTERRUPT_SUCCESS", `打断成功：${att.name} 的突刺打断 ${def.name} 的蓄力，眩晕 ${stunFrames} 帧`, {
         side: att.side,
         skill: skill.id,
         tier: "key",
-        data: { target: def.side, stun: 45 },
+        data: { target: def.side, stun: stunFrames },
       });
       this.milestone("first-interrupt", "首次打断成功");
       this.advanceChain("interrupt_chase", 2);
@@ -1034,6 +1035,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 
