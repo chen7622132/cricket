@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>cricket · 规则表驱动自动战斗</title>
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <div class="brand">
+          <b>cricket</b>
+          <span>规则表驱动自动战斗 · P0</span>
+        </div>
+        <div class="controls">
+          <label>seed<input id="seed-input" type="text" value="20260101" spellcheck="false" /></label>
+          <label
+            >规则<select id="ruleset-select">
+              <option value="A">A 突刺优先</option>
+              <option value="B">B 全格挡流</option>
+            </select></label
+          >
+          <button id="run-btn">开打</button>
+          <button id="speed-btn" title="播放速度">1×</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="stage-wrap">
+          <div id="stage"></div>
+        </section>
+
+        <aside id="side">
+          <div class="cards">
+            <div class="card hero">
+              <div class="row"><span>英雄</span><span id="hero-hp-text">160/160</span></div>
+              <div class="hp"><i id="hero-hp"></i></div>
+              <div class="sub">识破 <span id="hero-insight">●●○ 2/3</span></div>
+              <div class="status" id="hero-status"></div>
+            </div>
+            <div class="card enemy">
+              <div class="row"><span>敌人</span><span id="enemy-hp-text">480/480</span></div>
+              <div class="hp"><i id="enemy-hp"></i></div>
+              <div class="status" id="enemy-status"></div>
+            </div>
+          </div>
+
+          <div class="log-head"><span>战斗日志</span><span id="seed-label"></span></div>
+          <div id="log"></div>
+        </aside>
+      </main>
+
+      <div id="banner"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

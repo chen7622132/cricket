@@ -1,0 +1,27 @@
+{
+  "name": "cricket",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Rule-table driven auto-battle core slice (PixiJS v8 + TS, deterministic 60Hz sim)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "accept": "tsx src/cli/acceptance.ts",
+    "accept:report": "tsx src/cli/acceptance.ts > logs/acceptance.txt 2>&1",
+    "probe": "node scripts/probe.mjs",
+    "capture": "node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "pixelfx": "github:patch-gg/pixelfx",
+    "pixi.js": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "puppeteer-core": "^25.16.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.14"
+  }
+}
