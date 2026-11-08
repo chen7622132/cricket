@@ -8,7 +8,7 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { HitParticles } from "./particles.ts";
-import { ImpactFx } from "./impact.ts";
+import { ImpactFx, type ImpactKind } from "./impact.ts";
 
 export interface PresenterHooks {
   onLog(entry: LogEntry): void;
@@ -299,8 +299,9 @@ export class Presenter {
     }
 
     // 物理分离：攻击者后坐、受击者沿打击轴弹开，再弹回
-    this.separation[o.targetSide] = dir * 1.5;
-    this.separation[o.attackerSide] = -dir * 0.8;
+    const sep = tier === "ultimate" ? 4.5 : tier === "key" ? 2.5 : 1.2;
+    this.separation[o.targetSide] = dir * sep;
+    this.separation[o.attackerSide] = -dir * sep * 0.5;
     this.lungeTarget[o.attackerSide] = 0;
     this.pendingAttack[o.attackerSide] = null;
 
@@ -311,8 +312,8 @@ export class Presenter {
     const y = ARENA.floorY - 30;
     const count = tier === "normal" ? 8 : tier === "key" ? 10 : 12;
     this.particles.burst(x, y, count);
-    this.impact.trigger(x, y, dir, tier);
-    if (!o.guard) o.target.flashWhite(0.07);
+    this.impact.trigger(x, y, dir, tier, this.impactKind(o.fx, o.skill));
+    if (!o.guard) o.target.flashWhite(Math.max(0.07, this.freezeMs / 1000));
 
     if (o.guard) {
       this.fxLayer.spawn("impacts/shield-block", x, y, { flip: dir < 0 }, 0.8);
@@ -323,7 +324,7 @@ export class Presenter {
         this.fxLayer.spawn("impacts/hit-spark", x, y, { flip: dir < 0 }, 0.35);
       } else {
         const fxKey = o.fx || SKILLS[o.skill as keyof typeof SKILLS]?.fx;
-        if (fxKey) this.fxLayer.spawn(fxKey, x, y, { flip: dir < 0 }, 0.9);
+        if (fxKey) this.fxLayer.spawn(fxKey, x, y, { flip: dir < 0, palette: this.paletteFor(fxKey) }, 0.9);
       }
       if (tier === "key" && o.crit) {
         this.fxLayer.spawn("impacts/crit-hit", x + dir * 6, y - 4, { flip: dir < 0 }, 0.9);
@@ -334,6 +335,30 @@ export class Presenter {
     }
 
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
+  }
+
+  /** 按特效键选择打击形状，避免所有技能共用一套放射线。 */
+  private impactKind(fx?: string, skill?: string): ImpactKind {
+    const key = fx ?? "";
+    if (key.includes("hammer-smash") || key.includes("ground-slam")) return "hammer";
+    if (key.includes("scythe-reap") || key.includes("dagger-flurry")) return "execute";
+    if (key.includes("double-slash")) return "x";
+    if (key.includes("spear-sweep") || skill === "enemy_swipe") return "swipe";
+    if (key.includes("heavy-cleave")) return "heavy";
+    if (key.includes("shield-block") || key.includes("parry")) return "guard";
+    if (key.includes("thrust") || key.includes("uppercut")) return "thrust";
+    return "radial";
+  }
+
+  /** 不同技能给不同色系，避免整套特效看起来一样。 */
+  private paletteFor(fx?: string): string[] | undefined {
+    if (!fx) return undefined;
+    if (fx.includes("scythe-reap")) return ["#14061f", "#3d1560", "#7a2fbf", "#c77dff", "#efd6ff", "#ffffff"];
+    if (fx.includes("double-slash")) return ["#20060b", "#5a1020", "#a01c2e", "#ff4d5e", "#ffb3b3", "#ffffff"];
+    if (fx.includes("thrust") || fx.includes("uppercut")) return ["#06283d", "#0f4c75", "#1e88a8", "#55d6ff", "#c9f6ff", "#ffffff"];
+    if (fx.includes("heavy-cleave")) return ["#0a2a12", "#155a2a", "#2f9e4f", "#7ef29d", "#d6ffe2", "#ffffff"];
+    if (fx.includes("shield") || fx.includes("parry")) return ["#06282a", "#0f5550", "#1e8a80", "#4de0c8", "#c9fff5", "#ffffff"];
+    return undefined;
   }
 
   private actor(side: Side): HeroActor {
@@ -521,6 +546,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
