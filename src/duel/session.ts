@@ -398,14 +398,17 @@ export class DuelSession implements CombatSource {
 
     switch (item.cardId) {
       case "guard":
+        this.emit("FX_CUE", "格挡：架盾", { side: "hero", data: { fx: "impacts/shield-block" } });
         this.heroGuard = true;
         item.affinity = { triggered: true, reason: "格挡铺设：下一次受击 -50%" };
         break;
       case "stance":
+        this.emit("FX_CUE", "架势：蓄力表演", { side: "hero", data: { fx: "lightning/charge-up" } });
         this.stanceBuff = true;
         item.affinity = { triggered: true, reason: "架势铺设：下一爆发 +25%" };
         break;
       case "dash": {
+        this.emit("FX_CUE", "突进：位移", { side: "hero", data: { fx: "melee/uppercut" } });
         const to = Math.min(3, this.heroPos + 1);
         item.displacement = { from: this.heroPos, to, frames: item.windup };
         this.heroPos = to;
@@ -414,6 +417,7 @@ export class DuelSession implements CombatSource {
         break;
       }
       case "blink": {
+        this.emit("FX_CUE", "瞬移绕后", { side: "hero", data: { fx: "arcane/blink-in" } });
         const from = this.heroPos;
         item.displacement = { from, to: this.enemyPos, frames: item.windup };
         [this.heroPos, this.enemyPos] = [this.enemyPos, this.heroPos];
@@ -426,7 +430,7 @@ export class DuelSession implements CombatSource {
         item.damage = this.consumeBurst(8);
         item.affinity = this.lastBuff;
         this.maybeBurstFreeze(item);
-        this.damage("enemy", item.damage, item.freeze.frames);
+        this.damage("enemy", item.damage, item.freeze.frames, this.fxFor(item.cardId));
         item.hit = true;
         break;
       case "rend":
@@ -435,7 +439,7 @@ export class DuelSession implements CombatSource {
         this.statuses.enemy.set("bleed", 600);
         this.emit("STATUS_APPLY", "敌人流血", { side: "enemy", data: { status: "bleed" } });
         this.maybeBurstFreeze(item);
-        this.damage("enemy", item.damage, item.freeze.frames);
+        this.damage("enemy", item.damage, item.freeze.frames, this.fxFor(item.cardId));
         item.hit = true;
         break;
       case "hammer": {
@@ -453,7 +457,7 @@ export class DuelSession implements CombatSource {
         item.damage = dmg;
         item.hit = true;
         this.maybeBurstFreeze(item);
-        this.damage("enemy", dmg, item.freeze.frames);
+        this.damage("enemy", dmg, item.freeze.frames, this.fxFor(item.cardId));
         break;
       }
       case "execute": {
@@ -465,10 +469,11 @@ export class DuelSession implements CombatSource {
         item.affinity = vulnerable
           ? { triggered: true, reason: "目标流血/击晕：处决 24" }
           : { triggered: false, reason: "目标无破绽：仅 8" };
-        this.damage("enemy", item.damage, item.freeze.frames);
+        this.damage("enemy", item.damage, item.freeze.frames, this.fxFor(item.cardId));
         break;
       }
       case "disengage":
+        this.emit("FX_CUE", "脱离：后撤", { side: "hero", data: { fx: "arcane/blink-out" } });
         this.heroHp = Math.min(this.heroMaxHp, this.heroHp + 4);
         this.heroGuard = true;
         item.affinity = { triggered: true, reason: "脱离：回复 4，下一次受击 -50%" };
@@ -481,7 +486,7 @@ export class DuelSession implements CombatSource {
           ? { triggered: true, reason: "错位牌：16 伤害，自伤 4" }
           : { triggered: false, reason: "放在爆发段：仅 10" };
         this.maybeBurstFreeze(item);
-        this.damage("enemy", item.damage, item.freeze.frames);
+        this.damage("enemy", item.damage, item.freeze.frames, this.fxFor(item.cardId));
         if (offPhase) this.heroHp = Math.max(1, this.heroHp - 4);
         break;
       }
@@ -492,6 +497,7 @@ export class DuelSession implements CombatSource {
 
   private resolveEnemy(item: QueueItem): void {
     if (item.cardId === "enemy_charge") {
+      this.emit("FX_CUE", "敌方蓄力", { side: "enemy", data: { fx: "lightning/charge-up" } });
       this.enemyCharged = true;
       item.affinity = { triggered: false, reason: "敌方蓄力" };
       return;
@@ -515,7 +521,7 @@ export class DuelSession implements CombatSource {
     }
     item.damage = dmg;
     item.hit = true;
-    this.damage("hero", dmg);
+    this.damage("hero", dmg, 0, this.fxFor(item.cardId));
   }
 
   private consumeBurst(base: number): number {
@@ -540,7 +546,7 @@ export class DuelSession implements CombatSource {
     }
   }
 
-  private damage(target: DuelActor, amount: number, freezeFrames = 0): void {
+  private damage(target: DuelActor, amount: number, freezeFrames = 0, fx = ""): void {
     if (target === "hero") this.heroHp = Math.max(0, this.heroHp - amount);
     else this.enemyHp = Math.max(0, this.enemyHp - amount);
     this.emit("DAMAGE", `${target === "hero" ? "英雄" : "敌人"} -${amount}`, {
@@ -556,6 +562,7 @@ export class DuelSession implements CombatSource {
         damage: amount,
         crit: false,
         freezeFrames,
+        fx,
       },
     });
   }
@@ -674,14 +681,14 @@ export class DuelSession implements CombatSource {
   private fxFor(cardId: string): string {
     const map: Record<string, string> = {
       stance: "lightning/charge-up",
-      dash: "melee/thrust",
+      dash: "melee/uppercut",
       blink: "arcane/blink-in",
       thrust: "melee/thrust",
       rend: "melee/double-slash",
       hammer: "melee/hammer-smash",
       guard: "impacts/shield-block",
-      execute: "melee/thrust",
-      disengage: "impacts/parry",
+      execute: "melee/scythe-reap",
+      disengage: "arcane/blink-out",
       gamble: "melee/heavy-cleave",
       enemy_swipe: "melee/spear-sweep",
       enemy_charge: "lightning/charge-up",
@@ -743,6 +750,7 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
 
 
 

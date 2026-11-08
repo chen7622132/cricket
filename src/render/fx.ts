@@ -19,6 +19,8 @@ import * as exclamation from "pixelfx/fx/ui/exclamation";
 import * as blinkIn from "pixelfx/fx/arcane/blink-in";
 import * as heavyCleave from "pixelfx/fx/melee/heavy-cleave";
 import * as uppercut from "pixelfx/fx/melee/uppercut";
+import * as scytheReap from "pixelfx/fx/melee/scythe-reap";
+import * as blinkOut from "pixelfx/fx/arcane/blink-out";
 
 /**
  * 招式 → pixelfx 资源映射。引擎只给键（SKILLS[].fx），这里负责落地。
@@ -43,6 +45,8 @@ export const FX_MODULES: Record<string, FxMod> = {
   "arcane/blink-in": blinkIn as unknown as FxMod,
   "melee/heavy-cleave": heavyCleave as unknown as FxMod,
   "melee/uppercut": uppercut as unknown as FxMod,
+  "melee/scythe-reap": scytheReap as unknown as FxMod,
+  "arcane/blink-out": blinkOut as unknown as FxMod,
 };
 
 const CW = 256;
@@ -70,6 +74,7 @@ interface LiveFx {
 export class PixelFxLayer {
   readonly container = new PIXI.Container();
   private live: LiveFx[] = [];
+  private spawned: string[] = [];
   /** 同时存在的特效上限：高倍速下 hitstop 冻结表现层但逻辑继续跑，必须防止堆积。 */
   private readonly maxLive = 16;
 
@@ -78,6 +83,8 @@ export class PixelFxLayer {
   spawn(key: string, x: number, y: number, opts: Record<string, unknown> = {}, life = 1.4): void {
     const mod = FX_MODULES[key];
     if (!mod) return;
+    this.spawned.push(key);
+    if (this.spawned.length > 60) this.spawned.shift();
 
     if (this.live.length >= this.maxLive) {
       const oldest = this.live.shift();
@@ -123,6 +130,10 @@ export class PixelFxLayer {
     return this.live.length;
   }
 
+  get spawnLog(): string[] {
+    return this.spawned.slice(-12);
+  }
+
   update(dt: number): void {
     for (const item of this.live) {
       item.age += dt;
@@ -145,5 +156,7 @@ export class PixelFxLayer {
     }
   }
 }
+
+
 
 

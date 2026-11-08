@@ -163,6 +163,7 @@ export class Presenter {
           guard: d.guard === true,
           skill: String(ev.skill ?? ""),
           freezeFrames: typeof d.freezeFrames === "number" ? d.freezeFrames : undefined,
+          fx: typeof d.fx === "string" ? d.fx : undefined,
         });
         this.pushLog(ev, "event");
         break;
@@ -170,6 +171,15 @@ export class Presenter {
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
         break;
+      case "FX_CUE": {
+        const side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        const key = String(d.fx ?? "");
+        if (key) {
+          this.fxLayer.spawn(key, actor.x, ARENA.floorY - 30, { flip: side === "enemy" }, 0.9);
+        }
+        break;
+      }
       case "DUEL_LOG":
         this.hooks.onLog({
           frame: ev.frame,
@@ -275,6 +285,7 @@ export class Presenter {
       guard: boolean;
       skill: string;
       freezeFrames?: number;
+      fx?: string;
     },
   ): void {
     const profile = TIERS[tier];
@@ -311,7 +322,7 @@ export class Presenter {
       if (tier === "normal") {
         this.fxLayer.spawn("impacts/hit-spark", x, y, { flip: dir < 0 }, 0.35);
       } else {
-        const fxKey = SKILLS[o.skill as keyof typeof SKILLS]?.fx;
+        const fxKey = o.fx || SKILLS[o.skill as keyof typeof SKILLS]?.fx;
         if (fxKey) this.fxLayer.spawn(fxKey, x, y, { flip: dir < 0 }, 0.9);
       }
       if (tier === "key" && o.crit) {
@@ -475,6 +486,7 @@ export class Presenter {
     enemyFrame: number;
     heroHits: number;
     enemyHits: number;
+    fxKeys: string[];
     cover: number;
     heroX: number;
     enemyX: number;
@@ -497,6 +509,7 @@ export class Presenter {
       enemyFrame: this.enemy.sprite.currentFrame,
       heroHits: this.hero.hitFrameCount,
       enemyHits: this.enemy.hitFrameCount,
+      fxKeys: this.fxLayer.spawnLog,
       cover: Number(this.cover.toFixed(2)),
       heroX: Math.round(this.hero.x),
       enemyX: Math.round(this.enemy.x),
@@ -507,6 +520,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
