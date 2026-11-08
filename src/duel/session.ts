@@ -170,6 +170,7 @@ export class DuelSession implements CombatSource {
   private enemyStunSkip = false;
   private heroGuard = false;
   private heroEvade = false;
+  private skipNext: Record<DuelActor, boolean> = { hero: false, enemy: false };
   private firstBurstFreezeUsed = false;
   private lastBuff: { triggered: boolean; reason: string } = { triggered: false, reason: "无" };
 
@@ -204,6 +205,7 @@ export class DuelSession implements CombatSource {
     this.enemyStunSkip = false;
     this.heroGuard = false;
     this.heroEvade = false;
+    this.skipNext = { hero: false, enemy: false };
     this.firstBurstFreezeUsed = false;
     this.bans = deriveBans(this.seed);
     this.intents = this.buildIntents();
@@ -357,6 +359,19 @@ export class DuelSession implements CombatSource {
     const item = this.queue[0];
     if (!item) return;
 
+    if (this.skipNext[item.actor]) {
+      this.skipNext[item.actor] = false;
+      item.startFrame = this.frame;
+      item.hitFrame = this.frame;
+      item.expireFrame = this.frame + 1;
+      item.resolved = true;
+      item.hit = false;
+      item.damage = 0;
+      item.affinity = { triggered: true, reason: "落地硬直：跳过这一拍" };
+      this.emit("DUEL_LOG", `slot${item.slot} ${item.actor} 落地硬直，跳过`, { data: { skip: true } });
+      return;
+    }
+
     if (item.actor === "enemy" && this.enemyStunSkip) {
       this.enemyStunSkip = false;
       item.startFrame = this.frame;
@@ -470,6 +485,7 @@ export class DuelSession implements CombatSource {
           ? { triggered: true, reason: "目标流血/击晕：处决 24" }
           : { triggered: false, reason: "目标无破绽：仅 8" };
         this.damage("enemy", item.damage, item.freeze.frames, this.fxFor(item.cardId));
+        if (this.enemyHp > 0) this.skipNext.enemy = true; // 落地硬直：下一拍跳过
         break;
       }
       case "disengage":
@@ -751,6 +767,8 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
+
 
 
 

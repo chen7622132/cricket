@@ -482,8 +482,25 @@ export class Presenter {
       if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
     }
     const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
-    const heroX = clampX(this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero);
-    const enemyX = clampX(this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy);
+    const rawHero = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero;
+    const rawEnemy = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy;
+    const heroX = clampX(rawHero);
+    const enemyX = clampX(rawEnemy);
+
+    // 击飞撞到场地边界：反向弹回，并给一次重击标记
+    for (const side of ["hero", "enemy"] as Side[]) {
+      const raw = side === "hero" ? rawHero : rawEnemy;
+      const vx = this.launchVx[side];
+      const atLeft = raw < 26 && vx < -20;
+      const atRight = raw > ARENA.w - 26 && vx > 20;
+      if (atLeft || atRight) {
+        this.launchVx[side] = -vx * 0.55;
+        const wallX = atLeft ? 28 : ARENA.w - 28;
+        this.impact.trigger(wallX, this.footY[side] - 30, atLeft ? 1 : -1, "key", "hammer");
+        this.camera.kick("key", atLeft ? 1 : -1);
+        this.spawnFloat("撞墙", wallX, this.footY[side] - 62, "key", false);
+      }
+    }
 
     // 高低柱：走出柱顶会掉落，落地给压缩/尘屑/硬直提示
     const feet: Record<Side, number> = { hero: heroX, enemy: enemyX };
@@ -665,6 +682,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
