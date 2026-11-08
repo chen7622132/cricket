@@ -14,8 +14,10 @@ import {
 } from "./skills.ts";
 import { ENEMY_RULESETS, HERO_RULESETS, type Ruleset } from "./rules.ts";
 import type {
+  ActorSnapshot,
   ActorView,
   BattleEvent,
+  BattleSnapshot,
   EventType,
   LogEntry,
   RuleDef,
@@ -74,26 +76,6 @@ export interface Milestone {
   text: string;
 }
 
-export interface ActorSnapshot {
-  side: Side;
-  hp: number;
-  maxHp: number;
-  slot: number;
-  insight: number;
-  maxInsight: number;
-  statuses: Partial<Record<StatusId, number>>;
-  action: { skill: SkillId; phase: "windup" | "hit" | "recovery"; progress: number } | null;
-  tier: Tier;
-  name: string;
-}
-
-export interface BattleSnapshot {
-  frame: number;
-  hero: ActorSnapshot;
-  enemy: ActorSnapshot;
-  done: boolean;
-  winner: "hero" | "enemy" | "draw" | null;
-}
 
 export interface BattleStats {
   crits: number;
@@ -985,4 +967,5 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 

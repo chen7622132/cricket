@@ -1,5 +1,5 @@
 ﻿import * as PIXI from "pixi.js";
-import type { Battle } from "../engine/battle.ts";
+import type { CombatSource } from "../engine/types.ts";
 import { Presenter, type PresenterHooks } from "./presenter.ts";
 
 const FIXED_MS = 1000 / 60;
@@ -9,10 +9,12 @@ export class Game {
   private app: PIXI.Application | null = null;
   private readonly root = new PIXI.Container();
   private presenter: Presenter | null = null;
-  private battle: Battle | null = null;
+  private battle: CombatSource | null = null;
   private sheet: PIXI.Spritesheet | null = null;
   private acc = 0;
   private speed = 1;
+  private doneMs = 0;
+  private effectsCleared = false;
 
   async init(container: HTMLElement): Promise<void> {
     // 像素游戏：所有纹理默认最近邻采样
@@ -74,10 +76,12 @@ export class Game {
     });
   }
 
-  play(battle: Battle, hooks: PresenterHooks): void {
+  play(battle: CombatSource, hooks: PresenterHooks): void {
     if (!this.sheet || !this.app) throw new Error("game not initialised");
     this.battle = battle;
     this.acc = 0;
+    this.doneMs = 0;
+    this.effectsCleared = false;
     for (const child of this.root.removeChildren()) child.destroy({ children: true });
     this.presenter = new Presenter(battle, this.sheet, hooks);
     this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
@@ -93,7 +97,7 @@ export class Game {
     return this.presenter?.debugState() ?? null;
   }
 
-  get currentBattle(): Battle | null {
+  get currentBattle(): CombatSource | null {
     return this.battle;
   }
 
@@ -119,6 +123,17 @@ export class Game {
     const events = battle.drainEvents();
     if (events.length) presenter.consume(events);
     presenter.update(dt);
+
+    // 对局结束后 0.9s 清空残留特效（无定时器，靠帧累加）
+    if (battle.done) {
+      this.doneMs += dt;
+      if (this.doneMs > 900 && !this.effectsCleared) {
+        this.effectsCleared = true;
+        presenter.clearEffects();
+      }
+    }
   }
 }
+
+
 

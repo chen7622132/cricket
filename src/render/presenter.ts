@@ -1,7 +1,7 @@
 ﻿import * as PIXI from "pixi.js";
-import type { Battle } from "../engine/battle.ts";
+
 import { SKILLS } from "../engine/skills.ts";
-import type { BattleEvent, LogEntry, StatusId, Tier } from "../engine/types.ts";
+import type { BattleEvent, BattleSnapshot, CombatSource, LogEntry, StatusId, Tier } from "../engine/types.ts";
 import { TIERS } from "../presentation/tiers.ts";
 import { ARENA, createArena, slotX } from "./arena.ts";
 import { CameraRig } from "./camera.ts";
@@ -11,7 +11,7 @@ import { HitParticles } from "./particles.ts";
 
 export interface PresenterHooks {
   onLog(entry: LogEntry): void;
-  onSnapshot(snapshot: ReturnType<Battle["snapshot"]>): void;
+  onSnapshot(snapshot: BattleSnapshot): void;
   onBanner(text: string, kind: "clash" | "combo" | "reveal" | "end"): void;
   onEnd(winner: string, frames: number): void;
   onRule?: (ruleIndex: number, text: string, side: "hero" | "enemy") => void;
@@ -70,7 +70,7 @@ export class Presenter {
   private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
 
   constructor(
-    private readonly battle: Battle,
+    private readonly battle: CombatSource,
     sheet: PIXI.Spritesheet,
     hooks: PresenterHooks,
   ) {
@@ -100,6 +100,15 @@ export class Presenter {
     this.enemy.x = this.baseX.enemy;
     this.hero.update(0, this.hero.x, 1, snap.hero.statuses, ARENA.floorY);
     this.enemy.update(0, this.enemy.x, -1, snap.enemy.statuses, ARENA.floorY);
+  }
+
+  /** 对局结束后清空残留特效，保证下一局从干净状态开始。 */
+  clearEffects(): void {
+    this.fxLayer.clear();
+    for (const f of this.floats) f.text.destroy();
+    this.floats = [];
+    for (const m of this.marks) m.g.destroy();
+    this.marks = [];
   }
 
   setViewport(w: number, h: number): void {
@@ -159,6 +168,13 @@ export class Presenter {
       }
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
+        break;
+      case "DUEL_LOG":
+        this.hooks.onLog({
+          frame: ev.frame,
+          kind: typeof d.hook === "string" && d.hook ? "combo" : "event",
+          text: ev.text,
+        });
         break;
       case "RULE_TRIGGER": {
         this.pushLog(ev, "rule");
@@ -487,6 +503,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

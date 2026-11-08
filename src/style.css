@@ -628,3 +628,176 @@ main {
   color: #7d8ba3;
   max-width: 320px;
 }
+
+/* ---------- 编排对决 ---------- */
+
+.duel-mode .controls label,
+.duel-mode #run-btn,
+.duel-mode #edit-btn,
+.duel-mode #share-btn,
+.duel-mode #rules-btn {
+  display: none;
+}
+
+#duel-ui {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 440px;
+  max-height: calc(100% - 28px);
+  overflow: auto;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  background: rgba(7, 10, 16, 0.92);
+  border: 1px solid #243248;
+  border-radius: 8px;
+  backdrop-filter: blur(2px);
+}
+
+#duel-ui.hidden {
+  display: none;
+}
+
+.duel-title {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: #eaf2ff;
+}
+
+.duel-title span {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #7d8ba3;
+}
+
+.duel-label {
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #7d8ba3;
+}
+
+.duel-intents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.intent {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid #33445f;
+  border-radius: 4px;
+  background: #0c1320;
+  font-size: 11px;
+  color: #cfe0ff;
+}
+
+.intent b {
+  color: #ffd166;
+}
+
+.intent i {
+  font-style: normal;
+  font-size: 9px;
+  color: #5d6f8c;
+}
+
+.duel-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.duel-card {
+  padding: 6px 8px;
+  border: 1px solid #2c3d57;
+  border-radius: 5px;
+  background: #0d1522;
+  cursor: grab;
+  user-select: none;
+}
+
+.duel-card b {
+  display: block;
+  font-size: 12px;
+  color: #eaf2ff;
+}
+
+.duel-card span {
+  font-size: 10px;
+  color: #8fa2bd;
+}
+
+.duel-card.selected {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 1px #ffd166 inset;
+}
+
+.duel-card.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.duel-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.duel-slot {
+  position: relative;
+  min-height: 46px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #33445f;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #7d8ba3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.duel-slot.filled {
+  border-style: solid;
+  border-color: #4a6a92;
+  background: #101a29;
+  color: #eaf2ff;
+}
+
+.duel-slot i {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-style: normal;
+  font-size: 9px;
+  color: #5d6f8c;
+}
+
+.duel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+#duel-status {
+  font-size: 10px;
+  color: #8fa2bd;
+}
+
+.mode-active {
+  border-color: #ffd166;
+  color: #ffd166;
+}
+
+.hidden {
+  display: none !important;
+}

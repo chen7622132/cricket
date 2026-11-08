@@ -1,4 +1,4 @@
-import type { BattleSnapshot } from "../engine/battle.ts";
+﻿import type { BattleSnapshot } from "../engine/types.ts";
 import { describeCost } from "../engine/battle.ts";
 import type { LogEntry, RuleDef, Side, StatusId } from "../engine/types.ts";
 
@@ -95,9 +95,9 @@ export class Hud {
     this.bannerEl.className = "";
   }
 
-  end(winner: string, frames: number, seed: number): void {
+  end(winner: string, frames: number, seed: number, label = "seed"): void {
     const name = winner === "hero" ? "英雄获胜" : winner === "enemy" ? "敌人获胜" : "平局";
-    this.banner(`${name} · ${(frames / 60).toFixed(2)}s · seed ${seed}`, "end");
+    this.banner(`${name} · ${(frames / 60).toFixed(2)}s · ${label} ${seed}`, "end");
   }
 
   // ---------------------------------------------------------------- rules
@@ -142,3 +142,5 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
+

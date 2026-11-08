@@ -5,6 +5,8 @@ import type { PresenterHooks } from "./render/presenter.ts";
 import { Game } from "./render/game.ts";
 import { RuleEditor } from "./ui/editor.ts";
 import { Hud } from "./ui/hud.ts";
+import { DuelSession } from "./duel/session.ts";
+import { DuelPanel } from "./ui/duelPanel.ts";
 
 async function boot(): Promise<void> {
   const stage = document.getElementById("stage");
@@ -50,6 +52,7 @@ async function boot(): Promise<void> {
   const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
   const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
   const editBtn = document.getElementById("edit-btn") as HTMLButtonElement;
+  const modeBtn = document.getElementById("mode-btn") as HTMLButtonElement;
 
   rulesBtn.addEventListener("click", () => hud.toggleRules());
   rulesClose.addEventListener("click", () => hud.toggleRules(false));
@@ -142,6 +145,65 @@ async function boot(): Promise<void> {
     game.play(battle, hooks);
   };
 
+  // ---------------------------------------------------------- 编排对决模式
+
+  const duel = new DuelSession();
+  const duelHooks: PresenterHooks = {
+    onLog: (entry) => hud.pushLog(entry),
+    onSnapshot: (snapshot) => hud.updateSnapshot(snapshot),
+    onBanner: (text, kind) => hud.banner(text, kind),
+    onEnd: (winner, frames) => {
+      hud.end(winner, frames, duel.runId, "run");
+      duelPanel.render();
+    },
+    onRule: () => {},
+  };
+
+  const duelPanel = new DuelPanel(duel, {
+    onCompose: () => {},
+    onResolve: () => {},
+    onNext: () => startDuelRound(),
+  });
+
+  function startDuelRound(): void {
+    duel.newRound();
+    const disabled = duel.cards.find((c) => c.disabled)?.name ?? "-";
+    hud.reset(duel.runId, `编排对决 · run#${duel.runId}`);
+    hud.pushLog({
+      frame: 0,
+      kind: "system",
+      text: `run#${duel.runId} 敌方意图：${duel.intents.map((i) => `${i.icon}${i.name}`).join(" → ")}；本局禁用「${disabled}」`,
+    });
+    duelPanel.render();
+    game.play(duel, duelHooks);
+  }
+
+  let mode: "auto" | "duel" = "auto";
+
+  function setMode(next: "auto" | "duel"): void {
+    mode = next;
+    const isDuel = next === "duel";
+    document.body.classList.toggle("duel-mode", isDuel);
+    modeBtn.textContent = isDuel ? "规则模式" : "编排模式";
+    modeBtn.classList.toggle("mode-active", isDuel);
+    if (isDuel) {
+      duelPanel.show();
+      startDuelRound();
+    } else {
+      duelPanel.hide();
+      start();
+    }
+  }
+
+  modeBtn.addEventListener("click", () => setMode(mode === "duel" ? "auto" : "duel"));
+
+  Object.assign((window as unknown as Record<string, unknown>).__cricket as object, {
+    duel,
+    startDuelRound,
+    setMode,
+    mode: () => mode,
+  });
+
   runBtn.addEventListener("click", start);
   speedBtn.addEventListener("click", () => {
     speedIdx = (speedIdx + 1) % speeds.length;
@@ -153,12 +215,15 @@ async function boot(): Promise<void> {
     if (e.key === "Enter") start();
   });
   window.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "r") start();
+    if (e.key.toLowerCase() === "r") (mode === "duel" ? startDuelRound() : start());
     if (e.key.toLowerCase() === "t") hud.toggleRules();
   });
 
-  start();
+  if (params.get("mode") === "duel") setMode("duel");
+  else start();
 }
 
 void boot();
+
+
 

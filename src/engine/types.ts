@@ -1,4 +1,4 @@
-/** 引擎共享类型。渲染层只依赖这里的 BattleEvent / Tier，不反向依赖引擎内部。 */
+﻿/** 引擎共享类型。渲染层只依赖这里的 BattleEvent / Tier，不反向依赖引擎内部。 */
 
 export type Side = "hero" | "enemy";
 
@@ -121,6 +121,7 @@ export type EventType =
   | "GUARD"
   | "DODGE"
   | "MOVE"
+  | "DUEL_LOG"
   | "BATTLE_END";
 
 export interface BattleEvent {
@@ -138,3 +139,36 @@ export interface LogEntry {
   kind: "system" | "rule" | "clash" | "event" | "combo" | "reveal" | "damage";
   text: string;
 }
+
+/** 渲染层需要的最小战场快照（Battle 与 DuelEngine 共用）。 */
+export interface ActorSnapshot {
+  side: Side;
+  hp: number;
+  maxHp: number;
+  slot: number;
+  insight: number;
+  maxInsight: number;
+  statuses: Partial<Record<StatusId, number>>;
+  action: { skill: SkillId; phase: "windup" | "hit" | "recovery"; progress: number } | null;
+  tier: Tier;
+  name: string;
+}
+
+export interface BattleSnapshot {
+  frame: number;
+  hero: ActorSnapshot;
+  enemy: ActorSnapshot;
+  done: boolean;
+  winner: "hero" | "enemy" | "draw" | null;
+}
+
+/** 渲染层只依赖这个接口，不关心背后是规则引擎还是编排引擎。 */
+export interface CombatSource {
+  frame: number;
+  done: boolean;
+  winner: "hero" | "enemy" | "draw" | null;
+  step(): void;
+  snapshot(): BattleSnapshot;
+  drainEvents(): BattleEvent[];
+}
+
