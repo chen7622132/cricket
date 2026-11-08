@@ -184,7 +184,7 @@ hitstop 只冻结表现层时间（`Presenter.freezeMs`），引擎 `step()` 照
 - 攻击动画第 2 帧触发 `onFrameChange` 命中回调（与引擎的 HIT 事件对齐），受击/死亡播对应序列帧
 - 粒子：`pixi-particles-engine`（manual + 环形出生 `CircleSpawnBehaviour(22,11)`，中心留空），add 混合、8-12 颗、寿命 ≤0.28s
 - 描边：`OutlineFilter` 2px，英雄蓝、敌人红；脚下黑色投影盘
-- 攻击前先 RUN 冲刺到对方 30px 处才出招，命中瞬间分离 1.5px 再回弹
+- 攻击前先 RUN 冲刺到对方 18px 处才出招（约 30px 位移），命中瞬间分离 1.5px 再回弹
 
 ---
 
@@ -238,4 +238,5 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 - 完整日志：`logs/battle-seed*-rules*.log`
 - 验收汇总：`logs/acceptance.txt`
 - 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（Martial Hero 序列帧 + 整数倍像素）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）
+
 

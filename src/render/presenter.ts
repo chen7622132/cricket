@@ -126,7 +126,7 @@ export class Presenter {
           const foe = this.actor(side === "hero" ? "enemy" : "hero");
           const dir = Math.sign(foe.x - actor.x) || 1;
           const gap = Math.abs(foe.x - actor.x);
-          this.lungeTarget[side] = dir * Math.max(0, gap - 30);
+          this.lungeTarget[side] = dir * Math.max(0, gap - 18);
           this.pendingAttack[side] = attackForSkill(skill);
           actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
@@ -461,6 +461,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
