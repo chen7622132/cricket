@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: dark;
   --bg: #070910;
   --panel: #0a0d15;
@@ -125,9 +125,7 @@ main {
 
 #stage canvas {
   display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
+  image-rendering: crisp-edges;
   image-rendering: pixelated;
   border: 1px solid #1d2838;
   border-radius: 3px;
@@ -577,5 +575,7 @@ main {
     max-height: 55vh;
   }
 }
+
+
 
 

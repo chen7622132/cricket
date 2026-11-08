@@ -23,6 +23,13 @@ npm run probe      # 无头浏览器运行时探针（hitstop / 镜头 / 慢放 
 
 CI（`.github/workflows/ci.yml`）在每次 push 到 `main` 时跑：`npm ci → build → test → accept`。
 
+### 像素清晰度
+
+- `TextureSource.defaultOptions.scaleMode = "nearest"`，atlas 每个纹理再强制 nearest + 关闭 mipmap
+- 画布按**整数倍**放大（480×270 → 960×540），不做 2.05× 这种非整数拉伸
+- 世界缩放 1.25 × 精灵 1.2 × 画布 2 = **3 屏幕像素 / 美术像素**，像素边缘是硬边
+- 所有精灵 `roundPixels = true`
+
 demo 里可以：改 seed、切英雄规则表 A/B/C、切敌方规则表（碎地重锤 / 压制连锤）、开打、1×/2×/4×、按 `R` 重开。
 每一局都编码在 URL 里：`?seed=7&rules=C&enemy=ENEMY_B&speed=2`，点「复制链接」发给别人，打开就是同一局（确定性保证复现）。
 点「规则表」按钮（或按 `T`）打开规则面板：列出双方每条规则的序号、priority、代价与条件，**当前触发的规则行会实时高亮**——「优先级抢断」不再只存在于日志里。
@@ -228,4 +235,4 @@ pixelfx 不是 Pixi 插件，是**引擎无关的 Uint32 像素帧缓冲库**（
 
 - 完整日志：`logs/battle-seed*-rules*.log`
 - 验收汇总：`logs/acceptance.txt`
-- 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（角色描边/状态图标）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）
+- 截图：`shots/final-01.png`（连段中）、`shots/final-02.png`（Martial Hero 序列帧 + 整数倍像素）、`shots/final-03.png`（结算）、`shots/final-04.png`（规则表面板 + 触发高亮）

@@ -15,6 +15,10 @@ export class Game {
   private speed = 1;
 
   async init(container: HTMLElement): Promise<void> {
+    // 像素游戏：所有纹理默认最近邻采样，禁止线性过滤把像素糊掉
+    PIXI.TextureSource.defaultOptions.scaleMode = "nearest";
+    PIXI.TextureSource.defaultOptions.autoGenerateMipmaps = false;
+
     const app = new PIXI.Application();
     await app.init({
       width: 480,
@@ -32,6 +36,25 @@ export class Game {
 
     // Martial Hero 序列帧（CC0）打包成的 atlas + animations
     this.sheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/martial-hero/hero.json");
+    for (const texture of Object.values(this.sheet.textures)) {
+      texture.source.scaleMode = "nearest";
+      texture.source.autoGenerateMipmaps = false;
+      texture.source.update();
+    }
+
+    // 画布按整数倍放大（480×270 → 960×540 / 1440×810），避免 2.05× 这种非整数拉伸
+    const measure = container.parentElement ?? container;
+    const resize = (): void => {
+      const rect = measure.getBoundingClientRect();
+      const availW = Math.max(480, rect.width - 32);
+      const availH = Math.max(270, rect.height - 32);
+      const scale = Math.max(1, Math.min(Math.floor(availW / 480), Math.floor(availH / 270)));
+      app.canvas.style.width = `${480 * scale}px`;
+      app.canvas.style.height = `${270 * scale}px`;
+      app.canvas.style.imageRendering = "pixelated";
+    };
+    new ResizeObserver(resize).observe(measure);
+    resize();
   }
 
   play(battle: Battle, hooks: PresenterHooks): void {

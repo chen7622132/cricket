@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js";
+﻿import * as PIXI from "pixi.js";
 import type { Tier } from "../engine/types.ts";
 import { TIERS } from "../presentation/tiers.ts";
 
@@ -40,7 +40,7 @@ export class CameraRig {
     world.pivot.set(w / 2, h / 2);
     world.position.set(w / 2 + sx + this.push * this.pushDir, h / 2 + sy);
     // 固定广角 + 1.22 基础裁切：不跟拍，只把 6 个格点压进构图中心
-    world.scale.set((1 + this.zoom) * 1.22);
+    world.scale.set((1 + this.zoom) * 1.25);
   }
 
   get shakeAmount(): number {
@@ -51,3 +51,4 @@ export class CameraRig {
     return this.zoom;
   }
 }
+

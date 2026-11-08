@@ -1,4 +1,4 @@
-import * as PIXI from "pixi.js";
+﻿import * as PIXI from "pixi.js";
 import type { Side, StatusId } from "../engine/types.ts";
 
 export type HeroState = "IDLE" | "RUN" | "ATTACK_1" | "ATTACK_2" | "HIT" | "DEATH";
@@ -17,7 +17,7 @@ const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
 /** 帧内角色锚点：脚底在 128/200，身体中心在 97/200（据素材 alpha 包围盒实测）。 */
 const ANCHOR_X = 0.485;
 const ANCHOR_Y = 0.64;
-const BASE_SCALE = 1.15;
+const BASE_SCALE = 1.2;
 
 const SPEED: Record<HeroState, number> = {
   IDLE: 0.08,
@@ -202,3 +202,4 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
