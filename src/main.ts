@@ -1,6 +1,6 @@
 ﻿import "./style.css";
 import { Battle } from "./engine/battle.ts";
-import { applyRuleOverrides, getRuleset, type Ruleset } from "./engine/rules.ts";
+import { applyRuleOverrides, getRuleset, MECHANIC_LABEL, type Ruleset } from "./engine/rules.ts";
 import type { PresenterHooks } from "./render/presenter.ts";
 import { Game } from "./render/game.ts";
 import { RuleEditor } from "./ui/editor.ts";
@@ -141,6 +141,11 @@ async function boot(): Promise<void> {
       kind: "system",
       text: `预演（同 seed 同规则）：${forecastName}胜 · 预计第 ${forecast.frames} 帧（${(forecast.frames / 60).toFixed(2)}s）结束 · 英雄剩 ${forecast.heroHp}/160`,
     });
+    hud.pushLog({
+      frame: 0,
+      kind: "system",
+      text: `机制｜英雄：${MECHANIC_LABEL[battle.heroRuleset.mechanic]}｜敌方：${MECHANIC_LABEL[battle.enemyRuleset.mechanic]}`,
+    });
 
     const hooks: PresenterHooks = {
       onLog: (entry) => hud.pushLog(entry),
@@ -267,6 +272,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

@@ -12,6 +12,19 @@ import type { Cost, RuleDef, RuleTag, Side, SkillId } from "./types.ts";
 
 type RuleDraft = Omit<RuleDef, "index">;
 
+export const MECHANIC_LABEL: Record<Mechanic, string> = {
+  interrupt: "打断专精（打断额外眩晕）",
+  guard: "铁壁（格挡减伤 90%，还击窗口 70f）",
+  insight: "识破经济（看破返还 1 识破）",
+  bleed: "裂伤处决（流血双跳，处决 +30%）",
+  desperate: "背水一战（血量 <40% 伤害 +35%）",
+  heavy: "蓄力重锤（重锤 +20%）",
+  pressure: "破防压制（对格挡目标 +30%）",
+  early_charge: "提前蓄力（重锤附带 30f 眩晕）",
+  fast: "快刀（横扫追加 50% 二段）",
+  kite: "游走（后撤获得 30f 闪避减伤）",
+};
+
 export type Mechanic =
   | "interrupt"
   | "guard"
@@ -768,6 +781,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

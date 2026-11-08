@@ -12,7 +12,7 @@ import {
   JUDGE_TOLERANCE_FRAMES,
   SKILLS,
 } from "./skills.ts";
-import { ENEMY_RULESETS, HERO_RULESETS, type Mechanic, type Ruleset } from "./rules.ts";
+import { ENEMY_RULESETS, HERO_RULESETS, MECHANIC_LABEL, type Mechanic, type Ruleset } from "./rules.ts";
 import type {
   ActorSnapshot,
   ActorView,
@@ -107,18 +107,7 @@ export interface BattleResult {
   digest: string;
 }
 
-const MECH_LABEL: Record<Mechanic, string> = {
-  interrupt: "打断专精（打断额外眩晕）",
-  guard: "铁壁（格挡减伤 90%，还击窗口 70f）",
-  insight: "识破经济（看破返还 1 识破）",
-  bleed: "裂伤处决（流血双跳，处决 +30%）",
-  desperate: "背水一战（血量 <40% 伤害 +35%）",
-  heavy: "蓄力重锤（重锤 +20%）",
-  pressure: "破防压制（对格挡目标 +30%）",
-  early_charge: "提前蓄力（重锤附带 30f 眩晕）",
-  fast: "快刀（横扫追加 50% 二段）",
-  kite: "游走（后撤获得 30f 闪避减伤）",
-};
+
 
 const CHAIN_DEFS: Omit<ChainState, "step" | "attempts" | "completions">[] = [
   {
@@ -207,7 +196,7 @@ export class Battle {
     }
 
     this.logLine("system", `开局 seed=${cfg.seed}｜规则表 ${this.heroRuleset.id}「${this.heroRuleset.name}」｜敌方 ${this.enemyRuleset.id}「${this.enemyRuleset.name}」`);
-    this.logLine("system", `机制｜英雄：${MECH_LABEL[this.heroRuleset.mechanic]}｜敌方：${MECH_LABEL[this.enemyRuleset.mechanic]}`);
+    this.logLine("system", `机制｜英雄：${MECHANIC_LABEL[this.heroRuleset.mechanic]}｜敌方：${MECHANIC_LABEL[this.enemyRuleset.mechanic]}`);
     this.logLine("system", `初始站位 英雄#${this.hero.slot} / 敌人#${this.enemy.slot}｜识破 ${this.hero.insight}/${this.hero.maxInsight}`);
   }
 
@@ -1045,6 +1034,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 
