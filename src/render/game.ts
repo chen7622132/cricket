@@ -86,6 +86,7 @@ export class Game {
     this.presenter = new Presenter(battle, this.sheet, hooks);
     this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
     this.root.addChild(this.presenter.world);
+    this.root.addChild(this.presenter.overlay);
   }
 
   /** 容器尺寸变化（例如收起日志栏）后重算画布与 cover 缩放。 */
@@ -145,6 +146,7 @@ export class Game {
     }
   }
 }
+
 
 
 

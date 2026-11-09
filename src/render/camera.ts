@@ -40,14 +40,14 @@ export class CameraRig {
   }
 
   /** cover 缩放：max(viewport/world)，铺满游戏区、裁边而不留黑边。 */
-  apply(world: PIXI.Container, viewportW: number, viewportH: number, cover: number, pivotX = ARENA.w / 2): void {
+  apply(world: PIXI.Container, viewportW: number, viewportH: number, cover: number, pivotX = ARENA.w / 2, fitZoom = 1): void {
     const sx = Math.sin(this.time * 91) * this.shake;
     const sy = Math.cos(this.time * 73) * this.shake * 0.6;
     // 重心下移：保证地板与角色始终在画面内（宽而矮的窗口也不会把脚裁掉）
     const visibleH = viewportH / Math.max(0.0001, cover);
     const pivotY = Math.min(200, Math.max(110, ARENA.floorY - visibleH * 0.28));
     world.pivot.set(pivotX, pivotY);
-    world.scale.set(cover * (1 + this.zoom));
+    world.scale.set(cover * (1 + this.zoom) * fitZoom);
     world.position.set(viewportW / 2 + sx + this.push * this.pushDir, viewportH / 2 + sy);
   }
 
@@ -59,6 +59,7 @@ export class CameraRig {
     return this.zoom;
   }
 }
+
 
 
 

@@ -56,6 +56,15 @@ export class Presenter {
   private airCombo: Record<Side, number> = { hero: 0, enemy: 0 };
   private kdActive: Record<Side, boolean> = { hero: false, enemy: false };
   private ukemiCount = 0;
+  private camZoom = 1;
+  private koMs = 0;
+  /** 屏幕空间叠层：必杀 cut-in / K.O.，不随世界镜头缩放。 */
+  readonly overlay = new PIXI.Container();
+  private readonly cutinBg = new PIXI.Graphics();
+  private readonly cutinText: PIXI.Text;
+  private readonly koText: PIXI.Text;
+  private cutinMs = 0;
+  private cutinName = "";
   private knockdownCount = 0;
   private comboTimer = 0;
   private readonly hooks: PresenterHooks;
@@ -99,6 +108,20 @@ export class Presenter {
     this.enemy = new HeroActor(sheet, 0xff5c5c, 0xffb9b9);
 
     this.impact = new ImpactFx(ARENA.w, ARENA.h);
+    this.overlay.eventMode = "none";
+    this.overlay.visible = false;
+    this.cutinText = new PIXI.Text({
+      text: "",
+      style: { fontFamily: "Courier New, monospace", fontSize: 44, fontWeight: "800", fill: 0xffffff, stroke: { color: 0x5a1a08, width: 4 } },
+    });
+    this.cutinText.anchor.set(0.5);
+    this.koText = new PIXI.Text({
+      text: "K.O.",
+      style: { fontFamily: "Courier New, monospace", fontSize: 92, fontWeight: "900", fill: 0xffd45c, stroke: { color: 0x5a1a08, width: 8 } },
+    });
+    this.koText.anchor.set(0.5);
+    this.cutinBg.addChild(this.cutinText);
+    this.overlay.addChild(this.cutinBg, this.koText);
     this.world.addChildAt(this.aura, 0);
 
     this.world.addChild(createArena());
@@ -343,6 +366,7 @@ export class Presenter {
         break;
       case "BATTLE_END":
         this.pushLog(ev, "system");
+        this.koMs = 900;
         if (!this.ended) {
           this.ended = true;
           (this.battle.winner === "hero" ? this.enemy : this.hero).playDeath();
@@ -449,10 +473,45 @@ export class Presenter {
       }
       if (tier === "ultimate") {
         this.fxLayer.spawn("impacts/ground-slam", x, terrainY(o.target.x), {}, 0.7);
+        this.startCutin(SKILLS[o.skill as keyof typeof SKILLS]?.name ?? "必杀");
       }
     }
 
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
+  }
+
+  private startCutin(name: string): void {
+    this.cutinMs = 380;
+    this.cutinName = name;
+    this.overlay.visible = true;
+  }
+
+  private drawOverlay(dtMs: number): void {
+    const w = this.viewport.w;
+    const h = this.viewport.h;
+    this.cutinBg.clear();
+    if (this.cutinMs > 0) {
+      this.cutinMs -= dtMs;
+      const t = Math.max(0, Math.min(1, this.cutinMs / 380));
+      this.cutinBg.rect(0, 0, w, h).fill({ color: 0x0b0d12, alpha: 0.42 * t });
+      this.cutinText.text = this.cutinName;
+      this.cutinText.position.set(w / 2, h * 0.42);
+      this.cutinText.scale.set(1 + (1 - t) * 0.25);
+      this.cutinText.alpha = Math.min(1, t * 2);
+    } else {
+      this.cutinText.alpha = 0;
+    }
+    if (this.koMs > 0) {
+      this.koMs -= dtMs;
+      const k = Math.max(0, Math.min(1, this.koMs / 900));
+      this.koText.visible = true;
+      this.koText.position.set(w / 2, h * 0.45);
+      this.koText.scale.set(1 + (1 - k) * 0.15);
+      this.koText.alpha = Math.min(1, k * 1.6);
+    } else {
+      this.koText.visible = false;
+    }
+    this.overlay.visible = this.cutinMs > 0 || this.koMs > 0;
   }
 
   private mechanicShort(key: string): string {
@@ -557,6 +616,7 @@ export class Presenter {
   update(dtMs: number): void {
     this.time += dtMs / 1000;
     this.impact.update(dtMs);
+    this.drawOverlay(dtMs);
     if (this.freezeMs > 0) {
       this.freezeMs -= dtMs;
       this.applyCamera();
@@ -664,6 +724,13 @@ export class Presenter {
       this.footY[side] = fy;
     }
 
+    // 动态镜头：贴身推近、拉开拉远，KO 再推一档
+    const gap = Math.abs(heroX - enemyX);
+    let zoomTarget = Math.max(1, Math.min(1.42, 1.5 - gap / 420));
+    if (this.combo >= 3) zoomTarget += 0.06;
+    if (this.koMs > 0) zoomTarget = 1.55;
+    this.camZoom += (zoomTarget - this.camZoom) * Math.min(1, 0.12);
+
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
@@ -730,10 +797,10 @@ export class Presenter {
 
   private applyCamera(): void {
     this.cover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
-    const halfView = this.viewport.w / Math.max(0.0001, this.cover) / 2;
+    const halfView = this.viewport.w / Math.max(0.0001, this.cover * this.camZoom) / 2;
     const target = Math.max(halfView, Math.min(ARENA.w - halfView, (this.hero.x + this.enemy.x) / 2));
     this.camX += (target - this.camX) * Math.min(1, 0.12);
-    this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover, this.camX);
+    this.camera.apply(this.world, this.viewport.w, this.viewport.h, this.cover, this.camX, this.camZoom);
     if (this.insetLeft > 0) this.world.x += this.insetLeft / 2;
   }
 
@@ -776,6 +843,9 @@ export class Presenter {
     ukemis: number;
     knockdowns: number;
     kdLeft: number;
+    cutin: boolean;
+    ko: boolean;
+    camZoom: number;
     heroY: number;
     enemyY: number;
     cover: number;
@@ -785,6 +855,9 @@ export class Presenter {
     enemyVisible: boolean;
     worldScale: number;
     pivotY: number;
+    cutinName: string;
+    overlayVisible: boolean;
+    overlayChildren: number;
   } {
     return {
       frozen: this.freezeMs > 0,
@@ -809,6 +882,12 @@ export class Presenter {
       ukemis: this.ukemiCount,
       knockdowns: this.knockdownCount,
       kdLeft: Math.max(this.hero.kdLeft, this.enemy.kdLeft),
+      cutin: this.cutinMs > 0,
+      ko: this.koMs > 0,
+      camZoom: this.camZoom,
+      cutinName: this.cutinName,
+      overlayVisible: this.overlay.visible,
+      overlayChildren: this.overlay.children.length,
       heroY: this.footY.hero,
       enemyY: this.footY.enemy,
       cover: Number(this.cover.toFixed(2)),
@@ -821,6 +900,14 @@ export class Presenter {
     };
   }
 }
+
+
+
+
+
+
+
+
 
 
 
