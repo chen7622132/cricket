@@ -959,6 +959,86 @@
         "w": 200,
         "h": 200
       }
+    },
+    "getup_0": {
+      "frame": {
+        "x": 0,
+        "y": 1200,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "getup_1": {
+      "frame": {
+        "x": 200,
+        "y": 1200,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "getup_2": {
+      "frame": {
+        "x": 400,
+        "y": 1200,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "getup_3": {
+      "frame": {
+        "x": 600,
+        "y": 1200,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
     }
   },
   "animations": {
@@ -1027,6 +1107,12 @@
       "death_5",
       "death_6",
       "death_7"
+    ],
+    "getup": [
+      "getup_0",
+      "getup_1",
+      "getup_2",
+      "getup_3"
     ]
   },
   "meta": {
@@ -1036,7 +1122,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 1600,
-      "h": 1200
+      "h": 1400
     },
     "scale": "1"
   }

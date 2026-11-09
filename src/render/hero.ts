@@ -15,6 +15,7 @@ export type HeroState =
   | "HAMMER_WINDUP"
   | "HAMMER_RECOVERY"
   | "HIT"
+  | "GETUP"
   | "DEATH";
 
 const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
@@ -47,6 +48,7 @@ const SPEED: Record<HeroState, number> = {
   ATTACK_1: 0.14,
   ATTACK_2: 0.14,
   ATTACK_3: 0.12,
+  GETUP: 0.1,
   EXEC_WINDUP: 0.1,
   EXEC_RECOVERY: 0.14,
   HAMMER_WINDUP: 0.09,
@@ -88,6 +90,8 @@ export class HeroActor {
   private hurtMs = 0;
   private hurtDir = 1;
   private shakeMs = 0;
+  private lying = false;
+  private getupLock = 0;
   private kdMs = 0;
   private kdDir = 1;
   private airHeight = 0;
@@ -149,12 +153,13 @@ export class HeroActor {
   }
 
   play(state: HeroState, force = false): void {
+    if (this.getupLock > 0 && state !== "GETUP" && state !== "DEATH") return;
     if (this.state === state && !force) return;
     this.state = state;
     this.stateTime = 0;
     this.rigHit = false;
     const key =
-      state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state === "ATTACK_3" ? "attack3" : state.toLowerCase();
+      state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state === "ATTACK_3" ? "attack3" : state === "GETUP" ? "getup" : state.toLowerCase();
     const animations = this.sheet.animations as Record<string, PIXI.Texture[]>;
     this.sprite.textures = animations[key] ?? animations.attack2 ?? animations.attack1;
     this.sprite.animationSpeed = SPEED[state];
@@ -337,7 +342,18 @@ export class HeroActor {
   knockdown(dir: number, ms = 0.55): void {
     this.kdMs = ms;
     this.kdDir = dir;
+    this.lying = true;
     this.play("HIT", true);
+  }
+
+  /** 起身：播放专属 getup 序列，期间禁止被 IDLE 覆盖。 */
+  getup(): void {
+    this.lying = false;
+    this.kdMs = 0;
+    this.getupLock = 0.45;
+    this.play("GETUP", true);
+    this.sprite.loop = false;
+    this.sprite.gotoAndPlay(0);
   }
 
   /** 程序化腾空：没有跳跃序列帧，用垂直位移 + 影子缩放表现滞空。 */
@@ -433,8 +449,14 @@ export class HeroActor {
     }
     this.body.x = shakeX;
     this.body.y = shakeY;
+    if (this.getupLock > 0) this.getupLock = Math.max(0, this.getupLock - dt);
     let kdRot = 0;
-    if (this.kdMs > 0) {
+    if (this.lying) {
+      this.kdMs = Math.max(0, this.kdMs - dt);
+      const t = Math.min(1, (1 - this.kdMs / 0.55) * 4);
+      kdRot = this.kdDir * 1.25 * t;
+      this.body.y = -this.airHeight - 1 + 7 * t;
+    } else if (this.kdMs > 0) {
       this.kdMs -= dt;
       const t = Math.min(1, (1 - this.kdMs / 0.55) * 4);
       kdRot = this.kdDir * 1.25 * t;
@@ -614,6 +636,8 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
+
 
 
 

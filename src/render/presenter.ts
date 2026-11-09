@@ -305,6 +305,7 @@ export class Presenter {
         if (!this.kdActive[side]) break;
         this.kdActive[side] = false;
         this.ukemiCount++;
+        actor.getup();
         actor.spawnGhost();
         actor.flashWhite(0.06);
         this.spawnFloat("受身（无敌）", actor.x, terrainY(actor.x) - 64, "key", false);
@@ -602,7 +603,7 @@ export class Presenter {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
     const tint = element === "fire" ? 0xff7a1a : element === "thunder" ? 0xffe14d : 0x9fe8ff;
-    let view: PIXI.Container;
+    let view!: PIXI.Container;
     let anim: PIXI.AnimatedSprite | undefined;
     const sheet = PIXI.Assets.get("assets/fx/fireball.png") as PIXI.Texture | undefined;
     if (kind === "orb" && sheet) {
@@ -625,16 +626,28 @@ export class Presenter {
       g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
       g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
     } else if (kind === "swordwave") {
-      // 剑气：三层新月刀光
-      g.setStrokeStyle({ width: 4, color: tint, alpha: 0.95, cap: "round" });
-      g.arc(0, 0, 16, -0.75, 0.75);
-      g.stroke();
-      g.setStrokeStyle({ width: 2, color: 0xffffff, alpha: 0.9 });
-      g.arc(0, 0, 22, -0.6, 0.6);
-      g.stroke();
-      g.setStrokeStyle({ width: 1.5, color: tint, alpha: 0.7 });
-      g.arc(0, 0, 28, -0.45, 0.45);
-      g.stroke();
+      // pixelfx 导出的 24 帧剑斩序列
+      const sheet = PIXI.Assets.get("assets/fx/sword-slash.png") as PIXI.Texture | undefined;
+      if (sheet) {
+        const frames: PIXI.Texture[] = [];
+        for (let i = 0; i < 24; i++) {
+          frames.push(new PIXI.Texture({
+            source: sheet.source,
+            frame: new PIXI.Rectangle((i % 5) * 136, Math.floor(i / 5) * 104, 136, 104),
+          }));
+        }
+        anim = new PIXI.AnimatedSprite(frames);
+        anim.anchor.set(44 / 136, 92 / 104);
+        anim.animationSpeed = 2.4;
+        anim.loop = false;
+        anim.play();
+        view = anim;
+        g.setStrokeStyle({ width: 1, color: tint, alpha: 0.01 });
+      } else {
+        g.setStrokeStyle({ width: 4, color: tint, alpha: 0.95, cap: "round" });
+        g.arc(0, 0, 16, -0.75, 0.75);
+        g.stroke();
+      }
     } else if (kind === "wave") {
       g.setStrokeStyle({ width: 3, color: tint, alpha: 0.9 });
       g.arc(0, 0, 9, -0.9, 0.9);
@@ -647,7 +660,7 @@ export class Presenter {
       g.circle(0, 0, 4).fill({ color: 0xd9c2ff });
       g.circle(0, 0, 1.5).fill({ color: 0xffffff });
     }
-      view = g;
+      view = view ?? g;
     }
     const x = a.x + dir * 18;
     const y = terrainY(a.x) - 34;
@@ -1128,6 +1141,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

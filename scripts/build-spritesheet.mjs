@@ -30,6 +30,7 @@ const SETS = [
       { name: "hammer_recovery", file: "HammerRecovery.png", frames: 2 },
       { name: "hit", file: "Take_hit.png", frames: 3 },
       { name: "death", file: "Death.png", frames: 7 },
+      { name: "getup", file: "Getup.png", frames: 4 },
     ],
   },
   {
@@ -46,6 +47,7 @@ const SETS = [
       { name: "attack2", file: "Attack2.png", frames: 8 },
       { name: "hit", file: "Take hit.png", frames: 3 },
       { name: "death", file: "Death.png", frames: 7 },
+      { name: "getup", file: "Getup.png", frames: 4 },
     ],
   },
   {
@@ -63,6 +65,7 @@ const SETS = [
       { name: "attack3", file: "Attack3.png", frames: 7 },
       { name: "hit", file: "Take hit.png", frames: 3 },
       { name: "death", file: "Death.png", frames: 8 },
+      { name: "getup", file: "Getup.png", frames: 4 },
     ],
   },
   {
@@ -78,6 +81,7 @@ const SETS = [
       { name: "attack2", file: "Attack2.png", frames: 6 },
       { name: "hit", file: "Take Hit.png", frames: 4 },
       { name: "death", file: "Death.png", frames: 6 },
+      { name: "getup", file: "Getup.png", frames: 4 },
     ],
   },
 ];
@@ -147,6 +151,7 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
 
 
 
