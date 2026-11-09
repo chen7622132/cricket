@@ -225,6 +225,54 @@ export class ImpactFx {
     this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "radial");
   }
 
+  /** 按角色武器区分近战命中形态：拳/刀/杖/弓。 */
+  styleBurst(style: "fist" | "blade" | "staff" | "bow", x: number, y: number, dir: number, tier: Tier, color: number): void {
+    if (style === "fist") {
+      this.meleeSpark(x, y, dir, tier, color);
+      return;
+    }
+    const heavy = tier === "ultimate";
+    const key = tier === "key";
+    const s = heavy ? 1.35 : key ? 1.15 : 1;
+
+    if (style === "blade") {
+      // 交叉双斩
+      this.arc(x, y, dir, color, 30 * s, 0.35);
+      this.arc(x, y, dir, 0xffffff, 26 * s, -0.35);
+      this.star(x, y, 10 * s);
+      this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "x");
+      return;
+    }
+    if (style === "staff") {
+      // 法阵 + 竖直光柱
+      const ring = new PIXI.Graphics();
+      ring.circle(0, 0, 16 * s).stroke({ width: 2, color, alpha: 0.9 });
+      ring.circle(0, 0, 10 * s).stroke({ width: 1, color: 0xffffff, alpha: 0.7 });
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2;
+        ring.rect(Math.cos(a) * 13 * s - 2, Math.sin(a) * 13 * s - 2, 4, 4).fill({ color });
+      }
+      ring.position.set(x, y);
+      this.addShape(ring, 0.22, 1.4);
+      const g = new PIXI.Graphics();
+      g.rect(-1.5, -34 * s, 3, 68 * s).fill({ color, alpha: 0.55 });
+      g.position.set(x, y);
+      this.addShape(g, 0.18, 0);
+      this.star(x, y, 8 * s);
+      return;
+    }
+    // bow：三道贯射线
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: 2, color, alpha: 0.95 });
+    for (const off of [-5, 0, 5]) {
+      g.moveTo(x - dir * 26, y + off).lineTo(x + dir * 30, y + off);
+    }
+    g.stroke();
+    this.addShape(g, 0.12, 0);
+    this.star(x, y, 8 * s);
+    this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "thrust");
+  }
+
   /** 元素命中：火/雷/冰各自的硬边形态。 */
   elementBurst(x: number, y: number, element: "fire" | "thunder" | "ice"): void {
     const g = new PIXI.Graphics();
@@ -365,6 +413,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 

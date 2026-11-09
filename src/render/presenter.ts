@@ -485,7 +485,7 @@ export class Presenter {
         : this.chars[o.attackerSide].element === "fire" ? 0xffb35c
         : this.chars[o.attackerSide].element === "ice" ? 0xc9f6ff
         : 0xffe14d;
-      this.impact.meleeSpark(x, y, dir, tier, sparkColor);
+      this.impact.styleBurst(o.guard ? "fist" : this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
     }
     if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
       for (const delay of [4, 8]) {
@@ -1071,6 +1071,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
