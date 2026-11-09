@@ -64,6 +64,7 @@ export class Game {
     });
 
     // Martial Hero 序列帧（CC0）打包成的 atlas + animations
+    await PIXI.Assets.load("assets/fx/fireball.png");
     for (const def of CHARACTERS) {
       const sheet = await PIXI.Assets.load<PIXI.Spritesheet>(def.sheetUrl);
       for (const texture of Object.values(sheet.textures)) {
@@ -152,6 +153,7 @@ export class Game {
     }
   }
 }
+
 
 
 

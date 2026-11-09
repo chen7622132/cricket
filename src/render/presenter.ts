@@ -59,7 +59,7 @@ export class Presenter {
   private ukemiCount = 0;
   private camZoom = 1;
   private readonly chars: { hero: CharacterDef; enemy: CharacterDef };
-  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" | "swordwave" | "wave" }> = [];
+  private projectiles: Array<{ g: PIXI.Container; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" | "swordwave" | "wave"; anim?: PIXI.AnimatedSprite }> = [];
   private pendingLean: Record<Side, number> = { hero: 0, enemy: 0 };
   private arcQueue: Array<{ at: number; x: number; y: number; dir: number; color: number; radius: number }> = [];
   private koMs = 0;
@@ -477,7 +477,11 @@ export class Presenter {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
-      this.impact.meleeSpark(x, y, dir, tier, o.guard ? 0x7fd8ff : 0xffffff);
+      const sparkColor = o.guard ? 0x7fd8ff
+        : this.chars[o.attackerSide].element === "fire" ? 0xffb35c
+        : this.chars[o.attackerSide].element === "ice" ? 0xc9f6ff
+        : 0xffe14d;
+      this.impact.meleeSpark(x, y, dir, tier, sparkColor);
     }
     if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
       for (const delay of [4, 8]) {
@@ -541,7 +545,22 @@ export class Presenter {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
     const tint = element === "fire" ? 0xff7a1a : element === "thunder" ? 0xffe14d : 0x9fe8ff;
-    const g = new PIXI.Graphics();
+    let view: PIXI.Container;
+    let anim: PIXI.AnimatedSprite | undefined;
+    const sheet = PIXI.Assets.get("assets/fx/fireball.png") as PIXI.Texture | undefined;
+    if (kind === "orb" && sheet) {
+      const frames: PIXI.Texture[] = [];
+      for (let i = 0; i < 4; i++) {
+        frames.push(new PIXI.Texture({ source: sheet.source, frame: new PIXI.Rectangle(i * 24, 128, 24, 16) }));
+      }
+      anim = new PIXI.AnimatedSprite(frames);
+      anim.animationSpeed = 0.5;
+      anim.loop = true;
+      anim.play();
+      anim.anchor.set(0.5);
+      view = anim;
+    } else {
+      const g = new PIXI.Graphics();
     if (kind === "arrow") {
       g.setStrokeStyle({ width: 2, color: tint, alpha: 0.95 });
       g.moveTo(-14, 0).lineTo(10, 0);
@@ -571,12 +590,14 @@ export class Presenter {
       g.circle(0, 0, 4).fill({ color: 0xd9c2ff });
       g.circle(0, 0, 1.5).fill({ color: 0xffffff });
     }
+      view = g;
+    }
     const x = a.x + dir * 18;
     const y = terrainY(a.x) - 34;
-    g.position.set(x, y);
-    g.scale.set(dir, 1);
-    this.world.addChild(g);
-    this.projectiles.push({ g, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind });
+    view.position.set(x, y);
+    view.scale.set(dir * 1.6, 1.6);
+    this.world.addChild(view);
+    this.projectiles.push({ g: view, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind, anim });
   }
 
   private startCutin(name: string): void {
@@ -1034,6 +1055,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
