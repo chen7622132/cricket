@@ -16,7 +16,7 @@ export interface PresenterHooks {
   onBanner(text: string, kind: "clash" | "combo" | "reveal" | "end"): void;
   onEnd(winner: string, frames: number): void;
   onRule?: (ruleIndex: number, text: string, side: "hero" | "enemy") => void;
-  onCombo?: (n: number) => void;
+  onCombo?: (n: number, air: number) => void;
 }
 
 interface FloatText {
@@ -53,6 +53,11 @@ export class Presenter {
   private clock = 0;
   private combo = 0;
   private comboOwner: Side | null = null;
+  private airCombo: Record<Side, number> = { hero: 0, enemy: 0 };
+  private kdActive: Record<Side, boolean> = { hero: false, enemy: false };
+  private ukemiAt: Record<Side, number> = { hero: 0, enemy: 0 };
+  private ukemiCount = 0;
+  private knockdownCount = 0;
   private comboTimer = 0;
   private readonly hooks: PresenterHooks;
 
@@ -124,7 +129,10 @@ export class Presenter {
     this.combo = 0;
     this.comboOwner = null;
     this.comboTimer = 0;
-    this.hooks.onCombo?.(0);
+    this.airCombo = { hero: 0, enemy: 0 };
+    this.kdActive = { hero: false, enemy: false };
+    this.ukemiAt = { hero: 0, enemy: 0 };
+    this.hooks.onCombo?.(0, 0);
     for (const f of this.floats) f.text.destroy();
     this.floats = [];
     for (const m of this.marks) m.g.destroy();
@@ -381,13 +389,21 @@ export class Presenter {
           this.combo = 1;
         }
         this.comboTimer = 0.9;
-        this.hooks.onCombo?.(this.combo);
         if (o.target.airborne) {
+          this.airCombo[o.targetSide] = Math.min(9, this.airCombo[o.targetSide] + 1);
           o.target.startJump(14);
-          this.spawnFloat("浮空", o.target.x, o.target.airY + ARENA.floorY - 74, "key", false);
+          this.spawnFloat(`空连 ${this.airCombo[o.targetSide]}`, o.target.x, o.target.airY + ARENA.floorY - 78, "key", false);
+        } else {
+          this.airCombo[o.targetSide] = 0;
         }
+        this.hooks.onCombo?.(this.combo, this.airCombo[o.targetSide]);
         if (tier === "ultimate" && !this.ended) {
           o.target.knockdown(dir);
+          this.knockdownCount++;
+          this.kdActive[o.targetSide] = true;
+          this.ukemiAt[o.targetSide] = this.battle.frame + 33;
+          this.airCombo[o.targetSide] = 0;
+          this.spawnFloat("倒地", o.target.x, terrainY(o.target.x) - 70, "key", false);
         }
       }
     }
@@ -535,7 +551,7 @@ export class Presenter {
       if (this.comboTimer <= 0 && this.combo > 0) {
         this.combo = 0;
         this.comboOwner = null;
-        this.hooks.onCombo?.(0);
+        this.hooks.onCombo?.(0, 0);
       }
     }
 
@@ -639,6 +655,20 @@ export class Presenter {
       if (a.consumeLanded()) {
         this.particles.burst(a.x, terrainY(a.x) - 2, 4);
         this.camera.kick("normal", side === "hero" ? 1 : -1);
+        if (this.airCombo[side] > 0) {
+          this.spawnFloat(`落地 · 空连 ${this.airCombo[side]}`, a.x, terrainY(a.x) - 64, "key", false);
+          this.airCombo[side] = 0;
+          this.hooks.onCombo?.(this.combo, 0);
+        }
+      }
+      if (this.ukemiAt[side] > 0 && snap.frame >= this.ukemiAt[side]) {
+        this.ukemiAt[side] = 0;
+        this.kdActive[side] = false;
+        this.ukemiCount++;
+        a.spawnGhost();
+        a.flashWhite(0.06);
+        this.spawnFloat("受身", a.x, terrainY(a.x) - 64, "key", false);
+        this.camera.kick("normal", side === "hero" ? 1 : -1);
       }
     }
 
@@ -728,6 +758,10 @@ export class Presenter {
     smears: number;
     airborne: boolean;
     airY: number;
+    airCombo: number;
+    ukemis: number;
+    knockdowns: number;
+    kdLeft: number;
     heroY: number;
     enemyY: number;
     cover: number;
@@ -757,6 +791,10 @@ export class Presenter {
       smears: this.hero.smearCount + this.enemy.smearCount,
       airborne: this.hero.airborne || this.enemy.airborne,
       airY: Math.max(this.hero.airY, this.enemy.airY),
+      airCombo: Math.max(this.airCombo.hero, this.airCombo.enemy),
+      ukemis: this.ukemiCount,
+      knockdowns: this.knockdownCount,
+      kdLeft: Math.max(this.hero.kdLeft, this.enemy.kdLeft),
       heroY: this.footY.hero,
       enemyY: this.footY.enemy,
       cover: Number(this.cover.toFixed(2)),
@@ -769,6 +807,13 @@ export class Presenter {
     };
   }
 }
+
+
+
+
+
+
+
 
 
 

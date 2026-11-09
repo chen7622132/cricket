@@ -137,12 +137,12 @@ export class Hud {
     window.setTimeout(() => row.classList.remove("fired"), 900);
   }
 
-  setCombo(n: number): void {
+  setCombo(n: number, air = 0): void {
     const el = document.getElementById("combo");
     if (!el) return;
-    el.classList.toggle("hidden", n < 2);
+    el.classList.toggle("hidden", n < 2 && air < 2);
     el.classList.toggle("hot", n >= 5);
-    el.textContent = n >= 2 ? `${n} HIT` : "";
+    el.textContent = n >= 2 || air >= 2 ? `${n} HIT${air >= 2 ? ` · 空连 ${air}` : ""}` : "";
   }
 
   toggleRules(force?: boolean): void {
@@ -151,6 +151,7 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 
 

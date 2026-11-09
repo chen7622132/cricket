@@ -189,6 +189,14 @@ export class HeroActor {
     this.airVel = Math.sqrt(2 * 900 * Math.max(6, height));
   }
 
+  get kdLeft(): number {
+    return this.kdMs;
+  }
+
+  get knockedDown(): boolean {
+    return this.kdMs > 0;
+  }
+
   get airborne(): boolean {
     return this.airHeight > 0.5;
   }
@@ -342,6 +350,8 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
+
 
 
 
