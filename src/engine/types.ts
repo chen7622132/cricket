@@ -27,6 +27,8 @@ export type SkillId =
   | "hero_guard"
   | "hero_riposte"
   | "hero_dodge"
+  | "hero_retreat"
+  | "enemy_retreat"
   | "hero_read"
   | "hero_step"
   | "enemy_charge"
@@ -182,6 +184,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 

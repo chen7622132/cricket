@@ -12,6 +12,7 @@ export class Game {
   private battle: CombatSource | null = null;
   private sheet: PIXI.Spritesheet | null = null;
   private enemySheet: PIXI.Spritesheet | null = null;
+  private huntressSheet: PIXI.Spritesheet | null = null;
   private acc = 0;
   private speed = 1;
   private doneMs = 0;
@@ -66,7 +67,8 @@ export class Game {
     // Martial Hero 序列帧（CC0）打包成的 atlas + animations
     this.sheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/martial-hero/hero.json");
     this.enemySheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/samurai-mack/enemy.json");
-    for (const sheet of [this.sheet, this.enemySheet]) {
+    this.huntressSheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/huntress/huntress.json");
+    for (const sheet of [this.sheet, this.enemySheet, this.huntressSheet]) {
       for (const texture of Object.values(sheet.textures)) {
         texture.source.scaleMode = "nearest";
         texture.source.autoGenerateMipmaps = false;
@@ -87,7 +89,10 @@ export class Game {
     this.doneMs = 0;
     this.effectsCleared = false;
     for (const child of this.root.removeChildren()) child.destroy({ children: true });
-    this.presenter = new Presenter(battle, this.sheet, this.enemySheet ?? this.sheet, hooks);
+    const enemyId = (battle as unknown as { enemyRuleset?: { id?: string } }).enemyRuleset?.id ?? "";
+    const useHuntress = enemyId === "ENEMY_C" || enemyId === "ENEMY_D" || enemyId === "ENEMY_E";
+    const enemySheet = (useHuntress ? this.huntressSheet : this.enemySheet) ?? this.enemySheet ?? this.sheet;
+    this.presenter = new Presenter(battle, this.sheet, enemySheet, hooks);
     this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
     this.root.addChild(this.presenter.world);
     this.root.addChild(this.presenter.overlay);
@@ -150,6 +155,7 @@ export class Game {
     }
   }
 }
+
 
 
 

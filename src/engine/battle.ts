@@ -569,6 +569,9 @@ export class Battle {
     const skill = act.def;
     const base = DAMAGE[skill.id] ?? 0;
     if (base <= 0) {
+      if (skill.id === "hero_retreat" || skill.id === "enemy_retreat") {
+        this.stepAway(att, def, 2);
+      }
       if (skill.id === "enemy_step" && this.enemyRuleset.mechanic === "kite") {
         att.statuses.set("evasion", 30);
         this.logLine("event", `游走：${att.name} 后撤进入闪避姿态（30f 内下次受击减半）`);
@@ -889,6 +892,18 @@ export class Battle {
 
   // ---------------------------------------------------------------- space
 
+  private stepAway(actor: ActorState, foe: ActorState, slots: number) {
+    const dir = Math.sign(actor.slot - foe.slot) || 1;
+    const next = Math.max(ARENA_MIN_SLOT, Math.min(ARENA_MAX_SLOT, actor.slot + dir * slots));
+    if (next === actor.slot) return;
+    const from = actor.slot;
+    actor.slot = next;
+    this.emit("MOVE", `${actor.name} 拉开距离：#${from} → #${next}（距 ${Math.abs(this.hero.slot - this.enemy.slot)}）`, {
+      side: actor.side,
+      data: { kind: "retreat", from, to: next },
+    });
+  }
+
   private stepToward(actor: ActorState, foe: ActorState, label: string) {
     const dir = Math.sign(foe.slot - actor.slot);
     if (dir === 0) return;
@@ -1116,6 +1131,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

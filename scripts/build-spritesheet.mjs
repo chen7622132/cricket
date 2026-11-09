@@ -32,6 +32,23 @@ const SETS = [
     ],
   },
   {
+    dir: path.join("public", "assets", "huntress"),
+    image: "huntress.png",
+    json: "huntress.json",
+    sourceCell: 150,
+    animations: [
+      { name: "idle", file: "Idle.png", frames: 8 },
+      { name: "run", file: "Run.png", frames: 8 },
+      { name: "jump", file: "Jump.png", frames: 2 },
+      { name: "fall", file: "Fall.png", frames: 2 },
+      { name: "attack1", file: "Attack1.png", frames: 5 },
+      { name: "attack2", file: "Attack2.png", frames: 5 },
+      { name: "attack3", file: "Attack3.png", frames: 7 },
+      { name: "hit", file: "Take hit.png", frames: 3 },
+      { name: "death", file: "Death.png", frames: 8 },
+    ],
+  },
+  {
     dir: path.join("public", "assets", "samurai-mack"),
     image: "enemy.png",
     json: "enemy.json",
@@ -48,7 +65,7 @@ const SETS = [
   },
 ];
 
-function build({ dir, image, json, animations }) {
+function build({ dir, image, json, animations, sourceCell = CELL }) {
   const total = animations.reduce((n, a) => n + a.frames, 0);
   const rows = Math.ceil(total / COLS);
   const sheet = new PNG({ width: COLS * CELL, height: rows * CELL });
@@ -60,7 +77,8 @@ function build({ dir, image, json, animations }) {
 
   for (const anim of animations) {
     const strip = PNG.sync.read(fs.readFileSync(path.join(dir, anim.file)));
-    if (strip.height !== CELL) throw new Error(`${anim.file}: expected height ${CELL}, got ${strip.height}`);
+    if (strip.height !== sourceCell) throw new Error(`${anim.file}: expected height ${sourceCell}, got ${strip.height}`);
+    const fit = CELL / sourceCell;
     anims[anim.name] = [];
 
     for (let f = 0; f < anim.frames; f++) {
@@ -78,7 +96,9 @@ function build({ dir, image, json, animations }) {
 
       for (let y = 0; y < CELL; y++) {
         for (let x = 0; x < CELL; x++) {
-          const src = (y * strip.width + (f * CELL + x)) * 4;
+          const sx = f * sourceCell + Math.min(sourceCell - 1, Math.floor(x / fit));
+          const sy = Math.min(sourceCell - 1, Math.floor(y / fit));
+          const src = (sy * strip.width + sx) * 4;
           const dst = ((row * CELL + y) * sheet.width + (col * CELL + x)) * 4;
           sheet.data[dst] = strip.data[src];
           sheet.data[dst + 1] = strip.data[src + 1];
@@ -110,4 +130,5 @@ function build({ dir, image, json, animations }) {
 }
 
 for (const set of SETS) build(set);
+
 

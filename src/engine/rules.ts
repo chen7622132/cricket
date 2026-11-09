@@ -765,9 +765,7 @@ export const ENEMY_RULES_E = variant(
   },
 );
 
-ENEMY_RULESETS.ENEMY_C = ENEMY_RULES_C;
-ENEMY_RULESETS.ENEMY_D = ENEMY_RULES_D;
-ENEMY_RULESETS.ENEMY_E = ENEMY_RULES_E;
+
 
 /** 确反连招：格挡还击（确反）后 70 帧内自动接裂伤 / 碎地锤。 */
 const COMBO_RULES: RuleDraft[] = [
@@ -795,13 +793,50 @@ const COMBO_RULES: RuleDraft[] = [
   },
 ];
 
-function withCombo(rs: Ruleset): Ruleset {
+const SPACING_RULE: RuleDraft = {
+  id: "spacing_retreat",
+  side: "hero",
+  name: "拉开距离",
+  when: "距离≤1 且 没有更高优先级的攻击",
+  skill: "hero_retreat",
+  priority: 30,
+  cost: { kind: "none" },
+  cooldown: 160,
+  tags: tag("move"),
+  test: ({ self }) => self.distance <= 1,
+};
+
+const ENEMY_SPACING_RULE: RuleDraft = {
+  ...SPACING_RULE,
+  id: "enemy_spacing_retreat",
+  side: "enemy",
+  name: "游走",
+  skill: "enemy_retreat",
+  when: "距离≤1 且 没有更高优先级的攻击",
+  test: ({ self }) => self.distance <= 1,
+};
+
+function withExtras(rs: Ruleset, extra: RuleDraft): Ruleset {
   const start = rs.rules.length;
   return {
     ...rs,
-    rules: [...rs.rules, ...COMBO_RULES.map((d, i) => ({ ...d, index: start + i + 1 }))],
+    rules: [...rs.rules, ...COMBO_RULES.map((d, i) => ({ ...d, index: start + i + 1 })), { ...extra, index: start + COMBO_RULES.length + 1 }],
   };
 }
+
+function withCombo(rs: Ruleset): Ruleset {
+  return withExtras(rs, SPACING_RULE);
+}
+
+function withEnemySpacing(rs: Ruleset): Ruleset {
+  return withExtras(rs, ENEMY_SPACING_RULE);
+}
+
+ENEMY_RULESETS.ENEMY = withEnemySpacing(ENEMY_RULES);
+ENEMY_RULESETS.ENEMY_B = withEnemySpacing(ENEMY_RULES_B);
+ENEMY_RULESETS.ENEMY_C = withEnemySpacing(ENEMY_RULES_C);
+ENEMY_RULESETS.ENEMY_D = withEnemySpacing(ENEMY_RULES_D);
+ENEMY_RULESETS.ENEMY_E = withEnemySpacing(ENEMY_RULES_E);
 
 export const HERO_RULESETS: Record<"A" | "B" | "C" | "D" | "E", Ruleset> = {
   A: withCombo(HERO_RULES_A),
@@ -815,6 +850,8 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+
 
 
 
