@@ -72,6 +72,7 @@ export class HeroActor {
   private readonly sheet: PIXI.Spritesheet;
   private rig: PIXI.Container | null = null;
   private rigBones: Record<string, PIXI.Container> = {};
+  private rigTrail: PIXI.Graphics | null = null;
   private stateTime = 0;
   private rigHit = false;
 
@@ -306,6 +307,16 @@ export class HeroActor {
     this.rig.addChild(root);
     this.body.addChild(this.rig);
     this.rigBones = { pelvis, torso, armL, armR, thighL, shinL, thighR, shinR, sword, head, scarf };
+    this.rigTrail = new PIXI.Graphics();
+    this.rigTrail.setStrokeStyle({ width: 3, color: 0x9fe8ff, alpha: 0.85 });
+    this.rigTrail.arc(0, 0, 34, -0.9, 0.9);
+    this.rigTrail.stroke();
+    this.rigTrail.setStrokeStyle({ width: 1.5, color: 0xffffff, alpha: 0.9 });
+    this.rigTrail.arc(0, 0, 40, -0.6, 0.6);
+    this.rigTrail.stroke();
+    this.rigTrail.position.set(0, -18);
+    this.rigTrail.visible = false;
+    this.rig.addChild(this.rigTrail);
     this.sprite.visible = false;
     for (const o of this.outlines) o.visible = false;
   }
@@ -510,6 +521,23 @@ export class HeroActor {
       legR = 0.5;
       armL = -0.8;
       armR = -0.8;
+    } else if (this.state === "HAMMER_WINDUP" || this.state === "HAMMER_RECOVERY"
+      || this.state === "EXEC_WINDUP" || this.state === "EXEC_RECOVERY") {
+      const hammer = this.state.startsWith("HAMMER");
+      const windup = this.state.endsWith("WINDUP");
+      if (windup) {
+        armR = hammer ? -2.8 : -2.1;
+        armL = hammer ? -2.2 : -0.6;
+        lean = -0.12;
+        legL = -0.35;
+        legR = 0.35;
+      } else {
+        armR = hammer ? 3.0 : 2.6;
+        armL = 0.9;
+        lean = 0.2;
+        legL = 0.2;
+        legR = -0.2;
+      }
     } else if (this.state === "ATTACK_1" || this.state === "ATTACK_2" || this.state === "ATTACK_3") {
       const p = Math.min(1, t / 0.34);
       const wind = Math.min(1, p / 0.42);
@@ -549,6 +577,12 @@ export class HeroActor {
     b.pelvis.y = -28 + (this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 1.2 : 0);
     const scarfTarget = this.state === "RUN" ? -0.5 - Math.sin(this.bob * 10) * 0.25 : -0.12;
     b.scarf.rotation = lerp(b.scarf.rotation, scarfTarget, 6);
+    if (this.rigTrail) {
+      const attacking = this.state.startsWith("ATTACK") || this.state.endsWith("WINDUP") || this.state.endsWith("RECOVERY");
+      this.rigTrail.visible = attacking;
+      this.rigTrail.alpha = attacking ? Math.min(0.9, 0.3 + this.stateTime * 2) : 0;
+      this.rigTrail.rotation = (this.state === "ATTACK_2" || this.state === "HAMMER_RECOVERY") ? 1.1 : 0.2;
+    }
   }
 
   private updateGhosts(dt: number): void {
@@ -568,6 +602,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

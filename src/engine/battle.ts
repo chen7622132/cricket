@@ -36,6 +36,8 @@ export interface BattleConfig {
   enemyElement?: Element;
   heroRangedDamage?: number;
   enemyRangedDamage?: number;
+  heroRanged2?: boolean;
+  enemyRanged2?: boolean;
   /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流，或一个自定义 Ruleset */
   heroRuleset: "A" | "B" | "C" | "D" | "E" | Ruleset;
   /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
@@ -164,6 +166,8 @@ export class Battle {
   readonly enemyElement?: Element;
   readonly heroRangedDamage: number;
   readonly enemyRangedDamage: number;
+  readonly heroRanged2: boolean;
+  readonly enemyRanged2: boolean;
   private readonly mechSeen = new Set<string>();
 
   hero: ActorState;
@@ -204,6 +208,8 @@ export class Battle {
     this.enemyElement = cfg.enemyElement;
     this.heroRangedDamage = cfg.heroRangedDamage ?? 8;
     this.enemyRangedDamage = cfg.enemyRangedDamage ?? 7;
+    this.heroRanged2 = cfg.heroRanged2 === true;
+    this.enemyRanged2 = cfg.enemyRanged2 === true;
 
     this.hero = this.makeActor("hero", "英雄", HERO_MAX_HP, HERO_START_SLOT, 2);
     this.enemy = this.makeActor("enemy", "敌人", ENEMY_MAX_HP, ENEMY_START_SLOT, 0);
@@ -391,6 +397,8 @@ export class Battle {
   }
 
   private ruleAvailable(actor: ActorState, rule: RuleDef): boolean {
+    if (rule.id === "hero_ranged2_rule" && !this.heroRanged2) return false;
+    if (rule.id === "enemy_ranged2_rule" && !this.enemyRanged2) return false;
     if ((actor.cooldowns.get(rule.id) ?? 0) > 0) return false;
     if (rule.cost.kind === "resource" && actor.insight < rule.cost.insight) return false;
     const foe = actor.side === "hero" ? this.enemy : this.hero;
@@ -581,9 +589,12 @@ export class Battle {
   private resolveHit(att: ActorState, act: ActionState) {
     const def = att === this.hero ? this.enemy : this.hero;
     const skill = act.def;
-    const isRangedSkill = skill.id === "hero_ranged" || skill.id === "enemy_ranged";
+    const isRangedSkill = skill.id === "hero_ranged" || skill.id === "enemy_ranged"
+      || skill.id === "hero_ranged_2" || skill.id === "enemy_ranged_2";
+    const isStrongRanged = skill.id === "hero_ranged_2" || skill.id === "enemy_ranged_2";
     let base = DAMAGE[skill.id] ?? 0;
     if (isRangedSkill) base = att.side === "hero" ? this.heroRangedDamage : this.enemyRangedDamage;
+    if (isStrongRanged) base += 3;
     if (base <= 0) {
       if (skill.id === "hero_retreat" || skill.id === "enemy_retreat") {
         this.stepAway(att, def, 2);
@@ -1168,6 +1179,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

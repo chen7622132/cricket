@@ -8,6 +8,7 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { characterOf, type CharacterDef } from "./characters.ts";
+import { sfx } from "../audio/sfx.ts";
 import { HitParticles } from "./particles.ts";
 import { ImpactFx, type ImpactKind } from "./impact.ts";
 
@@ -212,7 +213,7 @@ export class Presenter {
           if (useRanged) {
             this.lungeTarget[side] = 0;
             actor.playAttack(attackForSkill(skill));
-            this.spawnProjectile(side, ranged, foe.x, this.chars[side].element);
+            this.spawnProjectile(side, ranged, foe.x, this.chars[side].element, skill.includes("_2"));
             this.pushLog(ev, "rule");
             break;
           }
@@ -237,6 +238,7 @@ export class Presenter {
           if (!heavy) actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
         }
+        sfx.whoosh();
         this.pushLog(ev, "rule");
         break;
       }
@@ -412,6 +414,7 @@ export class Presenter {
           this.ended = true;
           (this.battle.winner === "hero" ? this.enemy : this.hero).playDeath();
         }
+        sfx.ko();
         this.hooks.onEnd(this.battle.winner ?? "draw", this.battle.frame);
         break;
       default:
@@ -438,6 +441,8 @@ export class Presenter {
     },
   ): void {
     const profile = TIERS[tier];
+    if (o.guard) sfx.guard();
+    else sfx.hit(tier, (o.skill ?? "").includes("ranged"));
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
     // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
@@ -547,7 +552,7 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
-  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice"): void {
+  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice", strong = false): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
     const tint = element === "fire" ? 0xff7a1a : element === "thunder" ? 0xffe14d : 0x9fe8ff;
@@ -601,8 +606,10 @@ export class Presenter {
     const x = a.x + dir * 18;
     const y = terrainY(a.x) - 34;
     view.position.set(x, y);
-    view.scale.set(dir * 1.6, 1.6);
+    const zoom = strong ? 2.6 : 1.6;
+    view.scale.set(dir * zoom, zoom);
     this.world.addChild(view);
+    sfx.projectile();
     this.projectiles.push({ g: view, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind, anim });
   }
 
@@ -1073,6 +1080,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

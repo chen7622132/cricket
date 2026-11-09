@@ -837,6 +837,26 @@ const ENEMY_RANGED_RULE: RuleDraft = {
   skill: "enemy_ranged",
 };
 
+const HERO_RANGED2_RULE: RuleDraft = {
+  id: "hero_ranged2_rule",
+  side: "hero",
+  name: "强射",
+  when: "距离 3~5",
+  skill: "hero_ranged_2",
+  priority: 44,
+  cost: { kind: "none" },
+  cooldown: 150,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance >= 3 && self.distance <= 5,
+};
+
+const ENEMY_RANGED2_RULE: RuleDraft = {
+  ...HERO_RANGED2_RULE,
+  id: "enemy_ranged2_rule",
+  side: "enemy",
+  skill: "enemy_ranged_2",
+};
+
 function withExtras(rs: Ruleset, extras: RuleDraft[]): Ruleset {
   const start = rs.rules.length;
   return {
@@ -846,11 +866,11 @@ function withExtras(rs: Ruleset, extras: RuleDraft[]): Ruleset {
 }
 
 function withCombo(rs: Ruleset): Ruleset {
-  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE]);
+  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE]);
 }
 
 function withEnemySpacing(rs: Ruleset): Ruleset {
-  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE]);
+  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE]);
 }
 
 ENEMY_RULESETS.ENEMY = withEnemySpacing(ENEMY_RULES);
@@ -871,6 +891,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

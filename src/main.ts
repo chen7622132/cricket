@@ -2,6 +2,7 @@
 import { Battle } from "./engine/battle.ts";
 import { applyRuleOverrides, getRuleset, MECHANIC_LABEL, type Ruleset } from "./engine/rules.ts";
 import { characterOf } from "./render/characters.ts";
+import { sfx } from "./audio/sfx.ts";
 import type { PresenterHooks } from "./render/presenter.ts";
 import { Game } from "./render/game.ts";
 import { RuleEditor } from "./ui/editor.ts";
@@ -151,6 +152,8 @@ async function boot(): Promise<void> {
       enemyElement: enemyDef.element,
       heroRangedDamage: heroDef.rangedDamage,
       enemyRangedDamage: enemyDef.rangedDamage,
+      heroRanged2: heroDef.rangedPrimary === true,
+      enemyRanged2: enemyDef.rangedPrimary === true,
     });
 
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
@@ -162,6 +165,8 @@ async function boot(): Promise<void> {
       enemyElement: enemyDef.element,
       heroRangedDamage: heroDef.rangedDamage,
       enemyRangedDamage: enemyDef.rangedDamage,
+      heroRanged2: heroDef.rangedPrimary === true,
+      enemyRanged2: enemyDef.rangedPrimary === true,
     }).run();
 
     const baseHeroLabel = getRuleset(ruleset).name;
@@ -256,6 +261,18 @@ async function boot(): Promise<void> {
     }
   }
 
+  const sfxBtn = document.getElementById("sfx-btn") as HTMLButtonElement;
+  const syncSfxBtn = (): void => {
+    sfxBtn.textContent = sfx.isMuted ? "音效 关" : "音效 开";
+    sfxBtn.classList.toggle("mode-active", !sfx.isMuted);
+  };
+  sfxBtn.addEventListener("click", () => {
+    sfx.setMuted(!sfx.isMuted);
+    syncSfxBtn();
+  });
+  window.addEventListener("pointerdown", () => sfx.ensure(), { once: true });
+  syncSfxBtn();
+
   modeBtn.addEventListener("click", () => setMode(mode === "duel" ? "auto" : "duel"));
 
   // 编排面板展开时，把镜头可视中心右移，避免角色被面板挡住
@@ -308,6 +325,8 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
+
 
 
 
