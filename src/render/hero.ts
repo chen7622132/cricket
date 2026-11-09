@@ -2,7 +2,7 @@
 import { OutlineFilter } from "pixi-filters";
 import type { Side, StatusId } from "../engine/types.ts";
 
-export type HeroState = "IDLE" | "RUN" | "ATTACK_1" | "ATTACK_2" | "HIT" | "DEATH";
+export type HeroState = "IDLE" | "RUN" | "JUMP" | "FALL" | "ATTACK_1" | "ATTACK_2" | "HIT" | "DEATH";
 
 const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
   bleed: { label: "血", color: 0xff4d5e },
@@ -27,6 +27,8 @@ const BASE_SCALE = 1.2;
 const SPEED: Record<HeroState, number> = {
   IDLE: 0.08,
   RUN: 0.15,
+  JUMP: 0.12,
+  FALL: 0.12,
   ATTACK_1: 0.14,
   ATTACK_2: 0.14,
   HIT: 0.2,
@@ -208,6 +210,10 @@ export class HeroActor {
     return this.kdMs > 0;
   }
 
+  get airRising(): boolean {
+    return this.airVel > 0;
+  }
+
   get airborne(): boolean {
     return this.airHeight > 0.5;
   }
@@ -360,6 +366,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

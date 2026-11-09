@@ -240,7 +240,7 @@
         "h": 200
       }
     },
-    "attack1_0": {
+    "jump_0": {
       "frame": {
         "x": 800,
         "y": 200,
@@ -260,7 +260,7 @@
         "h": 200
       }
     },
-    "attack1_1": {
+    "jump_1": {
       "frame": {
         "x": 1000,
         "y": 200,
@@ -280,7 +280,7 @@
         "h": 200
       }
     },
-    "attack1_2": {
+    "fall_0": {
       "frame": {
         "x": 1200,
         "y": 200,
@@ -300,7 +300,7 @@
         "h": 200
       }
     },
-    "attack1_3": {
+    "fall_1": {
       "frame": {
         "x": 1400,
         "y": 200,
@@ -320,9 +320,89 @@
         "h": 200
       }
     },
-    "attack2_0": {
+    "attack1_0": {
       "frame": {
         "x": 0,
+        "y": 400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "attack1_1": {
+      "frame": {
+        "x": 200,
+        "y": 400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "attack1_2": {
+      "frame": {
+        "x": 400,
+        "y": 400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "attack1_3": {
+      "frame": {
+        "x": 600,
+        "y": 400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "attack2_0": {
+      "frame": {
+        "x": 800,
         "y": 400,
         "w": 200,
         "h": 200
@@ -342,7 +422,7 @@
     },
     "attack2_1": {
       "frame": {
-        "x": 200,
+        "x": 1000,
         "y": 400,
         "w": 200,
         "h": 200
@@ -362,7 +442,7 @@
     },
     "attack2_2": {
       "frame": {
-        "x": 400,
+        "x": 1200,
         "y": 400,
         "w": 200,
         "h": 200
@@ -382,7 +462,7 @@
     },
     "attack2_3": {
       "frame": {
-        "x": 600,
+        "x": 1400,
         "y": 400,
         "w": 200,
         "h": 200
@@ -402,86 +482,6 @@
     },
     "hit_0": {
       "frame": {
-        "x": 800,
-        "y": 400,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "hit_1": {
-      "frame": {
-        "x": 1000,
-        "y": 400,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "hit_2": {
-      "frame": {
-        "x": 1200,
-        "y": 400,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "death_0": {
-      "frame": {
-        "x": 1400,
-        "y": 400,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "death_1": {
-      "frame": {
         "x": 0,
         "y": 600,
         "w": 200,
@@ -500,7 +500,7 @@
         "h": 200
       }
     },
-    "death_2": {
+    "hit_1": {
       "frame": {
         "x": 200,
         "y": 600,
@@ -520,7 +520,7 @@
         "h": 200
       }
     },
-    "death_3": {
+    "hit_2": {
       "frame": {
         "x": 400,
         "y": 600,
@@ -540,7 +540,7 @@
         "h": 200
       }
     },
-    "death_4": {
+    "death_0": {
       "frame": {
         "x": 600,
         "y": 600,
@@ -560,7 +560,7 @@
         "h": 200
       }
     },
-    "death_5": {
+    "death_1": {
       "frame": {
         "x": 800,
         "y": 600,
@@ -580,10 +580,90 @@
         "h": 200
       }
     },
-    "death_6": {
+    "death_2": {
       "frame": {
         "x": 1000,
         "y": 600,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "death_3": {
+      "frame": {
+        "x": 1200,
+        "y": 600,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "death_4": {
+      "frame": {
+        "x": 1400,
+        "y": 600,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "death_5": {
+      "frame": {
+        "x": 0,
+        "y": 800,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "death_6": {
+      "frame": {
+        "x": 200,
+        "y": 800,
         "w": 200,
         "h": 200
       },
@@ -617,6 +697,14 @@
       "run_5",
       "run_6",
       "run_7"
+    ],
+    "jump": [
+      "jump_0",
+      "jump_1"
+    ],
+    "fall": [
+      "fall_0",
+      "fall_1"
     ],
     "attack1": [
       "attack1_0",
@@ -652,7 +740,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 1600,
-      "h": 800
+      "h": 1000
     },
     "scale": "1"
   }

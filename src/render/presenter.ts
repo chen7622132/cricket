@@ -102,12 +102,13 @@ export class Presenter {
   constructor(
     private readonly battle: CombatSource,
     sheet: PIXI.Spritesheet,
+    enemySheet: PIXI.Spritesheet,
     hooks: PresenterHooks,
   ) {
     this.hooks = hooks;
     this.fxLayer = new PixelFxLayer(0.45);
     this.hero = new HeroActor(sheet, 0x6fd3ff);
-    this.enemy = new HeroActor(sheet, 0xff5c5c, 0xffb9b9);
+    this.enemy = new HeroActor(enemySheet, 0xff5c5c, 0xffb9b9);
 
     this.impact = new ImpactFx(ARENA.w, ARENA.h);
     this.overlay.eventMode = "none";
@@ -759,6 +760,14 @@ export class Presenter {
     this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, this.footY.hero);
     this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, this.footY.enemy);
 
+    // 滞空时使用真实的 Jump/Fall 序列帧，而不是整体平移
+    for (const side of ["hero", "enemy"] as Side[]) {
+      const a = this.actor(side);
+      if (a.airborne && a.state !== "ATTACK_1" && a.state !== "ATTACK_2" && a.state !== "HIT") {
+        a.play(a.airRising ? "JUMP" : "FALL");
+      }
+    }
+
     for (const side of ["hero", "enemy"] as Side[]) {
       const a = this.actor(side);
       if (a.consumeLanded()) {
@@ -928,6 +937,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
