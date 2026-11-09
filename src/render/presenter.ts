@@ -480,6 +480,7 @@ export class Presenter {
     const launchable = tier === "ultimate" || (o.fx ?? "").includes("hammer") || (o.fx ?? "").includes("scythe");
     if (launchable) {
       o.target.startJump(tier === "ultimate" ? 46 : 26);
+      o.target.startSpin(dir * (tier === "ultimate" ? 7 : 4));
       this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 210 : 110);
       this.launchBoost[o.targetSide] = tier === "ultimate" ? 0.14 : 0.07;
     }
@@ -884,6 +885,10 @@ export class Presenter {
         this.launchVx[side] += Math.sign(this.launchVx[side] || 1) * 260 * dt;
       }
       this.launchX[side] += this.launchVx[side] * dt;
+      if (Math.abs(this.launchX[side]) > 500) {
+        this.launchX[side] = Math.sign(this.launchX[side]) * 500;
+        this.launchVx[side] = 0;
+      }
       this.launchVx[side] *= Math.exp(-dt * (this.launchBoost[side] > 0 ? 1.4 : 3.4));
       if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
     }
@@ -1165,6 +1170,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

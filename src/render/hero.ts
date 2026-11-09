@@ -91,6 +91,8 @@ export class HeroActor {
   private hurtDir = 1;
   private shakeMs = 0;
   private lying = false;
+  private spin = 0;
+  private spinVel = 0;
   private getupLock = 0;
   private kdMs = 0;
   private kdDir = 1;
@@ -346,10 +348,17 @@ export class HeroActor {
     this.play("HIT", true);
   }
 
+  /** 空中旋转：击飞时给一个角速度，落地前持续旋转。 */
+  startSpin(v: number): void {
+    this.spinVel = v;
+  }
+
   /** 起身：播放专属 getup 序列，期间禁止被 IDLE 覆盖。 */
   getup(): void {
     this.lying = false;
     this.kdMs = 0;
+    this.spin = 0;
+    this.spinVel = 0;
     this.getupLock = 0.45;
     this.play("GETUP", true);
     this.sprite.loop = false;
@@ -465,7 +474,13 @@ export class HeroActor {
     } else {
       this.body.y = -this.airHeight;
     }
-    this.body.rotation = kdRot + this.attackLean + hurtLean + sway;
+    if (this.airHeight > 0.5 && Math.abs(this.spinVel) > 0.01) {
+      this.spin += this.spinVel * dt;
+    } else if (this.airHeight <= 0.5) {
+      this.spin *= Math.exp(-dt * 14);
+      if (Math.abs(this.spin) < 0.01) this.spin = 0;
+    }
+    this.body.rotation = kdRot + this.attackLean + hurtLean + sway + this.spin;
     if (this.rig) this.animateRig(dt);
     const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
     this.shadow.scale.set(shadowScale);
@@ -636,6 +651,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
