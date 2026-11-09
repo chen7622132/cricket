@@ -479,14 +479,20 @@ export class Presenter {
       : (o.fx ?? "").includes("double-slash") ? 0xff6b6b
       : (o.fx ?? "").includes("hammer") ? 0xffe27a
       : 0x9fe8ff;
-    if ((o.skill ?? "").includes("ranged")) {
+    const sparkColor = o.guard ? 0x7fd8ff
+      : this.chars[o.attackerSide].element === "fire" ? 0xffb35c
+      : this.chars[o.attackerSide].element === "ice" ? 0xc9f6ff
+      : 0xffe14d;
+    if ((o.skill ?? "").includes("special")) {
+      const style = this.chars[o.attackerSide].meleeStyle;
+      this.impact.styleBurst(style, x, y, dir, "ultimate", sparkColor);
+      this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
+      this.camera.kick("key", dir);
+      this.spawnFloat("特技", x, y - 26, "key", false);
+    } else if ((o.skill ?? "").includes("ranged")) {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
-      const sparkColor = o.guard ? 0x7fd8ff
-        : this.chars[o.attackerSide].element === "fire" ? 0xffb35c
-        : this.chars[o.attackerSide].element === "ice" ? 0xc9f6ff
-        : 0xffe14d;
       this.impact.styleBurst(o.guard ? "fist" : this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
     }
     if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
@@ -1074,6 +1080,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

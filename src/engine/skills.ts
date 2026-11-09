@@ -60,6 +60,24 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "melee/thrust",
     note: "格挡成功后的后摇反击",
   },
+  hero_special: {
+    id: "hero_special",
+    name: "角色特技",
+    tier: "key",
+    windup: 20,
+    recovery: 30,
+    fx: "melee/heavy-cleave",
+    note: "各角色专属近身技，演出随武器变化",
+  },
+  enemy_special: {
+    id: "enemy_special",
+    name: "角色特技",
+    tier: "key",
+    windup: 20,
+    recovery: 30,
+    fx: "melee/heavy-cleave",
+    note: "敌方专属近身技",
+  },
   hero_ranged: {
     id: "hero_ranged",
     name: "远程牵制",
@@ -188,6 +206,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_special: 14,
+  enemy_special: 13,
   hero_ranged: 8,
   hero_ranged_2: 11,
   enemy_ranged: 7,
@@ -221,6 +241,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 
