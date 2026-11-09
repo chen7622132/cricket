@@ -78,6 +78,26 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "arcane/blink-in",
     note: "敌方触手禁锢",
   },
+  hero_monk_combo: {
+    id: "hero_monk_combo",
+    name: "连斩",
+    tier: "normal",
+    windup: 8,
+    recovery: 16,
+    fx: "melee/double-slash",
+    multi: { count: 3, interval: 5 },
+    note: "武僧三段连斩，每段独立命中与取消窗口",
+  },
+  enemy_monk_combo: {
+    id: "enemy_monk_combo",
+    name: "连斩",
+    tier: "normal",
+    windup: 8,
+    recovery: 16,
+    fx: "melee/double-slash",
+    multi: { count: 3, interval: 5 },
+    note: "敌方三段连斩",
+  },
   hero_flurry: {
     id: "hero_flurry",
     name: "高频突刺",
@@ -264,6 +284,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_monk_combo: 4,
+  enemy_monk_combo: 4,
   hero_tentacle: 6,
   enemy_tentacle: 6,
   hero_flurry: 4,
@@ -305,6 +327,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

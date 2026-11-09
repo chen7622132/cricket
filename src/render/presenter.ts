@@ -638,11 +638,13 @@ export class Presenter {
       for (const p of pts) p.age += dt;
       while (pts.length && pts[0].age > 0.18) pts.shift();
 
-      const samurai = this.chars[side].id === "samurai";
+      const charId = this.chars[side].id;
+      const samurai = charId === "samurai";
+      const monk = charId === "martial";
       const attacking = actor.state.startsWith("ATTACK") || actor.state.endsWith("WINDUP") || actor.state.endsWith("RECOVERY");
-      if (samurai && attacking) {
+      if ((samurai || monk) && attacking) {
         const facing = side === "hero" ? this.heroFacing : this.enemyFacing;
-        pts.push({ x: actor.x + facing * 34, y: terrainY(actor.x) - 38, age: 0 });
+        pts.push({ x: actor.x + facing * (monk ? 22 : 34), y: terrainY(actor.x) - (monk ? 36 : 38), age: 0 });
 
         this.trailTick[side] += dt;
         if (this.trailTick[side] > 0.05) {
@@ -653,7 +655,7 @@ export class Presenter {
       }
 
       if (pts.length < 2) continue;
-      const color = samurai ? 0x9fe8ff : 0xffe066;
+      const color = samurai ? 0x9fe8ff : 0xffcf5c;
       for (let i = 1; i < pts.length; i++) {
         const a = pts[i - 1];
         const b = pts[i];
@@ -1287,6 +1289,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
