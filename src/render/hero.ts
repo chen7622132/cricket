@@ -56,6 +56,8 @@ export class HeroActor {
   onHitFrame?: () => void;
 
   private flashMs = 0;
+  private attackLean = 0;
+  private leanTarget = 0;
   private kdMs = 0;
   private kdDir = 1;
   private airHeight = 0;
@@ -180,6 +182,11 @@ export class HeroActor {
     }
   }
 
+  /** 攻击姿态：前倾/后仰，弥补序列帧动作不足。 */
+  setAttackLean(v: number): void {
+    this.leanTarget = v;
+  }
+
   /** 重击倒地：身体绕脚点旋转 90°，短暂僵直后起身。 */
   knockdown(dir: number, ms = 0.55): void {
     this.kdMs = ms;
@@ -259,19 +266,18 @@ export class HeroActor {
         this.setSquash(1.18, 0.84);
       }
     }
+    this.attackLean += (this.leanTarget - this.attackLean) * Math.min(1, dt * 12);
+    let kdRot = 0;
     if (this.kdMs > 0) {
       this.kdMs -= dt;
       const t = Math.min(1, (1 - this.kdMs / 0.55) * 4);
-      this.body.rotation = this.kdDir * 1.25 * t;
+      kdRot = this.kdDir * 1.25 * t;
       this.body.y = -this.airHeight - 1 + 7 * t;
-      if (this.kdMs <= 0) {
-        this.body.rotation = 0;
-        this.body.y = -this.airHeight;
-      }
+      if (this.kdMs <= 0) this.kdMs = 0;
     } else {
-      this.body.rotation = 0;
       this.body.y = -this.airHeight;
     }
+    this.body.rotation = kdRot + this.attackLean;
     const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
     this.shadow.scale.set(shadowScale);
     this.shadow.alpha = 0.4 + shadowScale * 0.35;
@@ -354,6 +360,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

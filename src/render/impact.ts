@@ -196,6 +196,21 @@ export class ImpactFx {
     this.addShape(g, 0.1, 0);
   }
 
+  /** 武器挥砍弧线：2-3 帧硬边新月，补足攻击动作的轨迹感。 */
+  arc(x: number, y: number, dir: number, color = 0x9fe8ff, radius = 30, tilt = 0): void {
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: 4, color, alpha: 0.95, cap: "round" });
+    g.arc(0, 0, radius, -0.9, 0.9);
+    g.stroke();
+    g.setStrokeStyle({ width: 1.5, color: 0xffffff, alpha: 0.9 });
+    g.arc(0, 0, radius + 5, -0.7, 0.7);
+    g.stroke();
+    g.position.set(x, y);
+    g.rotation = tilt;
+    g.scale.set(dir, 1);
+    this.addShape(g, 0.13, 0.4);
+  }
+
   private addShape(g: PIXI.Graphics, life: number, grow: number): void {
     this.shapeLayer.addChild(g);
     this.shapes.push({ g, life, max: life, grow });
@@ -287,4 +302,5 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 

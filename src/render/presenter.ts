@@ -57,6 +57,8 @@ export class Presenter {
   private kdActive: Record<Side, boolean> = { hero: false, enemy: false };
   private ukemiCount = 0;
   private camZoom = 1;
+  private pendingLean: Record<Side, number> = { hero: 0, enemy: 0 };
+  private arcQueue: Array<{ at: number; x: number; y: number; dir: number; color: number; radius: number }> = [];
   private koMs = 0;
   /** 屏幕空间叠层：必杀 cut-in / K.O.，不随世界镜头缩放。 */
   readonly overlay = new PIXI.Container();
@@ -149,6 +151,7 @@ export class Presenter {
     this.hero.clearGhosts();
     this.enemy.clearGhosts();
     this.combo = 0;
+    this.arcQueue = [];
     this.comboOwner = null;
     this.comboTimer = 0;
     this.airCombo = { hero: 0, enemy: 0 };
@@ -191,6 +194,11 @@ export class Presenter {
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           this.pendingAttack[side] = attackForSkill(skill);
+          const leanMap: Record<string, number> = {
+            hero_thrust: 0.2, hero_execute: 0.22, hero_rend: 0.14,
+            hero_earthhammer: -0.16, enemy_swipe: 0.15, enemy_slam: -0.18,
+          };
+          this.pendingLean[side] = leanMap[skill] ?? 0;
           // 远距离时用飞跃入场；碎地锤/处决跳得更高，形成空中攻击
           const leap = skill === "hero_earthhammer" ? 34 : skill === "hero_execute" ? 40 : skill === "hero_thrust" ? 18 : 0;
           if (leap > 0 && gap > 55) actor.startJump(leap);
@@ -422,11 +430,22 @@ export class Presenter {
       this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 150 : 80);
     }
 
+    o.attacker.setAttackLean(0);
     o.target.setSquash(1.12, 0.9);
     o.attacker.setSquash(1.05, 0.95);
 
     const x = o.target.x;
     const y = terrainY(o.target.x) - 30;
+    const arcColor = (o.fx ?? "").includes("scythe") ? 0xc77dff
+      : (o.fx ?? "").includes("double-slash") ? 0xff6b6b
+      : (o.fx ?? "").includes("hammer") ? 0xffe27a
+      : 0x9fe8ff;
+    this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
+    if (tier === "ultimate") {
+      for (const delay of [4, 8]) {
+        this.arcQueue.push({ at: this.battle.frame + delay, x, y, dir, color: arcColor, radius: 34 - delay });
+      }
+    }
     const count = tier === "normal" ? 8 : tier === "key" ? 10 : 12;
     this.particles.burst(x, y, count);
     this.impact.trigger(x, y, dir, tier, this.impactKind(o.fx, o.skill));
@@ -649,6 +668,7 @@ export class Presenter {
 
       if (this.pendingAttack[side] && Math.abs(diff) < 4) {
         this.actor(side).playAttack(this.pendingAttack[side]!);
+        this.actor(side).setAttackLean(this.pendingLean[side]);
         this.pendingAttack[side] = null;
       }
       // 分离回弹
@@ -754,6 +774,14 @@ export class Presenter {
     }
 
     this.drawAuras(snap);
+    if (this.arcQueue.length) {
+      const due = this.arcQueue.filter((a) => snap.frame >= a.at);
+      this.arcQueue = this.arcQueue.filter((a) => snap.frame < a.at);
+      for (const a of due) {
+        this.impact.arc(a.x, a.y, a.dir, a.color, a.radius, a.dir > 0 ? -0.2 : 0.2);
+        this.particles.burst(a.x, a.y, 2);
+      }
+    }
     this.camera.update(dt);
     this.applyCamera();
     this.fxLayer.update(dt);
@@ -900,6 +928,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
