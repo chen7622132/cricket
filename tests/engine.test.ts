@@ -164,9 +164,11 @@ describe("敌方规则表", () => {  const firstCharge = (ruleset: "ENEMY" | "EN
 });
 
 describe("空间转换", () => {  it("换位后双方仍在 0..5 格点内且不重叠", () => {
-    // seed 5 在当前机制/数值下仍会产生一次优先级抢断换位
-    const r = run(5);
-    const swaps = r.events.filter((e) => e.type === "SWAP");
+    // 数值/机制调整会改变哪些 seed 触发换位，动态找一局而不是绑死 seed
+    let swaps: ReturnType<typeof run>["events"] = [];
+    for (let seed = 1; seed <= 80 && swaps.length === 0; seed++) {
+      swaps = run(seed).events.filter((e) => e.type === "SWAP");
+    }
     expect(swaps.length).toBeGreaterThan(0);
     for (const s of swaps) {
       const h = Number(s.data?.heroSlot);
@@ -190,5 +192,6 @@ describe("空间转换", () => {  it("换位后双方仍在 0..5 格点内且不
     }
   });
 });
+
 
 
