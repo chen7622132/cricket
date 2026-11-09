@@ -31,6 +31,8 @@ export type SkillId =
   | "hero_dodge"
   | "hero_tentacle"
   | "enemy_tentacle"
+  | "hero_charge_punch"
+  | "enemy_charge_punch"
   | "hero_monk_combo"
   | "enemy_monk_combo"
   | "hero_flurry"
@@ -202,6 +204,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 

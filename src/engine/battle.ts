@@ -39,6 +39,8 @@ export interface BattleConfig {
   heroRanged2?: boolean;
   heroTentacle?: boolean;
   heroMonkCombo?: boolean;
+  heroBoxer?: boolean;
+  enemyBoxer?: boolean;
   enemyMonkCombo?: boolean;
   enemyTentacle?: boolean;
   enemyRanged2?: boolean;
@@ -178,6 +180,8 @@ export class Battle {
   readonly heroRanged2: boolean;
   readonly heroTentacle: boolean;
   readonly heroMonkCombo: boolean;
+  readonly heroBoxer: boolean;
+  readonly enemyBoxer: boolean;
   readonly enemyMonkCombo: boolean;
   readonly enemyTentacle: boolean;
   readonly enemyRanged2: boolean;
@@ -224,6 +228,8 @@ export class Battle {
     this.heroRanged2 = cfg.heroRanged2 === true;
     this.heroTentacle = cfg.heroTentacle === true;
     this.heroMonkCombo = cfg.heroMonkCombo === true;
+    this.heroBoxer = cfg.heroBoxer === true;
+    this.enemyBoxer = cfg.enemyBoxer === true;
     this.enemyMonkCombo = cfg.enemyMonkCombo === true;
     this.enemyTentacle = cfg.enemyTentacle === true;
     this.enemyRanged2 = cfg.enemyRanged2 === true;
@@ -442,6 +448,8 @@ export class Battle {
     if (rule.id === "hero_ranged2_rule" && !this.heroRanged2) return false;
     if (rule.id === "hero_tentacle_rule" && !this.heroTentacle) return false;
     if (rule.id === "hero_monk_rule" && !this.heroMonkCombo) return false;
+    if (rule.id === "hero_charge_rule" && !this.heroBoxer) return false;
+    if (rule.id === "enemy_charge_rule" && !this.enemyBoxer) return false;
     if (rule.id === "enemy_monk_rule" && !this.enemyMonkCombo) return false;
     if (rule.id === "enemy_tentacle_rule" && !this.enemyTentacle) return false;
     if (rule.id === "enemy_ranged2_rule" && !this.enemyRanged2) return false;
@@ -1265,6 +1273,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

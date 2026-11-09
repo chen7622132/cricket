@@ -231,6 +231,7 @@ export class Presenter {
             break;
           }
           if (skill.includes("whirl")) this.fxLayer.spawn("melee/spin-slash", actor.x, terrainY(actor.x) - 40, {}, 0.8, 1.2);
+          if (skill.includes("charge_punch")) this.fxLayer.spawn("lightning/charge-up", actor.x, terrainY(actor.x) - 40, {}, 0.7, 1.3);
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
           const attackKind =
             (skill === "enemy_slam" || skill === "hero_riposte") && actor.supportsAttack3
@@ -550,6 +551,9 @@ export class Presenter {
         this.impact.clash(x, y, dir, tier === "ultimate");
         this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
         this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 250 : 140);
+      } else if (this.chars[o.attackerSide].id === "martial") {
+        this.impact.bluntBurst(x, y, dir, tier === "ultimate", 0xffffff);
+        this.fxLayer.spawn("impacts/blunt-hit", x, y, { dir }, 0.7, 1.0);
       } else {
         this.impact.styleBurst(this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
       }
@@ -1288,6 +1292,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

@@ -278,6 +278,27 @@ export class ImpactFx {
     this.spawnShards(x, y, strong ? 12 : 8, dir, "radial");
   }
 
+  /** 钝击：白色冲击环 + 黑色碎块，强调震荡而非锐利。 */
+  bluntBurst(x: number, y: number, dir: number, strong: boolean, color = 0xffffff): void {
+    const r = strong ? 26 : 16;
+    const ring = new PIXI.Graphics();
+    ring.circle(0, 0, r * 0.55).stroke({ width: 3, color, alpha: 0.9 });
+    ring.position.set(x, y);
+    this.addShape(ring, 0.18, strong ? 2.4 : 1.6);
+    const core = new PIXI.Graphics();
+    core.circle(x, y, strong ? 8 : 5).fill({ color: 0xffffff, alpha: 0.9 });
+    this.addShape(core, 0.08, 0);
+    const chunks = new PIXI.Graphics();
+    for (let k = 0; k < (strong ? 8 : 4); k++) {
+      const a = (k / (strong ? 8 : 4)) * Math.PI * 2 + 0.3;
+      const dist = (strong ? 18 : 12) + (k % 3) * 5;
+      const s = strong ? 4 : 3;
+      chunks.rect(x + Math.cos(a) * dist, y + Math.sin(a) * dist, s, s).fill({ color: 0x14161d, alpha: 0.9 });
+    }
+    this.addShape(chunks, 0.2, 0.6);
+    this.spawnShards(x, y, strong ? 5 : 3, dir, "radial");
+  }
+
   /** 按角色武器区分近战命中形态：拳/刀/杖/弓。 */
   styleBurst(style: "fist" | "blade" | "staff" | "bow", x: number, y: number, dir: number, tier: Tier, color: number): void {
     if (style === "fist") {
@@ -466,6 +487,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 

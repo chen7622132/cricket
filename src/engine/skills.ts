@@ -78,6 +78,24 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "arcane/blink-in",
     note: "敌方触手禁锢",
   },
+  hero_charge_punch: {
+    id: "hero_charge_punch",
+    name: "蓄力重拳",
+    tier: "key",
+    windup: 26,
+    recovery: 26,
+    fx: "melee/heavy-cleave",
+    note: "拳师高伤重拳，长前摇换重量",
+  },
+  enemy_charge_punch: {
+    id: "enemy_charge_punch",
+    name: "蓄力重拳",
+    tier: "key",
+    windup: 26,
+    recovery: 26,
+    fx: "melee/heavy-cleave",
+    note: "敌方蓄力重拳",
+  },
   hero_monk_combo: {
     id: "hero_monk_combo",
     name: "连斩",
@@ -284,6 +302,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_charge_punch: 16,
+  enemy_charge_punch: 14,
   hero_monk_combo: 4,
   enemy_monk_combo: 4,
   hero_tentacle: 6,
@@ -327,6 +347,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

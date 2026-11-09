@@ -156,6 +156,8 @@ async function boot(): Promise<void> {
       heroRanged2: heroDef.rangedPrimary === true,
       heroTentacle: heroDef.id === "wizard",
       heroMonkCombo: heroDef.id === "martial",
+      heroBoxer: heroDef.id === "martial",
+      enemyBoxer: enemyDef.id === "martial",
       enemyMonkCombo: enemyDef.id === "martial",
       enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
@@ -173,6 +175,8 @@ async function boot(): Promise<void> {
       heroRanged2: heroDef.rangedPrimary === true,
       heroTentacle: heroDef.id === "wizard",
       heroMonkCombo: heroDef.id === "martial",
+      heroBoxer: heroDef.id === "martial",
+      enemyBoxer: enemyDef.id === "martial",
       enemyMonkCombo: enemyDef.id === "martial",
       enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
@@ -322,6 +326,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 
