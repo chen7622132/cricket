@@ -157,6 +157,8 @@ async function boot(): Promise<void> {
       heroTentacle: heroDef.id === "wizard",
       heroMonkCombo: heroDef.id === "martial",
       heroBoxer: heroDef.id === "martial",
+      heroSamuraiKit: heroDef.id === "samurai",
+      enemySamuraiKit: enemyDef.id === "samurai",
       enemyBoxer: enemyDef.id === "martial",
       enemyMonkCombo: enemyDef.id === "martial",
       enemyTentacle: enemyDef.id === "wizard",
@@ -176,6 +178,8 @@ async function boot(): Promise<void> {
       heroTentacle: heroDef.id === "wizard",
       heroMonkCombo: heroDef.id === "martial",
       heroBoxer: heroDef.id === "martial",
+      heroSamuraiKit: heroDef.id === "samurai",
+      enemySamuraiKit: enemyDef.id === "samurai",
       enemyBoxer: enemyDef.id === "martial",
       enemyMonkCombo: enemyDef.id === "martial",
       enemyTentacle: enemyDef.id === "wizard",
@@ -326,6 +330,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

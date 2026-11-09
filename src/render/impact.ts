@@ -278,6 +278,20 @@ export class ImpactFx {
     this.spawnShards(x, y, strong ? 12 : 8, dir, "radial");
   }
 
+  /** 长线刀光：居合/上挑的贯穿线。 */
+  line(x: number, y: number, dir: number, len: number, color: number, vertical = false): void {
+    const g = new PIXI.Graphics();
+    const dx = vertical ? 0 : dir * len;
+    const dy = vertical ? -len : 0;
+    g.setStrokeStyle({ width: 10, color, alpha: 0.35, cap: "round" });
+    g.moveTo(x, y).lineTo(x + dx, y + dy);
+    g.stroke();
+    g.setStrokeStyle({ width: 3, color: 0xffffff, alpha: 0.95, cap: "round" });
+    g.moveTo(x, y).lineTo(x + dx, y + dy);
+    g.stroke();
+    this.addShape(g, 0.16, 0);
+  }
+
   /** 钝击：白色冲击环 + 黑色碎块，强调震荡而非锐利。 */
   bluntBurst(x: number, y: number, dir: number, strong: boolean, color = 0xffffff): void {
     const r = strong ? 26 : 16;
@@ -487,6 +501,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 

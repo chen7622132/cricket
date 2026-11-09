@@ -837,6 +837,49 @@ const ENEMY_RANGED_RULE: RuleDraft = {
   skill: "enemy_ranged",
 };
 
+const HERO_SAMURAI_RULE: RuleDraft = {
+  id: "hero_samurai_combo_rule",
+  side: "hero",
+  name: "连斩",
+  when: "距离≤1",
+  skill: "hero_samurai_combo",
+  priority: 61,
+  cost: { kind: "none" },
+  cooldown: 160,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance <= 1,
+};
+
+const HERO_UPPERCUT_RULE: RuleDraft = {
+  id: "hero_uppercut_rule",
+  side: "hero",
+  name: "上挑斩",
+  when: "距离≤1",
+  skill: "hero_uppercut",
+  priority: 59,
+  cost: { kind: "none" },
+  cooldown: 220,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance <= 1,
+};
+
+const HERO_IAI_RULE: RuleDraft = {
+  id: "hero_iai_rule",
+  side: "hero",
+  name: "居合斩",
+  when: "距离≤2",
+  skill: "hero_iai",
+  priority: 62,
+  cost: { kind: "none" },
+  cooldown: 300,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance <= 2,
+};
+
+const ENEMY_SAMURAI_COMBO_RULE: RuleDraft = { ...HERO_SAMURAI_RULE, id: "enemy_samurai_combo_rule", side: "enemy", skill: "enemy_samurai_combo" };
+const ENEMY_UPPERCUT_RULE: RuleDraft = { ...HERO_UPPERCUT_RULE, id: "enemy_uppercut_rule", side: "enemy", skill: "enemy_uppercut" };
+const ENEMY_IAI_RULE: RuleDraft = { ...HERO_IAI_RULE, id: "enemy_iai_rule", side: "enemy", skill: "enemy_iai" };
+
 const HERO_CHARGE_RULE: RuleDraft = {
   id: "hero_charge_rule",
   side: "hero",
@@ -961,11 +1004,11 @@ function withExtras(rs: Ruleset, extras: RuleDraft[]): Ruleset {
 }
 
 function withCombo(rs: Ruleset): Ruleset {
-  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE, HERO_FLURRY_RULE, HERO_WHIRL_RULE, HERO_TENTACLE_RULE, HERO_MONK_RULE, HERO_CHARGE_RULE]);
+  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE, HERO_FLURRY_RULE, HERO_WHIRL_RULE, HERO_TENTACLE_RULE, HERO_MONK_RULE, HERO_CHARGE_RULE, HERO_SAMURAI_RULE, HERO_UPPERCUT_RULE, HERO_IAI_RULE]);
 }
 
 function withEnemySpacing(rs: Ruleset): Ruleset {
-  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE, ENEMY_FLURRY_RULE, ENEMY_WHIRL_RULE, ENEMY_TENTACLE_RULE, ENEMY_MONK_RULE, ENEMY_CHARGE_RULE]);
+  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE, ENEMY_FLURRY_RULE, ENEMY_WHIRL_RULE, ENEMY_TENTACLE_RULE, ENEMY_MONK_RULE, ENEMY_CHARGE_RULE, ENEMY_SAMURAI_COMBO_RULE, ENEMY_UPPERCUT_RULE, ENEMY_IAI_RULE]);
 }
 
 ENEMY_RULESETS.ENEMY = withEnemySpacing(ENEMY_RULES);
@@ -986,6 +1029,8 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+
 
 
 

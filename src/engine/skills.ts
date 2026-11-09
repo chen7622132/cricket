@@ -78,6 +78,37 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "arcane/blink-in",
     note: "敌方触手禁锢",
   },
+  hero_samurai_combo: {
+    id: "hero_samurai_combo",
+    name: "连斩",
+    tier: "normal",
+    windup: 6,
+    recovery: 18,
+    fx: "melee/double-slash",
+    multi: { count: 3, interval: 7 },
+    note: "横斩→斜斩→唐竹，三段独立线切割",
+  },
+  enemy_samurai_combo: { id: "enemy_samurai_combo", name: "连斩", tier: "normal", windup: 6, recovery: 18, fx: "melee/double-slash", multi: { count: 3, interval: 7 }, note: "敌方三段连斩" },
+  hero_uppercut: {
+    id: "hero_uppercut",
+    name: "上挑斩",
+    tier: "key",
+    windup: 12,
+    recovery: 22,
+    fx: "melee/uppercut",
+    note: "自下而上，命中浮空",
+  },
+  enemy_uppercut: { id: "enemy_uppercut", name: "上挑斩", tier: "key", windup: 12, recovery: 22, fx: "melee/uppercut", note: "敌方上挑" },
+  hero_iai: {
+    id: "hero_iai",
+    name: "居合斩",
+    tier: "key",
+    windup: 24,
+    recovery: 30,
+    fx: "melee/heavy-cleave",
+    note: "长蓄力，极快横斩，高伤高硬直",
+  },
+  enemy_iai: { id: "enemy_iai", name: "居合斩", tier: "key", windup: 24, recovery: 30, fx: "melee/heavy-cleave", note: "敌方居合" },
   hero_charge_punch: {
     id: "hero_charge_punch",
     name: "蓄力重拳",
@@ -302,6 +333,12 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_samurai_combo: 5,
+  enemy_samurai_combo: 5,
+  hero_uppercut: 10,
+  enemy_uppercut: 10,
+  hero_iai: 16,
+  enemy_iai: 16,
   hero_charge_punch: 16,
   enemy_charge_punch: 14,
   hero_monk_combo: 4,
@@ -347,6 +384,8 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
+
 
 
 

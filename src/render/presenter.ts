@@ -232,6 +232,7 @@ export class Presenter {
           }
           if (skill.includes("whirl")) this.fxLayer.spawn("melee/spin-slash", actor.x, terrainY(actor.x) - 40, {}, 0.8, 1.2);
           if (skill.includes("charge_punch")) this.fxLayer.spawn("lightning/charge-up", actor.x, terrainY(actor.x) - 40, {}, 0.7, 1.3);
+          if (skill.includes("iai")) this.fxLayer.spawn("lightning/charge-up", actor.x, terrainY(actor.x) - 40, {}, 0.9, 1.2);
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
           const attackKind =
             (skill === "enemy_slam" || skill === "hero_riposte") && actor.supportsAttack3
@@ -556,6 +557,8 @@ export class Presenter {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
+      if ((o.skill ?? "").includes("iai")) this.impact.line(x, y, dir, 130, 0x9fe8ff);
+      if ((o.skill ?? "").includes("uppercut")) this.impact.line(x, y, dir, 90, 0x9fe8ff, true);
       if (o.guard) {
         this.fxLayer.spawn("impacts/ricochet", x, y, { dir }, 0.8, 1.1);
         this.impact.clash(x, y, dir, tier === "ultimate");
@@ -649,7 +652,8 @@ export class Presenter {
       const actor = this.actor(side);
       const pts = this.trailPts[side];
       for (const p of pts) p.age += dt;
-      while (pts.length && pts[0].age > 0.18) pts.shift();
+      const maxAge = this.chars[side].id === "samurai" ? 0.3 : 0.18;
+      while (pts.length && pts[0].age > maxAge) pts.shift();
 
       const charId = this.chars[side].id;
       const samurai = charId === "samurai";
@@ -672,7 +676,7 @@ export class Presenter {
       for (let i = 1; i < pts.length; i++) {
         const a = pts[i - 1];
         const b = pts[i];
-        const k = 1 - b.age / 0.18;
+        const k = 1 - b.age / maxAge;
         this.trailG.moveTo(a.x, a.y).lineTo(b.x, b.y);
         this.trailG.stroke({ width: 3 + 7 * k, color, alpha: 0.16 + 0.3 * k });
       }
@@ -1322,6 +1326,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

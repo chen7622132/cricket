@@ -40,6 +40,8 @@ export interface BattleConfig {
   heroTentacle?: boolean;
   heroMonkCombo?: boolean;
   heroBoxer?: boolean;
+  heroSamuraiKit?: boolean;
+  enemySamuraiKit?: boolean;
   enemyBoxer?: boolean;
   enemyMonkCombo?: boolean;
   enemyTentacle?: boolean;
@@ -181,6 +183,8 @@ export class Battle {
   readonly heroTentacle: boolean;
   readonly heroMonkCombo: boolean;
   readonly heroBoxer: boolean;
+  readonly heroSamuraiKit: boolean;
+  readonly enemySamuraiKit: boolean;
   readonly enemyBoxer: boolean;
   readonly enemyMonkCombo: boolean;
   readonly enemyTentacle: boolean;
@@ -229,6 +233,8 @@ export class Battle {
     this.heroTentacle = cfg.heroTentacle === true;
     this.heroMonkCombo = cfg.heroMonkCombo === true;
     this.heroBoxer = cfg.heroBoxer === true;
+    this.heroSamuraiKit = cfg.heroSamuraiKit === true;
+    this.enemySamuraiKit = cfg.enemySamuraiKit === true;
     this.enemyBoxer = cfg.enemyBoxer === true;
     this.enemyMonkCombo = cfg.enemyMonkCombo === true;
     this.enemyTentacle = cfg.enemyTentacle === true;
@@ -449,6 +455,8 @@ export class Battle {
     if (rule.id === "hero_tentacle_rule" && !this.heroTentacle) return false;
     if (rule.id === "hero_monk_rule" && !this.heroMonkCombo) return false;
     if (rule.id === "hero_charge_rule" && !this.heroBoxer) return false;
+    if ((rule.id === "hero_samurai_combo_rule" || rule.id === "hero_uppercut_rule" || rule.id === "hero_iai_rule") && !this.heroSamuraiKit) return false;
+    if ((rule.id === "enemy_samurai_combo_rule" || rule.id === "enemy_uppercut_rule" || rule.id === "enemy_iai_rule") && !this.enemySamuraiKit) return false;
     if (rule.id === "enemy_charge_rule" && !this.enemyBoxer) return false;
     if (rule.id === "enemy_monk_rule" && !this.enemyMonkCombo) return false;
     if (rule.id === "enemy_tentacle_rule" && !this.enemyTentacle) return false;
@@ -808,6 +816,22 @@ export class Battle {
       }
     }
 
+    if (skill.id === "hero_uppercut" || skill.id === "enemy_uppercut") {
+      if (def.hp > 0) {
+        def.statuses.set("airborne", 45);
+        def.pendingDowned = 30;
+        def.airHits = 0;
+        this.stepAway(att, def, 1);
+      }
+    }
+    if (skill.id === "hero_iai" || skill.id === "enemy_iai") {
+      this.stepAway(att, def, 2);
+      this.emit("KNOCKBACK", `${def.name} 被居合斩击退`, {
+        side: def.side,
+        skill: skill.id,
+        data: { from: att.side },
+      });
+    }
     if (skill.id === "hero_tentacle" || skill.id === "enemy_tentacle") {
       def.statuses.set("stun", 24);
       this.stepAway(att, def, 1);
@@ -1273,6 +1297,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 
