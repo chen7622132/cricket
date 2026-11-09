@@ -19,7 +19,7 @@ export const MECHANIC_LABEL: Record<Mechanic, string> = {
   bleed: "裂伤处决（流血双跳，处决 +30%）",
   desperate: "背水一战（血量 <40% 伤害 +35%）",
   heavy: "蓄力重锤（重锤 +20%）",
-  pressure: "破防压制（对格挡目标 +50%）",
+  pressure: "破防压制（对格挡目标 +100%）",
   early_charge: "提前蓄力（重锤附带 30f 眩晕）",
   fast: "快刀（横扫追加 50% 二段）",
   kite: "游走（后撤获得 30f 闪避减伤）",
@@ -603,7 +603,7 @@ export const ENEMY_RULES_B = makeRuleset(
       skill: "enemy_charge",
       priority: 85,
       cost: { kind: "none" },
-      cooldown: 220,
+      cooldown: 100,
       tags: tag("attack"),
       reveal: "敌方规则触发：战斗≥0.5s（或血<55%）→ 蓄力碎地锤",
       test: ({ self, frame }) =>
@@ -617,7 +617,7 @@ export const ENEMY_RULES_B = makeRuleset(
       skill: "enemy_slam",
       priority: 60,
       cost: { kind: "none" },
-      cooldown: 140,
+      cooldown: 40,
       tags: tag("attack"),
       reveal: "敌方规则触发：距离≤1 → 碎地重锤",
       test: ({ self }) => self.distance <= 1 && !self.charging,
@@ -781,6 +781,8 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+
 
 
 

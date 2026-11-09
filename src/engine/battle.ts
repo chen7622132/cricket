@@ -313,9 +313,10 @@ export class Battle {
         if (id === "airborne") a.airHits = 0;
         if (id === "downed") {
           a.statuses.set("iframes", 24);
-          this.emit("GETUP", `${a.name} 受身起身（24f 无敌）`, {
+          a.statuses.set("ukemi_counter", 60);
+          this.emit("GETUP", `${a.name} 受身起身（24f 无敌 + 60f 反击窗口）`, {
             side: a.side,
-            data: { iframes: 24 },
+            data: { iframes: 24, counter: 60 },
           });
           this.logLine("event", `${a.name} 受身：获得 24 帧无敌`);
         }
@@ -667,13 +668,13 @@ export class Battle {
       this.milestone("first-execute", "首次处决");
       this.advanceChain("bleed_exec", 3);
       if (def.hp > 0) {
-        def.statuses.set("airborne", 40);
+        def.statuses.set("airborne", 75);
         def.statuses.set("downed", 45);
         def.airHits = 0;
-        this.emit("STATUS_APPLY", `${def.name} 被击飞（浮空 40f / 倒地 45f）`, {
+        this.emit("STATUS_APPLY", `${def.name} 被击飞（浮空 75f / 倒地 45f）`, {
           side: def.side,
           skill: skill.id,
-          data: { status: "airborne", frames: 40 },
+          data: { status: "airborne", frames: 75 },
         });
         this.emit("DOWNED", `${def.name} 倒地`, { side: def.side, data: { frames: 45 } });
       }
@@ -719,8 +720,8 @@ export class Battle {
       this.mechOnce("hero:desperate", "机制触发｜背水一战：血量 <40%，伤害 ×1.35");
     }
     if (att.side === "enemy" && mech === "pressure" && def.statuses.has("guard")) {
-      mechMult *= 1.8;
-      this.mechOnce("enemy:pressure", "机制触发｜破防压制：对格挡目标伤害 ×1.8");
+      mechMult *= 2.0;
+      this.mechOnce("enemy:pressure", "机制触发｜破防压制：对格挡目标伤害 ×2.0");
     }
     if (att.side === "enemy" && mech === "heavy" && skill.id === "enemy_slam") {
       mechMult *= 1.2;
@@ -731,11 +732,20 @@ export class Battle {
       this.mechOnce("hero:bleed", "机制触发｜裂伤处决：处决流血目标伤害 ×1.3");
     }
 
+    let counterMult = 1;
+    if (att.statuses.has("ukemi_counter")) {
+      att.statuses.delete("ukemi_counter");
+      counterMult = 1.3;
+      this.logLine("event", `受身反击：${att.name} 下一击伤害 ×1.3`);
+    }
     let airScale = 1;
     if (def.statuses.has("airborne") && !guardSuccess) {
       def.airHits++;
+      // 空连延长滞空：每段 +20f，上限 110f，让下一段能接上
+      const left = def.statuses.get("airborne") ?? 0;
+      def.statuses.set("airborne", Math.min(110, left + 20));
       airScale = Math.max(0.5, 1 - 0.1 * (def.airHits - 1));
-      this.logLine("event", `空连 ${def.airHits} 段：伤害 ×${airScale.toFixed(2)}`);
+      this.logLine("event", `空连 ${def.airHits} 段：伤害 ×${airScale.toFixed(2)}（滞空延长）`);
     }
     // 连段递减：同一攻击方 45 帧内连续命中，每段 -8%，最低 50%
     if (this.frame - att.lastHitFrame <= 45) att.comboHits++;
@@ -745,7 +755,7 @@ export class Battle {
     if (att.comboHits > 1) {
       this.logLine("event", `连段 ${att.comboHits} 段：伤害 ×${comboScale.toFixed(2)}`);
     }
-    let amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult * mechMult * airScale * comboScale));
+    let amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult * mechMult * airScale * comboScale * counterMult));
     // 游走机制：后撤后的第一次受击减半
     if (def.side === "enemy" && def.statuses.has("evasion")) {
       amount = Math.max(1, Math.round(amount * 0.5));
@@ -1082,6 +1092,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 

@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<StatusId, string> = {
   evasion: "游走",
   airborne: "浮空",
   downed: "倒地",
+  ukemi_counter: "受身反击",
 };
 
 const LOG_CLASS: Record<LogEntry["kind"], string> = {
@@ -153,6 +154,7 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 
 
