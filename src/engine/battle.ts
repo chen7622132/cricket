@@ -719,8 +719,8 @@ export class Battle {
       this.mechOnce("hero:desperate", "机制触发｜背水一战：血量 <40%，伤害 ×1.35");
     }
     if (att.side === "enemy" && mech === "pressure" && def.statuses.has("guard")) {
-      mechMult *= 1.3;
-      this.mechOnce("enemy:pressure", "机制触发｜破防压制：对格挡目标伤害 ×1.3");
+      mechMult *= 1.8;
+      this.mechOnce("enemy:pressure", "机制触发｜破防压制：对格挡目标伤害 ×1.8");
     }
     if (att.side === "enemy" && mech === "heavy" && skill.id === "enemy_slam") {
       mechMult *= 1.2;
@@ -1082,6 +1082,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 
