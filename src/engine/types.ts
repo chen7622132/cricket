@@ -121,6 +121,7 @@ export interface RuleDef {
 
 export type EventType =
   | "RULE_TRIGGER"
+  | "PARRY"
   | "PRIORITY_CLASH"
   | "INTERRUPT_SUCCESS"
   | "COMBO_STEP"
@@ -192,6 +193,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 

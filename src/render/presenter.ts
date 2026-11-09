@@ -244,6 +244,15 @@ export class Presenter {
         this.pushLog(ev, "rule");
         break;
       }
+      case "PARRY": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        this.clashPulse(true);
+        this.spawnFloat("弹反", (this.hero.x + this.enemy.x) / 2, terrainY(this.hero.x) - 70, "ultimate", false);
+        this.freezeMs = Math.max(this.freezeMs, 280);
+        this.fxLayer.spawn("impacts/parry", (this.hero.x + this.enemy.x) / 2, terrainY(this.hero.x) - 36, {}, 1.2, 1.8);
+        void side;
+        break;
+      }
       case "PRIORITY_CLASH": {
         this.clashPulse(false);
         this.pushLog(ev, "clash");
@@ -360,6 +369,15 @@ export class Presenter {
         if (ev.side === "enemy" && typeof d.reveal === "string") {
           this.hooks.onBanner(d.reveal, "reveal");
         }
+        break;
+      }
+      case "PARRY": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        this.clashPulse(true);
+        this.spawnFloat("弹反", (this.hero.x + this.enemy.x) / 2, terrainY(this.hero.x) - 70, "ultimate", false);
+        this.freezeMs = Math.max(this.freezeMs, 280);
+        this.fxLayer.spawn("impacts/parry", (this.hero.x + this.enemy.x) / 2, terrainY(this.hero.x) - 36, {}, 1.2, 1.8);
+        void side;
         break;
       }
       case "PRIORITY_CLASH": {
@@ -1170,6 +1188,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

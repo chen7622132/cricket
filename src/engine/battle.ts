@@ -68,6 +68,9 @@ interface ActorState {
   damageDealt: number;
   airHits: number;
   pendingDowned: number;
+  guardAt: number;
+  cancelOpenAt: number;
+  canceling: boolean;
   comboHits: number;
   lastHitFrame: number;
   nextActionAt: number;
@@ -242,6 +245,9 @@ export class Battle {
       damageDealt: 0,
       airHits: 0,
       pendingDowned: 0,
+      guardAt: 0,
+      cancelOpenAt: 0,
+      canceling: false,
       comboHits: 0,
       lastHitFrame: -999,
       nextActionAt: 0,
@@ -367,6 +373,7 @@ export class Battle {
     if (!act.resolved && act.elapsed >= act.def.windup) {
       act.resolved = true;
       this.resolveHit(a, act);
+      a.cancelOpenAt = this.frame + 2 + this.rng.int(5, `cancel.${a.side}`, this.frame);
     }
     if (act.elapsed >= act.def.windup + act.def.recovery) {
       a.action = null;
@@ -421,12 +428,24 @@ export class Battle {
 
   private tryAct(actor: ActorState) {
     if (this.done) return;
-    if (actor.action || actor.lock > 0) return;
+    if (actor.lock > 0) return;
+    const canceling = !!actor.action;
+    if (canceling) {
+      if (!actor.action!.resolved || this.frame < actor.cancelOpenAt) return;
+    }
     if (this.frame < actor.nextActionAt) return;
     if ((actor.statuses.get("stun") ?? 0) > 0) return;
 
     const all = this.rulesFor(actor.side);
-    const candidates = all.filter((r) => this.ruleAvailable(actor, r));
+    let candidates = all.filter((r) => this.ruleAvailable(actor, r));
+    if (canceling) {
+      const rank = (id: string): number => {
+        const t = SKILLS[id as keyof typeof SKILLS]?.tier;
+        return t === "ultimate" ? 3 : t === "key" ? 2 : 1;
+      };
+      const cur = rank(actor.action!.def.id);
+      candidates = candidates.filter((r) => rank(r.skill) > cur);
+    }
     if (candidates.length === 0) return;
 
     candidates.sort((a, b) => b.priority - a.priority || a.index - b.index);
@@ -474,6 +493,7 @@ export class Battle {
       }
     }
 
+    if (canceling) actor.canceling = true;
     this.payCost(actor, winner);
     this.startSkill(actor, winner);
   }
@@ -499,7 +519,13 @@ export class Battle {
 
   private startSkill(actor: ActorState, rule: RuleDef) {
     const def = SKILLS[rule.skill];
+    if (actor.canceling) {
+      this.logLine("combo", `取消：${actor.name} 用 ${def.name} 取消前一段后摇`);
+      this.emit("MECHANIC", `取消后摇 → ${def.name}`, { side: actor.side, skill: def.id, data: { kind: "cancel" } });
+      actor.canceling = false;
+    }
     actor.action = { def, elapsed: 0, resolved: false, rule };
+    actor.cancelOpenAt = Number.MAX_SAFE_INTEGER;
     if (rule.cooldown) {
       // 敌方节奏带 0~36 帧的种子抖动：同一张规则表也会因为种子不同而错拍
       const jitter =
@@ -554,6 +580,7 @@ export class Battle {
     switch (def.id) {
       case "hero_guard":
         actor.statuses.set("guard", 120);
+        actor.guardAt = this.frame;
         this.emit("STATUS_APPLY", `${actor.name} 进入格挡（120 帧）`, {
           side: actor.side,
           skill: def.id,
@@ -644,9 +671,23 @@ export class Battle {
     // 格挡（铁壁机制：减伤 90%，还击窗口 70f）
     if (def.statuses.has("guard")) {
       const ironWall = def.side === "hero" && this.heroRuleset.mechanic === "guard";
-      guardMult = ironWall ? 0.1 : 0.2;
+      const perfect = this.frame - def.guardAt <= 45;
+      guardMult = perfect ? 0 : ironWall ? 0.1 : 0.2;
       guardSuccess = true;
       this.stats.guards++;
+      if (perfect) {
+        def.statuses.set("iframes", 10);
+        def.statuses.set("riposte", 70);
+        def.statuses.set("combo_ready", 70);
+        att.statuses.set("stun", 40);
+        att.action = null;
+        this.emit("PARRY", `${def.name} 精准弹反 ${att.name}（攻击方硬直 40f）`, {
+          side: def.side,
+          skill: skill.id,
+          data: { attacker: att.side },
+        });
+        this.logLine("event", `弹反：${att.name} 被震开，${def.name} 获得先手`);
+      }
       def.statuses.set("riposte", ironWall ? 70 : 50);
       tier = "key";
       this.emit("GUARD", `格挡成功：${def.name} 吃下 ${skill.name}（伤害 ×${ironWall ? "0.1" : "0.2"}），还击窗口 ${ironWall ? 70 : 50} 帧`, {
@@ -1192,6 +1233,12 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
+
+
+
+
 
 
 
