@@ -953,3 +953,20 @@ body.sidebar-collapsed #side {
   text-shadow: 0 2px 0 #5a1a08, 0 0 16px rgba(255, 90, 40, 0.7);
 }
 
+
+/* 角色选择：顶栏保持单行可读 */
+.controls {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.controls select {
+  max-width: 96px;
+}

@@ -48,6 +48,13 @@ async function boot(): Promise<void> {
   const enemySelect = document.getElementById("enemy-ruleset-select") as HTMLSelectElement;
   const runBtn = document.getElementById("run-btn") as HTMLButtonElement;
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
+  const heroCharSelect = document.getElementById("hero-char") as HTMLSelectElement;
+  const enemyCharSelect = document.getElementById("enemy-char") as HTMLSelectElement;
+  const CHAR_IDS = ["martial", "samurai", "huntress", "wizard"];
+  const currentChars = (): { hero: string; enemy: string } => ({
+    hero: CHAR_IDS.includes(heroCharSelect.value) ? heroCharSelect.value : "martial",
+    enemy: CHAR_IDS.includes(enemyCharSelect.value) ? enemyCharSelect.value : "samurai",
+  });
   const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
   const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
   const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
@@ -91,6 +98,10 @@ async function boot(): Promise<void> {
   if (HERO_IDS.includes(rulesParam as HeroId)) rulesetSelect.value = rulesParam as HeroId;
   const enemyParam = params.get("enemy") as EnemyId;
   if (ENEMY_IDS.includes(enemyParam)) enemySelect.value = enemyParam;
+  const heroCharParam = params.get("heroChar");
+  if (heroCharParam && CHAR_IDS.includes(heroCharParam)) heroCharSelect.value = heroCharParam;
+  const enemyCharParam = params.get("enemyChar");
+  if (enemyCharParam && CHAR_IDS.includes(enemyCharParam)) enemyCharSelect.value = enemyCharParam;
   const speedParam = Number.parseInt(params.get("speed") ?? "", 10);
   if (speeds.includes(speedParam)) {
     speedIdx = speeds.indexOf(speedParam);
@@ -123,6 +134,8 @@ async function boot(): Promise<void> {
       rules: ruleset,
       enemy: enemyRuleset,
       speed: String(speeds[speedIdx]),
+      heroChar: currentChars().hero,
+      enemyChar: currentChars().enemy,
     });
     window.history.replaceState(null, "", `?${query.toString()}`);
 
@@ -156,7 +169,8 @@ async function boot(): Promise<void> {
       onCombo: (n, air) => hud.setCombo(n, air),
     };
     hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${heroTag} · 敌方 ${enemyLabel}`);
-    game.play(battle, hooks);
+    const chars = currentChars();
+    game.play(battle, hooks, chars.hero, chars.enemy);
   };
 
   // ---------------------------------------------------------- 编排对决模式
@@ -199,7 +213,8 @@ async function boot(): Promise<void> {
       text: `seed=${seed} run#${duel.runId} · 敌方意图：${duel.intents.map((i) => `${i.icon}${i.name}`).join(" → ")}`,
     });
     duelPanel.render();
-    game.play(duel, duelHooks);
+    const chars = currentChars();
+    game.play(duel, duelHooks, chars.hero, chars.enemy);
   }
 
   let mode: "auto" | "duel" = "auto";
@@ -274,6 +289,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

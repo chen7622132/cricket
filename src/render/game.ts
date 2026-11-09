@@ -1,6 +1,7 @@
 ﻿import * as PIXI from "pixi.js";
 import type { CombatSource } from "../engine/types.ts";
 import { Presenter, type PresenterHooks } from "./presenter.ts";
+import { CHARACTERS } from "./characters.ts";
 
 const FIXED_MS = 1000 / 60;
 
@@ -10,9 +11,7 @@ export class Game {
   private readonly root = new PIXI.Container();
   private presenter: Presenter | null = null;
   private battle: CombatSource | null = null;
-  private sheet: PIXI.Spritesheet | null = null;
-  private enemySheet: PIXI.Spritesheet | null = null;
-  private huntressSheet: PIXI.Spritesheet | null = null;
+  private sheets = new Map<string, PIXI.Spritesheet>();
   private acc = 0;
   private speed = 1;
   private doneMs = 0;
@@ -65,15 +64,14 @@ export class Game {
     });
 
     // Martial Hero 序列帧（CC0）打包成的 atlas + animations
-    this.sheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/martial-hero/hero.json");
-    this.enemySheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/samurai-mack/enemy.json");
-    this.huntressSheet = await PIXI.Assets.load<PIXI.Spritesheet>("assets/huntress/huntress.json");
-    for (const sheet of [this.sheet, this.enemySheet, this.huntressSheet]) {
+    for (const def of CHARACTERS) {
+      const sheet = await PIXI.Assets.load<PIXI.Spritesheet>(def.sheetUrl);
       for (const texture of Object.values(sheet.textures)) {
         texture.source.scaleMode = "nearest";
         texture.source.autoGenerateMipmaps = false;
         texture.source.update();
       }
+      this.sheets.set(def.id, sheet);
     }
 
     // 画布跟随父容器（resizeTo），渲染器尺寸变化时同步世界 cover 缩放
@@ -82,17 +80,16 @@ export class Game {
     });
   }
 
-  play(battle: CombatSource, hooks: PresenterHooks): void {
-    if (!this.sheet || !this.app) throw new Error("game not initialised");
+  play(battle: CombatSource, hooks: PresenterHooks, heroChar: string = "martial", enemyChar: string = "samurai"): void {
+    if (this.sheets.size === 0 || !this.app) throw new Error("game not initialised");
     this.battle = battle;
     this.acc = 0;
     this.doneMs = 0;
     this.effectsCleared = false;
     for (const child of this.root.removeChildren()) child.destroy({ children: true });
-    const enemyId = (battle as unknown as { enemyRuleset?: { id?: string } }).enemyRuleset?.id ?? "";
-    const useHuntress = enemyId === "ENEMY_C" || enemyId === "ENEMY_D" || enemyId === "ENEMY_E";
-    const enemySheet = (useHuntress ? this.huntressSheet : this.enemySheet) ?? this.enemySheet ?? this.sheet;
-    this.presenter = new Presenter(battle, this.sheet, enemySheet, hooks);
+    const heroSheet = this.sheets.get(heroChar) ?? this.sheets.get("martial")!;
+    const enemySheet = this.sheets.get(enemyChar) ?? this.sheets.get("samurai") ?? heroSheet;
+    this.presenter = new Presenter(battle, heroSheet, enemySheet, hooks);
     this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
     this.root.addChild(this.presenter.world);
     this.root.addChild(this.presenter.overlay);
@@ -155,6 +152,8 @@ export class Game {
     }
   }
 }
+
+
 
 
 
