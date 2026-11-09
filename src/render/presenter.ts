@@ -206,7 +206,7 @@ export class Presenter {
             actor.setAttackLean(this.pendingLean[side]);
           }
           // 远距离时用飞跃入场；碎地锤/处决跳得更高，形成空中攻击
-          const leap = skill === "hero_earthhammer" ? 34 : skill === "hero_execute" ? 40 : skill === "hero_thrust" ? 18 : 0;
+          const leap = skill === "hero_earthhammer" ? 82 : skill === "hero_execute" ? 96 : skill === "hero_thrust" ? 42 : 0;
           if (leap > 0 && gap > 55) actor.startJump(leap);
           if (!heavy) actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
@@ -294,6 +294,7 @@ export class Presenter {
         const actor = this.actor(side);
         if (String(d.fx ?? "").includes("uppercut") || String(d.fx ?? "").includes("blink")) {
           actor.spawnGhost();
+          actor.startJump(56);
         }
         const key = String(d.fx ?? "");
         if (key) {
@@ -756,7 +757,9 @@ export class Presenter {
 
     // 动态镜头：贴身推近、拉开拉远，KO 再推一档
     const gap = Math.abs(heroX - enemyX);
-    let zoomTarget = Math.max(1, Math.min(1.42, 1.5 - gap / 420));
+    const baseCover = Math.max(this.viewport.w / ARENA.w, this.viewport.h / ARENA.h);
+    // 全屏跳跃：间距大时自动拉远，保证双方都在画面内
+    let zoomTarget = Math.max(0.72, Math.min(1.35, this.viewport.w / (baseCover * (gap + 240))));
     if (this.combo >= 3) zoomTarget += 0.06;
     if (this.koMs > 0) zoomTarget = 1.55;
     this.camZoom += (zoomTarget - this.camZoom) * Math.min(1, 0.12);
@@ -947,6 +950,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

@@ -1,17 +1,18 @@
 ﻿import * as PIXI from "pixi.js";
 
 export const ARENA = {
-  w: 640,
-  h: 270,
-  floorY: 208,
+  w: 960,
+  h: 320,
+  floorY: 248,
   slotCount: 6,
 };
 
 /** 场地中央的三根高低立柱：角色可以站上不同柱子，形成 Y 轴高低差。 */
 export const PILLARS = [
-  { x0: 210, x1: 262, top: 172 },
-  { x0: 296, x1: 352, top: 150 },
-  { x0: 386, x1: 438, top: 184 },
+  { x0: 280, x1: 344, top: 200 },
+  { x0: 420, x1: 484, top: 168 },
+  { x0: 560, x1: 624, top: 214 },
+  { x0: 700, x1: 764, top: 184 },
 ];
 
 /** 格点落在柱子上或地面：决定落脚高度。 */
@@ -23,7 +24,7 @@ export function terrainY(x: number): number {
 }
 
 /** 场地的 6 个离散格点：位移只在格点之间补间，不做持续漂移。 */
-export const SLOT_X = [170, 236, 324, 412, 500, 560];
+export const SLOT_X = [160, 312, 452, 592, 732, 860];
 
 export function slotX(slot: number): number {
   const i = Math.max(0, Math.min(SLOT_X.length - 1, slot));
@@ -48,18 +49,13 @@ export function createArena(): PIXI.Container {
   }
 
   // 远景遗迹剪影
-  bg.moveTo(0, 208);
+  bg.moveTo(0, ARENA.floorY);
   const ruins = [
-    [30, 150, 34, 58],
-    [88, 128, 22, 80],
-    [126, 162, 40, 46],
-    [210, 118, 28, 90],
-    [262, 148, 46, 60],
-    [330, 136, 24, 72],
-    [372, 158, 52, 50],
-    [470, 122, 26, 86],
-    [520, 150, 44, 58],
-    [586, 132, 22, 76],
+    [30, 190, 34, 58], [88, 168, 22, 80], [126, 202, 40, 46],
+    [210, 158, 28, 90], [262, 188, 46, 60], [330, 176, 24, 72],
+    [372, 198, 52, 50], [470, 162, 26, 86], [520, 190, 44, 58],
+    [586, 172, 22, 76], [660, 178, 34, 70], [720, 158, 30, 90],
+    [780, 192, 40, 56], [840, 168, 26, 80], [900, 188, 34, 60],
   ];
   for (const [x, y, w, h] of ruins) {
     bg.rect(x, y, w, h).fill({ color: 0x121b2b });
@@ -69,7 +65,7 @@ export function createArena(): PIXI.Container {
 
   // 地平线雾
   const fog = new PIXI.Graphics();
-  fog.rect(0, 196, ARENA.w, 16).fill({ color: 0x3b5a80, alpha: 0.4 });
+  fog.rect(0, ARENA.floorY - 12, ARENA.w, 16).fill({ color: 0x3b5a80, alpha: 0.4 });
 
   // 地面
   const floor = new PIXI.Graphics();
@@ -79,7 +75,7 @@ export function createArena(): PIXI.Container {
   floor.setStrokeStyle({ width: 1, color: 0x2c3950, alpha: 0.9 });
   for (let i = 0; i <= 8; i++) {
     const x = (i / 8) * ARENA.w;
-    floor.moveTo(x, ARENA.floorY).lineTo(240 + (x - 240) * 1.6, ARENA.h);
+    floor.moveTo(x, ARENA.floorY).lineTo(ARENA.w / 2 + (x - ARENA.w / 2) * 1.6, ARENA.h);
   }
   for (let i = 1; i <= 3; i++) {
     const y = ARENA.floorY + i * 18;
@@ -131,4 +127,5 @@ export function createArena(): PIXI.Container {
 
   return root;
 }
+
 
