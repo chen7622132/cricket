@@ -87,7 +87,7 @@ export class Presenter {
   // 前冲 / 物理分离
   private lunge: Record<Side, number> = { hero: 0, enemy: 0 };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
-  private pendingAttack: Record<Side, "attack1" | "attack2" | null> = { hero: null, enemy: null };
+  private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
   private dodge: Record<Side, number> = { hero: 0, enemy: 0 };
   private insetLeft = 0;
@@ -195,7 +195,8 @@ export class Presenter {
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
-          this.pendingAttack[side] = heavy ? null : attackForSkill(skill);
+          const attackKind = skill === "enemy_slam" && actor.supportsAttack3 ? "attack3" : attackForSkill(skill);
+          this.pendingAttack[side] = heavy ? null : attackKind;
           const leanMap: Record<string, number> = {
             hero_thrust: 0.2, hero_execute: 0.22, hero_rend: 0.14,
             hero_earthhammer: -0.16, enemy_swipe: 0.15, enemy_slam: -0.18,
@@ -950,6 +951,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

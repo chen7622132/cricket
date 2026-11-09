@@ -803,7 +803,7 @@ const SPACING_RULE: RuleDraft = {
   cost: { kind: "none" },
   cooldown: 160,
   tags: tag("move"),
-  test: ({ self }) => self.distance <= 1,
+  test: ({ self }) => self.distance <= 1 || (self.hp / self.maxHp < 0.35 && self.distance <= 2),
 };
 
 const ENEMY_SPACING_RULE: RuleDraft = {
@@ -813,7 +813,7 @@ const ENEMY_SPACING_RULE: RuleDraft = {
   name: "游走",
   skill: "enemy_retreat",
   when: "距离≤1 且 没有更高优先级的攻击",
-  test: ({ self }) => self.distance <= 1,
+  test: ({ self }) => self.distance <= 1 || (self.hp / self.maxHp < 0.35 && self.distance <= 2),
 };
 
 function withExtras(rs: Ruleset, extra: RuleDraft): Ruleset {
@@ -850,6 +850,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

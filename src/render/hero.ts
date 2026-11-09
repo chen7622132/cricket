@@ -9,6 +9,7 @@ export type HeroState =
   | "FALL"
   | "ATTACK_1"
   | "ATTACK_2"
+  | "ATTACK_3"
   | "EXEC_WINDUP"
   | "EXEC_RECOVERY"
   | "HAMMER_WINDUP"
@@ -43,6 +44,7 @@ const SPEED: Record<HeroState, number> = {
   FALL: 0.12,
   ATTACK_1: 0.14,
   ATTACK_2: 0.14,
+  ATTACK_3: 0.12,
   EXEC_WINDUP: 0.1,
   EXEC_RECOVERY: 0.14,
   HAMMER_WINDUP: 0.09,
@@ -85,7 +87,7 @@ export class HeroActor {
   private squashX = 1;
   private squashY = 1;
   private actionTimer = 0;
-  private actionKind: "attack1" | "attack2" | null = null;
+  private actionKind: "attack1" | "attack2" | "attack3" | null = null;
   private bob = 0;
 
   constructor(sheet: PIXI.Spritesheet, outlineColor: number, tint?: number) {
@@ -103,7 +105,7 @@ export class HeroActor {
 
 
     this.sprite.onFrameChange = (frame) => {
-      if (this.state === "ATTACK_1" || this.state === "ATTACK_2") {
+      if (this.state === "ATTACK_1" || this.state === "ATTACK_2" || this.state === "ATTACK_3") {
         if (frame === 1) {
           this.hitFrameCount++;
           this.onHitFrame?.();
@@ -140,17 +142,26 @@ export class HeroActor {
     if (this.state === state && !force) return;
     this.state = state;
     const key =
-      state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state.toLowerCase();
-    this.sprite.textures = this.sheet.animations[key];
+      state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state === "ATTACK_3" ? "attack3" : state.toLowerCase();
+    const animations = this.sheet.animations as Record<string, PIXI.Texture[]>;
+    this.sprite.textures = animations[key] ?? animations.attack2 ?? animations.attack1;
     this.sprite.animationSpeed = SPEED[state];
     this.sprite.loop = state === "IDLE" || state === "RUN";
     this.sprite.gotoAndPlay(0);
   }
 
-  playAttack(kind: "attack1" | "attack2"): void {
+  playAttack(kind: "attack1" | "attack2" | "attack3"): void {
     this.actionKind = kind;
     this.actionTimer = 0;
-    this.play(kind === "attack1" ? "ATTACK_1" : "ATTACK_2", true);
+    this.play(kind === "attack1" ? "ATTACK_1" : kind === "attack3" ? "ATTACK_3" : "ATTACK_2", true);
+  }
+
+  get supportsAttack3(): boolean {
+    return !!(this.sheet.animations as Record<string, unknown>).attack3;
+  }
+
+  get actionKindNow(): "attack1" | "attack2" | "attack3" | null {
+    return this.actionKind;
   }
 
   playHit(): void {
@@ -382,6 +393,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
