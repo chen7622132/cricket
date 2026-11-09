@@ -208,7 +208,7 @@ export class Battle {
     this.heroRuleset =
       typeof cfg.heroRuleset === "string" ? HERO_RULESETS[cfg.heroRuleset] : cfg.heroRuleset;
     this.enemyRuleset = ENEMY_RULESETS[cfg.enemyRuleset ?? "ENEMY"];
-    this.maxFrames = cfg.maxFrames ?? 4800;
+    this.maxFrames = cfg.maxFrames ?? 7200;
     this.heroElement = cfg.heroElement;
     this.enemyElement = cfg.enemyElement;
     this.heroRangedDamage = cfg.heroRangedDamage ?? 8;
@@ -1242,6 +1242,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

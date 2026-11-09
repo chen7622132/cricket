@@ -93,6 +93,7 @@ export class Game {
     const heroSheet = this.sheets.get(heroChar) ?? this.sheets.get("martial")!;
     const enemySheet = this.sheets.get(enemyChar) ?? this.sheets.get("samurai") ?? heroSheet;
     this.presenter = new Presenter(battle, heroSheet, enemySheet, hooks, heroChar, enemyChar);
+    this.presenter.setSpeed(this.speed);
     this.presenter.setViewport(this.app.screen.width, this.app.screen.height);
     this.root.addChild(this.presenter.world);
     this.root.addChild(this.presenter.overlay);
@@ -111,6 +112,7 @@ export class Game {
 
   setSpeed(speed: number): void {
     this.speed = speed;
+    this.presenter?.setSpeed(speed);
   }
 
   /** 运行时探针（无头验证用）。 */
@@ -155,6 +157,7 @@ export class Game {
     }
   }
 }
+
 
 
 

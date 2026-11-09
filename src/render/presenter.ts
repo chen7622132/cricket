@@ -82,6 +82,7 @@ export class Presenter {
   private slowmoScale = 0.3;
   private settleMs = 0;
   private time = 0;
+  private animScale = 1;
   private hudAcc = 0;
   private ended = false;
 
@@ -95,6 +96,8 @@ export class Presenter {
   private clashCd = 0;
   private push: Record<Side, number> = { hero: 0, enemy: 0 };
   private trailG = new PIXI.Graphics();
+  private tentacleG = new PIXI.Graphics();
+  private tentacles: Array<{ x1: number; y1: number; x2: number; y2: number; age: number }> = [];
   private trailPts: Record<Side, Array<{ x: number; y: number; age: number }>> = { hero: [], enemy: [] };
   private trailTick: Record<Side, number> = { hero: 0, enemy: 0 };
   private heroFacing = 1;
@@ -518,6 +521,9 @@ export class Presenter {
 
     const x = o.target.x;
     const y = terrainY(o.target.x) - 30;
+    if (this.chars[o.attackerSide].id === "wizard") {
+      this.tentacles.push({ x1: o.attacker.x, y1: terrainY(o.attacker.x) - 42, x2: x, y2: y, age: 0 });
+    }
     if (tier === "ultimate") this.fxLayer.spawn("impacts/impact-frame", x, y, {}, 0.9, 1.2);
     if (launchable) this.impact.directionalSpark(x, y, dir, tier === "ultimate", 0xffd27a);
     const arcColor = (o.fx ?? "").includes("scythe") ? 0xc77dff
@@ -675,6 +681,38 @@ export class Presenter {
     this.fxLayer.spawn("impacts/heavy-landing", actor.x, gy, {}, 0.8, heavy ? 1.1 : 0.8);
     this.freezeMs = Math.max(this.freezeMs, heavy ? 130 : 66);
     this.camera.kick(heavy ? "key" : "normal", side === "hero" ? 1 : -1);
+  }
+
+  /** 法师触手：二次贝塞尔 + 摆动控制点，渐细线段。 */
+  private drawTentacles(dt: number): void {
+    this.tentacleG.clear();
+    this.tentacles = this.tentacles.filter((t) => {
+      t.age += dt;
+      if (t.age > 0.4) return false;
+      const k = 1 - t.age / 0.4;
+      const mx = (t.x1 + t.x2) / 2;
+      const my = (t.y1 + t.y2) / 2;
+      const nx = -(t.y2 - t.y1);
+      const ny = t.x2 - t.x1;
+      const len = Math.hypot(nx, ny) || 1;
+      const sway = Math.sin(t.age * 34) * 26 * k;
+      const cx = mx + (nx / len) * sway;
+      const cy = my + (ny / len) * sway - 18;
+      let px = t.x1;
+      let py = t.y1;
+      for (let i = 1; i <= 12; i++) {
+        const u = i / 12;
+        const qx = (1 - u) * (1 - u) * t.x1 + 2 * (1 - u) * u * cx + u * u * t.x2;
+        const qy = (1 - u) * (1 - u) * t.y1 + 2 * (1 - u) * u * cy + u * u * t.y2;
+        this.tentacleG.moveTo(px, py).lineTo(qx, qy);
+        this.tentacleG.stroke({ width: 7 * k * (1 - u * 0.5), color: 0x3b1d5e, alpha: 0.8 * k });
+        this.tentacleG.moveTo(px, py - 2).lineTo(qx, qy - 2);
+        this.tentacleG.stroke({ width: 2 * k, color: 0xb07cff, alpha: 0.7 * k });
+        px = qx;
+        py = qy;
+      }
+      return true;
+    });
   }
 
   private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice", strong = false): void {
@@ -898,10 +936,16 @@ export class Presenter {
     this.marks.push({ g, life: 1.0 });
   }
 
+  setSpeed(speed: number): void {
+    this.animScale = speed;
+  }
+
   update(dtMs: number): void {
-    this.time += dtMs / 1000;
-    this.impact.update(dtMs);
-    this.drawOverlay(dtMs);
+    const animMs = dtMs * this.animScale;
+    this.time += animMs / 1000;
+    this.impact.update(animMs);
+    this.drawOverlay(animMs);
+    this.drawTentacles(animMs / 1000);
     if (this.freezeMs > 0) {
       this.freezeMs -= dtMs;
       this.applyCamera();
@@ -910,7 +954,7 @@ export class Presenter {
 
     const scale = this.slowmoMs > 0 ? this.slowmoScale : 1;
     if (this.slowmoMs > 0) this.slowmoMs -= dtMs;
-    const dt = (dtMs / 1000) * scale;
+    const dt = (animMs / 1000) * scale;
     this.clock += dt;
 
     if (this.comboTimer > 0) {
@@ -1242,6 +1286,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
