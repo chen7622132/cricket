@@ -55,7 +55,6 @@ export class Presenter {
   private comboOwner: Side | null = null;
   private airCombo: Record<Side, number> = { hero: 0, enemy: 0 };
   private kdActive: Record<Side, boolean> = { hero: false, enemy: false };
-  private ukemiAt: Record<Side, number> = { hero: 0, enemy: 0 };
   private ukemiCount = 0;
   private knockdownCount = 0;
   private comboTimer = 0;
@@ -131,7 +130,6 @@ export class Presenter {
     this.comboTimer = 0;
     this.airCombo = { hero: 0, enemy: 0 };
     this.kdActive = { hero: false, enemy: false };
-    this.ukemiAt = { hero: 0, enemy: 0 };
     this.hooks.onCombo?.(0, 0);
     for (const f of this.floats) f.text.destroy();
     this.floats = [];
@@ -203,6 +201,28 @@ export class Presenter {
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
         break;
+      case "DOWNED": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        this.kdActive[side] = true;
+        this.knockdownCount++;
+        actor.knockdown(side === "hero" ? 1 : -1);
+        this.airCombo[side] = 0;
+        this.spawnFloat("倒地", actor.x, terrainY(actor.x) - 70, "key", false);
+        break;
+      }
+      case "GETUP": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        if (!this.kdActive[side]) break;
+        this.kdActive[side] = false;
+        this.ukemiCount++;
+        actor.spawnGhost();
+        actor.flashWhite(0.06);
+        this.spawnFloat("受身（无敌）", actor.x, terrainY(actor.x) - 64, "key", false);
+        this.camera.kick("normal", side === "hero" ? 1 : -1);
+        break;
+      }
       case "MECHANIC": {
         const side: Side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
@@ -397,14 +417,7 @@ export class Presenter {
           this.airCombo[o.targetSide] = 0;
         }
         this.hooks.onCombo?.(this.combo, this.airCombo[o.targetSide]);
-        if (tier === "ultimate" && !this.ended) {
-          o.target.knockdown(dir);
-          this.knockdownCount++;
-          this.kdActive[o.targetSide] = true;
-          this.ukemiAt[o.targetSide] = this.battle.frame + 33;
-          this.airCombo[o.targetSide] = 0;
-          this.spawnFloat("倒地", o.target.x, terrainY(o.target.x) - 70, "key", false);
-        }
+
       }
     }
 
@@ -661,15 +674,7 @@ export class Presenter {
           this.hooks.onCombo?.(this.combo, 0);
         }
       }
-      if (this.ukemiAt[side] > 0 && snap.frame >= this.ukemiAt[side]) {
-        this.ukemiAt[side] = 0;
-        this.kdActive[side] = false;
-        this.ukemiCount++;
-        a.spawnGhost();
-        a.flashWhite(0.06);
-        this.spawnFloat("受身", a.x, terrainY(a.x) - 64, "key", false);
-        this.camera.kick("normal", side === "hero" ? 1 : -1);
-      }
+
     }
 
     this.drawAuras(snap);
@@ -807,6 +812,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

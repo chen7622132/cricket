@@ -58,6 +58,9 @@ interface ActorState {
   lock: number;
   regenTimer: number;
   damageDealt: number;
+  airHits: number;
+  comboHits: number;
+  lastHitFrame: number;
 }
 
 export interface ChainState {
@@ -215,6 +218,9 @@ export class Battle {
       lock: 0,
       regenTimer: 0,
       damageDealt: 0,
+      airHits: 0,
+      comboHits: 0,
+      lastHitFrame: -999,
     };
   }
 
@@ -302,8 +308,18 @@ export class Battle {
         }
       }
       const left = frames - 1;
-      if (left <= 0) a.statuses.delete(id);
-      else a.statuses.set(id, left);
+      if (left <= 0) {
+        a.statuses.delete(id);
+        if (id === "airborne") a.airHits = 0;
+        if (id === "downed") {
+          a.statuses.set("iframes", 24);
+          this.emit("GETUP", `${a.name} 受身起身（24f 无敌）`, {
+            side: a.side,
+            data: { iframes: 24 },
+          });
+          this.logLine("event", `${a.name} 受身：获得 24 帧无敌`);
+        }
+      } else a.statuses.set(id, left);
     }
   }
 
@@ -650,6 +666,17 @@ export class Battle {
       });
       this.milestone("first-execute", "首次处决");
       this.advanceChain("bleed_exec", 3);
+      if (def.hp > 0) {
+        def.statuses.set("airborne", 40);
+        def.statuses.set("downed", 45);
+        def.airHits = 0;
+        this.emit("STATUS_APPLY", `${def.name} 被击飞（浮空 40f / 倒地 45f）`, {
+          side: def.side,
+          skill: skill.id,
+          data: { status: "airborne", frames: 40 },
+        });
+        this.emit("DOWNED", `${def.name} 倒地`, { side: def.side, data: { frames: 45 } });
+      }
     }
 
     // 流血：裂伤
@@ -704,7 +731,21 @@ export class Battle {
       this.mechOnce("hero:bleed", "机制触发｜裂伤处决：处决流血目标伤害 ×1.3");
     }
 
-    let amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult * mechMult));
+    let airScale = 1;
+    if (def.statuses.has("airborne") && !guardSuccess) {
+      def.airHits++;
+      airScale = Math.max(0.5, 1 - 0.1 * (def.airHits - 1));
+      this.logLine("event", `空连 ${def.airHits} 段：伤害 ×${airScale.toFixed(2)}`);
+    }
+    // 连段递减：同一攻击方 45 帧内连续命中，每段 -8%，最低 50%
+    if (this.frame - att.lastHitFrame <= 45) att.comboHits++;
+    else att.comboHits = 1;
+    att.lastHitFrame = this.frame;
+    const comboScale = Math.max(0.5, 1 - 0.08 * (att.comboHits - 1));
+    if (att.comboHits > 1) {
+      this.logLine("event", `连段 ${att.comboHits} 段：伤害 ×${comboScale.toFixed(2)}`);
+    }
+    let amount = Math.max(1, Math.round(base * variance * critMult * guardMult * interruptMult * mechMult * airScale * comboScale));
     // 游走机制：后撤后的第一次受击减半
     if (def.side === "enemy" && def.statuses.has("evasion")) {
       amount = Math.max(1, Math.round(amount * 0.5));
@@ -1041,6 +1082,9 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
+
 
 
 

@@ -11,6 +11,8 @@ export type StatusId =
   | "riposte" // 还击窗口
   | "iframes" // 闪避无敌帧
   | "evasion" // 游走：下一次受击减半
+  | "airborne" // 浮空：处决击飞，可被空连
+  | "downed" // 倒地：受身前的硬直
   | "read"; // 看破：下一次命中必暴击
 
 export type Tier = "normal" | "key" | "ultimate";
@@ -126,6 +128,8 @@ export type EventType =
   | "FX_CUE"
   | "DODGE"
   | "MECHANIC"
+  | "DOWNED"
+  | "GETUP"
   | "BATTLE_END";
 
 export interface BattleEvent {
@@ -175,6 +179,8 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
+
 
 
 
