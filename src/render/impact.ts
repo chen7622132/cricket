@@ -196,6 +196,40 @@ export class ImpactFx {
     this.addShape(g, 0.1, 0);
   }
 
+  /** 元素命中：火/雷/冰各自的硬边形态。 */
+  elementBurst(x: number, y: number, element: "fire" | "thunder" | "ice"): void {
+    const g = new PIXI.Graphics();
+    if (element === "fire") {
+      g.circle(x, y, 10).fill({ color: 0xff7a1a, alpha: 0.55 });
+      g.circle(x, y, 5).fill({ color: 0xffe066, alpha: 0.9 });
+      for (const [dx, h] of [[-8, 18], [0, 26], [8, 16]] as const) {
+        g.poly([x + dx - 3, y, x + dx, y - h, x + dx + 3, y]).fill({ color: 0xff9f43, alpha: 0.8 });
+      }
+      this.addShape(g, 0.22, 0.5);
+    } else if (element === "thunder") {
+      g.setStrokeStyle({ width: 2.5, color: 0xffe14d, alpha: 0.95 });
+      for (const dir of [-1, 1]) {
+        g.moveTo(x, y);
+        g.lineTo(x + 10 * dir, y - 12);
+        g.lineTo(x + 4 * dir, y - 18);
+        g.lineTo(x + 16 * dir, y - 30);
+      }
+      g.stroke();
+      this.addShape(g, 0.16, 0);
+    } else {
+      g.circle(x, y, 12).stroke({ width: 2, color: 0x9fe8ff, alpha: 0.9 });
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2;
+        g.poly([
+          x + Math.cos(a) * 6, y + Math.sin(a) * 6,
+          x + Math.cos(a + 0.18) * 18, y + Math.sin(a + 0.18) * 18,
+          x + Math.cos(a + 0.36) * 6, y + Math.sin(a + 0.36) * 6,
+        ]).fill({ color: 0xc9f6ff, alpha: 0.85 });
+      }
+      this.addShape(g, 0.2, 0.3);
+    }
+  }
+
   /** 武器挥砍弧线：2-3 帧硬边新月，补足攻击动作的轨迹感。 */
   arc(x: number, y: number, dir: number, color = 0x9fe8ff, radius = 30, tilt = 0): void {
     const g = new PIXI.Graphics();
@@ -302,5 +336,6 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 

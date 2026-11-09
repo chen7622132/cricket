@@ -203,11 +203,12 @@ export class Presenter {
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           const ranged = this.chars[side].projectile;
-          const useRanged = skill.includes("ranged") || (this.chars[side].standOff && gap > 60);
+          // 真远程判定：只有远程技能发弹道；近身技能一律走突进/近战
+          const useRanged = skill.includes("ranged") && gap > 36;
           if (useRanged) {
             this.lungeTarget[side] = 0;
             actor.playAttack(attackForSkill(skill));
-            this.spawnProjectile(side, ranged, foe.x);
+            this.spawnProjectile(side, ranged, foe.x, this.chars[side].element);
             this.pushLog(ev, "rule");
             break;
           }
@@ -472,8 +473,12 @@ export class Presenter {
       : (o.fx ?? "").includes("double-slash") ? 0xff6b6b
       : (o.fx ?? "").includes("hammer") ? 0xffe27a
       : 0x9fe8ff;
-    this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
-    if (tier === "ultimate") {
+    if ((o.skill ?? "").includes("ranged")) {
+      this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
+    } else {
+      this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
+    }
+    if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
       for (const delay of [4, 8]) {
         this.arcQueue.push({ at: this.battle.frame + delay, x, y, dir, color: arcColor, radius: 34 - delay });
       }
@@ -531,30 +536,31 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
-  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "knife" | "wave", targetX: number): void {
+  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "knife" | "wave", targetX: number, element: "fire" | "thunder" | "ice"): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
+    const tint = element === "fire" ? 0xff7a1a : element === "thunder" ? 0xffe14d : 0x9fe8ff;
     const g = new PIXI.Graphics();
     if (kind === "arrow") {
-      g.setStrokeStyle({ width: 2, color: 0xffe0a0, alpha: 0.95 });
+      g.setStrokeStyle({ width: 2, color: tint, alpha: 0.95 });
       g.moveTo(-14, 0).lineTo(10, 0);
       g.stroke();
       g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
       g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
     } else if (kind === "knife") {
-      g.setStrokeStyle({ width: 2, color: 0xd8e4ff, alpha: 0.95 });
+      g.setStrokeStyle({ width: 2, color: tint, alpha: 0.95 });
       g.moveTo(-8, 0).lineTo(8, 0);
       g.stroke();
       g.poly([8, -2, 12, 0, 8, 2]).fill({ color: 0xffffff });
     } else if (kind === "wave") {
-      g.setStrokeStyle({ width: 3, color: 0xffc46b, alpha: 0.9 });
+      g.setStrokeStyle({ width: 3, color: tint, alpha: 0.9 });
       g.arc(0, 0, 9, -0.9, 0.9);
       g.stroke();
       g.setStrokeStyle({ width: 1.5, color: 0xffffff, alpha: 0.8 });
       g.arc(0, 0, 14, -0.7, 0.7);
       g.stroke();
     } else {
-      g.circle(0, 0, 7).fill({ color: 0x9f6bff, alpha: 0.5 });
+      g.circle(0, 0, 7).fill({ color: tint, alpha: 0.5 });
       g.circle(0, 0, 4).fill({ color: 0xd9c2ff });
       g.circle(0, 0, 1.5).fill({ color: 0xffffff });
     }
@@ -1021,6 +1027,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
