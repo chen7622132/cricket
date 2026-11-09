@@ -61,6 +61,7 @@ interface ActorState {
   airHits: number;
   comboHits: number;
   lastHitFrame: number;
+  nextActionAt: number;
 }
 
 export interface ChainState {
@@ -221,6 +222,7 @@ export class Battle {
       airHits: 0,
       comboHits: 0,
       lastHitFrame: -999,
+      nextActionAt: 0,
     };
   }
 
@@ -334,6 +336,7 @@ export class Battle {
     }
     if (act.elapsed >= act.def.windup + act.def.recovery) {
       a.action = null;
+      a.nextActionAt = this.frame + 8; // 中立间隔：拉开回合，避免动作无缝连播
     }
   }
 
@@ -383,6 +386,7 @@ export class Battle {
   private tryAct(actor: ActorState) {
     if (this.done) return;
     if (actor.action || actor.lock > 0) return;
+    if (this.frame < actor.nextActionAt) return;
     if ((actor.statuses.get("stun") ?? 0) > 0) return;
 
     const all = this.rulesFor(actor.side);
@@ -1077,7 +1081,7 @@ export class Battle {
 
 /** 演出层级 → hitstop 帧数（与 src/presentation/tiers.ts 保持一致）。 */
 export function hitstopForTier(tier: Tier): number {
-  return tier === "normal" ? 3 : tier === "key" ? 8 : 16;
+  return tier === "normal" ? 4 : tier === "key" ? 9 : 17;
 }
 
 export function describeCost(rule: RuleDef): string {
@@ -1092,6 +1096,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 

@@ -142,8 +142,8 @@ export const DAMAGE: Record<SkillId, number> = {
   enemy_step: 0,
 };
 
-export const HERO_MAX_HP = 160;
-export const ENEMY_MAX_HP = 360;
+export const HERO_MAX_HP = 260;
+export const ENEMY_MAX_HP = 560;
 /** 识破回复：900 帧 = 15s 才回 1 点，强调"资源有限"。 */
 export const INSIGHT_REGEN_FRAMES = 900;
 export const HERO_START_SLOT = 2;
@@ -161,6 +161,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

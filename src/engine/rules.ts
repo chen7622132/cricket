@@ -603,7 +603,7 @@ export const ENEMY_RULES_B = makeRuleset(
       skill: "enemy_charge",
       priority: 85,
       cost: { kind: "none" },
-      cooldown: 100,
+      cooldown: 20,
       tags: tag("attack"),
       reveal: "敌方规则触发：战斗≥0.5s（或血<55%）→ 蓄力碎地锤",
       test: ({ self, frame }) =>
@@ -617,7 +617,7 @@ export const ENEMY_RULES_B = makeRuleset(
       skill: "enemy_slam",
       priority: 60,
       cost: { kind: "none" },
-      cooldown: 40,
+      cooldown: 20,
       tags: tag("attack"),
       reveal: "敌方规则触发：距离≤1 → 碎地重锤",
       test: ({ self }) => self.distance <= 1 && !self.charging,
@@ -781,6 +781,8 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
+
 
 
 

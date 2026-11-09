@@ -57,8 +57,10 @@ const ENEMY_TIMING: Record<string, { windup: number; recovery: number }> = {
   enemy_slam: { windup: 12, recovery: 20 },
 };
 
-const HERO_MAX = 60;
-const ENEMY_MAX = 56;
+const HERO_MAX = 140;
+/** 编排模式整体放慢：每槽动作时长 ×1.5，让单局更长、动作更清楚。 */
+const DUEL_TIME = 1.5;
+const ENEMY_MAX = 130;
 
 export interface Intent {
   slot: number;
@@ -303,7 +305,8 @@ export class DuelSession implements CombatSource {
 
   private makeItem(slot: number, actor: DuelActor, cardId: string): QueueItem {
     const card = CARD_BY_ID.get(cardId);
-    const timing = card ?? ENEMY_TIMING[cardId] ?? { windup: 10, recovery: 12 };
+    const raw = card ?? ENEMY_TIMING[cardId] ?? { windup: 10, recovery: 12 };
+    const timing = { windup: Math.round(raw.windup * DUEL_TIME), recovery: Math.round(raw.recovery * DUEL_TIME) };
     return {
       slot,
       phase: phaseOfSlot(slot),
@@ -767,6 +770,9 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
+
+
 
 
 

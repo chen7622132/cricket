@@ -25,9 +25,9 @@ const BASE_SCALE = 1.2;
 
 const SPEED: Record<HeroState, number> = {
   IDLE: 0.08,
-  RUN: 0.18,
-  ATTACK_1: 0.18,
-  ATTACK_2: 0.18,
+  RUN: 0.15,
+  ATTACK_1: 0.14,
+  ATTACK_2: 0.14,
   HIT: 0.2,
   DEATH: 0.07,
 };
@@ -353,6 +353,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

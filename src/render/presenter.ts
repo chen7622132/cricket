@@ -32,7 +32,7 @@ interface Mark {
 
 type Side = "hero" | "enemy";
 const FIXED_MS = 1000 / 60;
-const LUNGE_SPEED = 320; // world px/s（冲刺速度，接近 BvN 的快速位移）
+const LUNGE_SPEED = 230; // world px/s（冲刺速度，接近 BvN 的快速位移）
 
 /**
  * 演出层：订阅引擎事件，把它们翻译成 hitstop / 镜头 / 粒子 / 特效 / 位移。
@@ -812,6 +812,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

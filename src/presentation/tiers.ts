@@ -1,4 +1,4 @@
-import type { Tier } from "../engine/types.ts";
+﻿import type { Tier } from "../engine/types.ts";
 
 /**
  * 演出层级表：逻辑层只给 tier，渲染层照这张表播。
@@ -29,7 +29,7 @@ export const TIERS: Record<Tier, TierProfile> = {
   normal: {
     tier: "normal",
     label: "轻击",
-    hitstopFrames: 3,
+    hitstopFrames: 4,
     camera: "none",
     cameraPush: 0,
     shake: 1,
@@ -42,7 +42,7 @@ export const TIERS: Record<Tier, TierProfile> = {
   key: {
     tier: "key",
     label: "中击",
-    hitstopFrames: 8,
+    hitstopFrames: 9,
     camera: "push",
     cameraPush: 4,
     shake: 3,
@@ -55,7 +55,7 @@ export const TIERS: Record<Tier, TierProfile> = {
   ultimate: {
     tier: "ultimate",
     label: "重击 / 处决",
-    hitstopFrames: 16,
+    hitstopFrames: 17,
     camera: "crash-zoom",
     cameraPush: 12,
     shake: 10,
@@ -75,3 +75,5 @@ export const TIER_RANGES: Record<Tier, [number, number]> = {
 
 /** 普通攻击（不触发任何关键判定时的 tier 兜底）。 */
 export const PLAIN_HIT_SKILLS = new Set(["hero_thrust", "hero_rend", "enemy_swipe"]);
+
+
