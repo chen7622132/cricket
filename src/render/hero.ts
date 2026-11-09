@@ -70,6 +70,10 @@ export class HeroActor {
   private readonly outlines: PIXI.Sprite[] = [];
   private readonly iconMap = new Map<StatusId, PIXI.Container>();
   private readonly sheet: PIXI.Spritesheet;
+  private rig: PIXI.Container | null = null;
+  private rigBones: Record<string, PIXI.Container> = {};
+  private stateTime = 0;
+  private rigHit = false;
 
   x = 0;
   facing = 1;
@@ -145,6 +149,8 @@ export class HeroActor {
   play(state: HeroState, force = false): void {
     if (this.state === state && !force) return;
     this.state = state;
+    this.stateTime = 0;
+    this.rigHit = false;
     const key =
       state === "ATTACK_1" ? "attack1" : state === "ATTACK_2" ? "attack2" : state === "ATTACK_3" ? "attack3" : state.toLowerCase();
     const animations = this.sheet.animations as Record<string, PIXI.Texture[]>;
@@ -213,6 +219,63 @@ export class HeroActor {
       holder.addChild(ghost);
       this.ghosts.addChild(holder);
     }
+  }
+
+  /** 切换为程序化分件骨骼（DragonBones 式占位），用于验证多帧动作。 */
+  enableRig(): void {
+    this.rig = new PIXI.Container();
+    const tint = this.baseTint;
+    const outline = 0x0b0d12;
+    const limb = (w: number, len: number, color: number): PIXI.Container => {
+      const c = new PIXI.Container();
+      const g = new PIXI.Graphics();
+      g.rect(-w / 2 - 1, -1, w + 2, len + 2).fill({ color: outline });
+      g.rect(-w / 2, 0, w, len).fill({ color });
+      c.addChild(g);
+      return c;
+    };
+    const pelvis = new PIXI.Container();
+    pelvis.position.set(0, -26);
+    const torso = new PIXI.Container();
+    torso.position.set(0, 0);
+    const torsoG = new PIXI.Graphics();
+    torsoG.rect(-6, -26, 12, 28).fill({ color: tint });
+    torsoG.rect(-4, -22, 8, 18).fill({ color: 0x1b2a3a });
+    torso.addChild(torsoG);
+    const head = new PIXI.Container();
+    head.position.set(0, -30);
+    const headG = new PIXI.Graphics();
+    headG.circle(0, 0, 7).fill({ color: 0xffd7a8 });
+    headG.circle(0, -1, 8).stroke({ width: 2, color: outline });
+    head.addChild(headG);
+    const armL = limb(4, 20, tint);
+    armL.position.set(-7, -24);
+    const armR = limb(4, 20, tint);
+    armR.position.set(7, -24);
+    const thighL = limb(5, 18, 0x2b3a4a);
+    thighL.position.set(-4, 0);
+    const shinL = limb(4, 18, 0x2b3a4a);
+    shinL.position.set(0, 18);
+    thighL.addChild(shinL);
+    const thighR = limb(5, 18, 0x2b3a4a);
+    thighR.position.set(4, 0);
+    const shinR = limb(4, 18, 0x2b3a4a);
+    shinR.position.set(0, 18);
+    thighR.addChild(shinR);
+    const sword = new PIXI.Graphics();
+    sword.rect(-1.5, -34, 3, 34).fill({ color: 0xd8e4ff });
+    sword.rect(-4, -2, 8, 3).fill({ color: 0x8fb0d6 });
+    sword.position.set(0, 20);
+    armR.addChild(sword);
+    torso.addChild(head, armL, armR);
+    pelvis.addChild(torso, thighL, thighR);
+    const root = new PIXI.Container();
+    root.addChild(pelvis);
+    this.rig.addChild(root);
+    this.body.addChild(this.rig);
+    this.rigBones = { pelvis, torso, armL, armR, thighL, shinL, thighR, shinR, sword, head };
+    this.sprite.visible = false;
+    for (const o of this.outlines) o.visible = false;
   }
 
   /** 受击后仰：命中瞬间给目标一个短促的反向倾斜，随后回弹。 */
@@ -327,6 +390,7 @@ export class HeroActor {
       this.body.y = -this.airHeight;
     }
     this.body.rotation = kdRot + this.attackLean + hurtLean + sway;
+    if (this.rig) this.animateRig(dt);
     const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
     this.shadow.scale.set(shadowScale);
     this.shadow.alpha = 0.4 + shadowScale * 0.35;
@@ -392,6 +456,68 @@ export class HeroActor {
     return container;
   }
 
+  private animateRig(dt: number): void {
+    this.stateTime += dt;
+    const b = this.rigBones;
+    const lerp = (cur: number, target: number, k = 12): number => cur + (target - cur) * Math.min(1, dt * k);
+    let armL = 0.25;
+    let armR = -0.2;
+    let legL = 0;
+    let legR = 0;
+    let lean = 0;
+    const t = this.stateTime;
+
+    if (this.state === "IDLE" || this.state === "RUN") {
+      const cycle = Math.sin(this.bob * (this.state === "RUN" ? 10 : 2.2));
+      legL = this.state === "RUN" ? cycle * 0.75 : 0.06;
+      legR = this.state === "RUN" ? -cycle * 0.75 : -0.06;
+      armL = this.state === "RUN" ? -cycle * 0.7 : 0.18;
+      armR = this.state === "RUN" ? cycle * 0.7 : -0.18;
+      lean = this.state === "RUN" ? 0.12 : 0.02;
+    } else if (this.state === "JUMP" || this.state === "FALL") {
+      legL = -0.9;
+      legR = 0.5;
+      armL = -0.8;
+      armR = -0.8;
+    } else if (this.state === "ATTACK_1" || this.state === "ATTACK_2" || this.state === "ATTACK_3") {
+      const p = Math.min(1, t / 0.34);
+      const wind = Math.min(1, p / 0.42);
+      const strike = Math.max(0, (p - 0.42) / 0.58);
+      if (this.state === "ATTACK_2") {
+        armR = -2.4 * wind + 3.4 * strike;
+        armL = 0.8 * strike;
+      } else if (this.state === "ATTACK_3") {
+        armR = -1.2 + 3.2 * strike;
+        armL = 0.6 + 2.2 * strike;
+        b.torso.rotation = 0.5 * Math.sin(p * Math.PI * 2);
+      } else {
+        armR = -1.6 * wind + 2.8 * strike;
+        armL = 0.6 * strike;
+      }
+      lean = 0.16 * strike;
+      if (!this.rigHit && p > 0.42) {
+        this.rigHit = true;
+        this.hitFrameCount++;
+        this.onHitFrame?.();
+      }
+    } else if (this.state === "HIT") {
+      lean = -0.25;
+      armL = 0.5;
+      armR = 0.5;
+    } else if (this.state === "DEATH") {
+      lean = 0.3;
+    }
+
+    b.armL.rotation = lerp(b.armL.rotation, armL);
+    b.armR.rotation = lerp(b.armR.rotation, armR);
+    b.thighL.rotation = lerp(b.thighL.rotation, legL);
+    b.thighR.rotation = lerp(b.thighR.rotation, legR);
+    b.shinL.rotation = lerp(b.shinL.rotation, legL < 0 ? 0.4 : 0.1);
+    b.shinR.rotation = lerp(b.shinR.rotation, legR < 0 ? 0.4 : 0.1);
+    b.torso.rotation = lerp(b.torso.rotation, lean);
+    b.pelvis.y = -26 + (this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 1.2 : 0);
+  }
+
   private updateGhosts(dt: number): void {
     for (const child of [...this.ghosts.children]) {
       const holder = child as PIXI.Container & { life: number };
@@ -409,6 +535,8 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
+
 
 
 

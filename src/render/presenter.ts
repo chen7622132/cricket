@@ -117,6 +117,8 @@ export class Presenter {
     this.fxLayer = new PixelFxLayer(0.45);
     this.hero = new HeroActor(sheet, 0x6fd3ff);
     this.enemy = new HeroActor(enemySheet, 0xff5c5c, 0xffb9b9);
+    if (this.chars.hero.rig) this.hero.enableRig();
+    if (this.chars.enemy.rig) this.enemy.enableRig();
 
     this.impact = new ImpactFx(ARENA.w, ARENA.h);
     this.overlay.eventMode = "none";
@@ -1071,6 +1073,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

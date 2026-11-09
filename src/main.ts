@@ -51,7 +51,7 @@ async function boot(): Promise<void> {
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
   const heroCharSelect = document.getElementById("hero-char") as HTMLSelectElement;
   const enemyCharSelect = document.getElementById("enemy-char") as HTMLSelectElement;
-  const CHAR_IDS = ["martial", "samurai", "huntress", "wizard"];
+  const CHAR_IDS = ["martial", "samurai", "huntress", "wizard", "skeleton"];
   const currentChars = (): { hero: string; enemy: string } => ({
     hero: CHAR_IDS.includes(heroCharSelect.value) ? heroCharSelect.value : "martial",
     enemy: CHAR_IDS.includes(enemyCharSelect.value) ? enemyCharSelect.value : "samurai",
@@ -308,6 +308,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

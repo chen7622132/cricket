@@ -1,4 +1,4 @@
-﻿export type CharacterId = "martial" | "samurai" | "huntress" | "wizard";
+﻿export type CharacterId = "martial" | "samurai" | "huntress" | "wizard" | "skeleton";
 
 export interface CharacterDef {
   id: CharacterId;
@@ -8,6 +8,7 @@ export interface CharacterDef {
   projectile: "arrow" | "orb" | "swordwave" | "wave";
   element: "fire" | "thunder" | "ice";
   meleeStyle: "fist" | "blade" | "staff" | "bow";
+  rig?: boolean;
   rangedDamage: number;
 }
 
@@ -17,6 +18,7 @@ export const CHARACTERS: CharacterDef[] = [
   { id: "samurai", name: "武士", style: "太刀连斩", sheetUrl: "assets/samurai-mack/enemy.json", projectile: "swordwave", element: "fire", rangedDamage: 8, meleeStyle: "blade" },
   { id: "huntress", name: "猎手", style: "长弓/突进", sheetUrl: "assets/huntress/huntress.json", projectile: "arrow", element: "ice", rangedDamage: 10, meleeStyle: "bow" },
   { id: "wizard", name: "法师", style: "法杖/远程", sheetUrl: "assets/evil-wizard/wizard.json", projectile: "orb", element: "fire", rangedDamage: 12, meleeStyle: "staff" },
+  { id: "skeleton", name: "骨架", style: "分件骨骼（测试）", sheetUrl: "assets/martial-hero/hero.json", projectile: "wave", element: "thunder", rangedDamage: 7, meleeStyle: "fist", rig: true },
 ];
 
 export const CHARACTER_IDS: CharacterId[] = CHARACTERS.map((c) => c.id);
@@ -24,6 +26,8 @@ export const CHARACTER_IDS: CharacterId[] = CHARACTERS.map((c) => c.id);
 export function characterOf(id: string | null | undefined): CharacterDef {
   return CHARACTERS.find((c) => c.id === id) ?? CHARACTERS[0];
 }
+
+
 
 
 
