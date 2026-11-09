@@ -195,7 +195,10 @@ export class Presenter {
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
-          const attackKind = skill === "enemy_slam" && actor.supportsAttack3 ? "attack3" : attackForSkill(skill);
+          const attackKind =
+            (skill === "enemy_slam" || skill === "hero_riposte") && actor.supportsAttack3
+              ? "attack3"
+              : attackForSkill(skill);
           this.pendingAttack[side] = heavy ? null : attackKind;
           const leanMap: Record<string, number> = {
             hero_thrust: 0.2, hero_execute: 0.22, hero_rend: 0.14,
@@ -951,6 +954,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

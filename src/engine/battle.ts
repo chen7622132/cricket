@@ -571,6 +571,8 @@ export class Battle {
     if (base <= 0) {
       if (skill.id === "hero_retreat" || skill.id === "enemy_retreat") {
         this.stepAway(att, def, 2);
+        att.statuses.set("roaming", 90);
+        this.logLine("event", `${att.name} 进入游走状态（90 帧内保持距离）`);
       }
       if (skill.id === "enemy_step" && this.enemyRuleset.mechanic === "kite") {
         att.statuses.set("evasion", 30);
@@ -905,6 +907,11 @@ export class Battle {
   }
 
   private stepToward(actor: ActorState, foe: ActorState, label: string) {
+    // 游走状态：不主动贴脸，改为保持/拉开距离
+    if (actor.statuses.has("roaming") && Math.abs(actor.slot - foe.slot) <= 2) {
+      this.stepAway(actor, foe, 1);
+      return;
+    }
     const dir = Math.sign(foe.slot - actor.slot);
     if (dir === 0) return;
     const next = Math.max(ARENA_MIN_SLOT, Math.min(ARENA_MAX_SLOT, actor.slot + dir));
@@ -1131,6 +1138,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 从英雄攻击帧生成重击专用起手/收招帧（2 帧 × 200px）。
  * 通过旋转 + 位移生成与普通攻击不同的关键姿势，输出：
  *   ExecWindup.png / ExecRecovery.png / HammerWindup.png / HammerRecovery.png
@@ -81,3 +81,12 @@ writeStrip("HammerRecovery.png", [
   transformFrame(attack2, 2, 7, 5, 2),
   transformFrame(attack2, 3, 9, 7, 3),
 ]);
+
+// 英雄第三套连段：蓄力 -> 斩击 -> 回身 -> 收势
+writeStrip("HeroAttack3.png", [
+  transformFrame(attack2, 1, -12, -6, -4),
+  transformFrame(attack1, 2, 6, 4, 1),
+  transformFrame(attack2, 0, 10, 6, 2),
+  transformFrame(attack1, 3, 4, 2, 0),
+]);
+

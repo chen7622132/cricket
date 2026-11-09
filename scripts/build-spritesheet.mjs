@@ -23,6 +23,7 @@ const SETS = [
       { name: "fall", file: "Fall.png", frames: 2 },
       { name: "attack1", file: "Attack1.png", frames: 4 },
       { name: "attack2", file: "Attack2.png", frames: 4 },
+      { name: "attack3", file: "HeroAttack3.png", frames: 4 },
       { name: "exec_windup", file: "ExecWindup.png", frames: 2 },
       { name: "exec_recovery", file: "ExecRecovery.png", frames: 2 },
       { name: "hammer_windup", file: "HammerWindup.png", frames: 2 },
@@ -130,5 +131,6 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
 
 

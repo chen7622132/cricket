@@ -31,6 +31,7 @@ const STATUS_STYLE: Record<StatusId, { label: string; color: number }> = {
   downed: { label: "倒", color: 0xff8a5c },
   ukemi_counter: { label: "反", color: 0xffd45c },
   combo_ready: { label: "连", color: 0x7effc4 },
+  roaming: { label: "走", color: 0x9fd8ff },
 };
 
 const ANCHOR_X = 0.485;
@@ -393,6 +394,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
