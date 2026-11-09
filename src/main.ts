@@ -56,6 +56,8 @@ async function boot(): Promise<void> {
     hero: CHAR_IDS.includes(heroCharSelect.value) ? heroCharSelect.value : "martial",
     enemy: CHAR_IDS.includes(enemyCharSelect.value) ? enemyCharSelect.value : "samurai",
   });
+  heroCharSelect.value = "martial";
+  enemyCharSelect.value = "samurai";
   const rulesBtn = document.getElementById("rules-btn") as HTMLButtonElement;
   const rulesClose = document.getElementById("rules-close") as HTMLButtonElement;
   const shareBtn = document.getElementById("share-btn") as HTMLButtonElement;
@@ -312,6 +314,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 
