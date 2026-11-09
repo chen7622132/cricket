@@ -102,7 +102,7 @@ async function boot(): Promise<void> {
   if (heroCharParam && CHAR_IDS.includes(heroCharParam)) heroCharSelect.value = heroCharParam;
   const enemyCharParam = params.get("enemyChar");
   if (enemyCharParam && CHAR_IDS.includes(enemyCharParam)) enemyCharSelect.value = enemyCharParam;
-  const speedParam = Number.parseInt(params.get("speed") ?? "", 10);
+  const speedParam = Number.parseFloat(params.get("speed") ?? "");
   if (speeds.includes(speedParam)) {
     speedIdx = speeds.indexOf(speedParam);
     game.setSpeed(speedParam);
@@ -289,6 +289,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 
