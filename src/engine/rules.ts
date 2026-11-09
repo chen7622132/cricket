@@ -837,6 +837,36 @@ const ENEMY_RANGED_RULE: RuleDraft = {
   skill: "enemy_ranged",
 };
 
+const HERO_FLURRY_RULE: RuleDraft = {
+  id: "hero_flurry_rule",
+  side: "hero",
+  name: "高频突刺",
+  when: "距离≤1",
+  skill: "hero_flurry",
+  priority: 56,
+  cost: { kind: "none" },
+  cooldown: 180,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance <= 1,
+};
+
+const ENEMY_FLURRY_RULE: RuleDraft = { ...HERO_FLURRY_RULE, id: "enemy_flurry_rule", side: "enemy", skill: "enemy_flurry" };
+
+const HERO_WHIRL_RULE: RuleDraft = {
+  id: "hero_whirl_rule",
+  side: "hero",
+  name: "旋风斩",
+  when: "距离≤1",
+  skill: "hero_whirl",
+  priority: 58,
+  cost: { kind: "none" },
+  cooldown: 240,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance <= 1,
+};
+
+const ENEMY_WHIRL_RULE: RuleDraft = { ...HERO_WHIRL_RULE, id: "enemy_whirl_rule", side: "enemy", skill: "enemy_whirl" };
+
 const HERO_SPECIAL_RULE: RuleDraft = {
   id: "hero_special_rule",
   side: "hero",
@@ -886,11 +916,11 @@ function withExtras(rs: Ruleset, extras: RuleDraft[]): Ruleset {
 }
 
 function withCombo(rs: Ruleset): Ruleset {
-  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE]);
+  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE, HERO_FLURRY_RULE, HERO_WHIRL_RULE]);
 }
 
 function withEnemySpacing(rs: Ruleset): Ruleset {
-  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE]);
+  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE, ENEMY_FLURRY_RULE, ENEMY_WHIRL_RULE]);
 }
 
 ENEMY_RULESETS.ENEMY = withEnemySpacing(ENEMY_RULES);
@@ -911,6 +941,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

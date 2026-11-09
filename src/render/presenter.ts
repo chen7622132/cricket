@@ -226,6 +226,7 @@ export class Presenter {
             this.pushLog(ev, "rule");
             break;
           }
+          if (skill.includes("whirl")) this.fxLayer.spawn("melee/spin-slash", actor.x, terrainY(actor.x) - 40, {}, 0.8, 1.2);
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
           const attackKind =
             (skill === "enemy_slam" || skill === "hero_riposte") && actor.supportsAttack3
@@ -1251,6 +1252,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

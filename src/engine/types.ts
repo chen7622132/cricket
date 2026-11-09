@@ -29,6 +29,10 @@ export type SkillId =
   | "hero_guard"
   | "hero_riposte"
   | "hero_dodge"
+  | "hero_flurry"
+  | "enemy_flurry"
+  | "hero_whirl"
+  | "enemy_whirl"
   | "hero_special"
   | "hero_ranged"
   | "hero_ranged_2"
@@ -55,6 +59,7 @@ export interface SkillDef {
   recovery: number;
   /** pixelfx 招式资源键，见 src/render/fx.ts 的映射表。 */
   fx: string;
+  multi?: { count: number; interval: number };
   note: string;
 }
 
@@ -193,6 +198,8 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
+
 
 
 

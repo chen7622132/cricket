@@ -60,6 +60,46 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "melee/thrust",
     note: "格挡成功后的后摇反击",
   },
+  hero_flurry: {
+    id: "hero_flurry",
+    name: "高频突刺",
+    tier: "normal",
+    windup: 10,
+    recovery: 18,
+    fx: "melee/thrust",
+    multi: { count: 3, interval: 6 },
+    note: "三段独立命中，每段都出反馈",
+  },
+  enemy_flurry: {
+    id: "enemy_flurry",
+    name: "高频突刺",
+    tier: "normal",
+    windup: 10,
+    recovery: 18,
+    fx: "melee/thrust",
+    multi: { count: 3, interval: 6 },
+    note: "三段独立命中",
+  },
+  hero_whirl: {
+    id: "hero_whirl",
+    name: "旋风斩",
+    tier: "key",
+    windup: 16,
+    recovery: 24,
+    fx: "melee/spin-slash",
+    multi: { count: 4, interval: 8 },
+    note: "旋转多段，每段独立判定",
+  },
+  enemy_whirl: {
+    id: "enemy_whirl",
+    name: "旋风斩",
+    tier: "key",
+    windup: 16,
+    recovery: 24,
+    fx: "melee/spin-slash",
+    multi: { count: 4, interval: 8 },
+    note: "旋转多段",
+  },
   hero_special: {
     id: "hero_special",
     name: "角色特技",
@@ -206,6 +246,10 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_flurry: 4,
+  enemy_flurry: 4,
+  hero_whirl: 5,
+  enemy_whirl: 5,
   hero_special: 12,
   enemy_special: 11,
   hero_ranged: 8,
@@ -241,6 +285,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

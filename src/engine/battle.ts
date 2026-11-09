@@ -49,6 +49,7 @@ interface ActionState {
   def: SkillDef;
   elapsed: number;
   resolved: boolean;
+  multiDone: number;
   rule: RuleDef | null;
 }
 
@@ -373,7 +374,15 @@ export class Battle {
     if (!act.resolved && act.elapsed >= act.def.windup) {
       act.resolved = true;
       this.resolveHit(a, act);
+      act.multiDone = 1;
       a.cancelOpenAt = this.frame + 2 + this.rng.int(5, `cancel.${a.side}`, this.frame);
+    }
+    if (act.def.multi && act.resolved && act.elapsed > act.def.windup) {
+      const k = Math.min(act.def.multi.count, 1 + Math.floor((act.elapsed - act.def.windup) / act.def.multi.interval));
+      while (act.multiDone < k) {
+        act.multiDone++;
+        this.resolveHit(a, act, true);
+      }
     }
     if (act.elapsed >= act.def.windup + act.def.recovery) {
       a.action = null;
@@ -524,7 +533,7 @@ export class Battle {
       this.emit("MECHANIC", `取消后摇 → ${def.name}`, { side: actor.side, skill: def.id, data: { kind: "cancel" } });
       actor.canceling = false;
     }
-    actor.action = { def, elapsed: 0, resolved: false, rule };
+    actor.action = { def, elapsed: 0, resolved: false, multiDone: 0, rule };
     actor.cancelOpenAt = Number.MAX_SAFE_INTEGER;
     if (rule.cooldown) {
       // 敌方节奏带 0~36 帧的种子抖动：同一张规则表也会因为种子不同而错拍
@@ -627,7 +636,7 @@ export class Battle {
 
   // ---------------------------------------------------------------- hits
 
-  private resolveHit(att: ActorState, act: ActionState) {
+  private resolveHit(att: ActorState, act: ActionState, followUp = false) {
     const def = att === this.hero ? this.enemy : this.hero;
     const skill = act.def;
     const isRangedSkill = skill.id === "hero_ranged" || skill.id === "enemy_ranged"
@@ -1233,6 +1242,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 
