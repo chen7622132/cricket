@@ -221,63 +221,94 @@ export class HeroActor {
     }
   }
 
-  /** 切换为程序化分件骨骼（DragonBones 式占位），用于验证多帧动作。 */
+  /** 程序化像素分件：头/袍/袖/裤/靴/剑，骨骼层级驱动关键帧动作。 */
   enableRig(): void {
     this.rig = new PIXI.Container();
     const tint = this.baseTint;
     const outline = 0x0b0d12;
-    const limb = (w: number, len: number, color: number): PIXI.Container => {
+    const skin = 0xffd7a8;
+    const cloth = 0x1b2a3a;
+    const boot = 0x2b3a4a;
+
+    const limb = (w: number, len: number, base: number, shade: number): PIXI.Container => {
       const c = new PIXI.Container();
       const g = new PIXI.Graphics();
       g.rect(-w / 2 - 1, -1, w + 2, len + 2).fill({ color: outline });
-      g.rect(-w / 2, 0, w, len).fill({ color });
+      g.rect(-w / 2, 0, w, len).fill({ color: base });
+      g.rect(-w / 2, 0, 2, len).fill({ color: shade });
+      g.rect(w / 2 - 1, 0, 1, len).fill({ color: 0xffffff, alpha: 0.18 });
+      g.circle(0, 0, w / 2).fill({ color: base }).stroke({ width: 1, color: outline });
       c.addChild(g);
       return c;
     };
+
     const pelvis = new PIXI.Container();
-    pelvis.position.set(0, -26);
+    pelvis.position.set(0, -28);
+
     const torso = new PIXI.Container();
-    torso.position.set(0, 0);
     const torsoG = new PIXI.Graphics();
-    torsoG.rect(-6, -26, 12, 28).fill({ color: tint });
-    torsoG.rect(-4, -22, 8, 18).fill({ color: 0x1b2a3a });
+    torsoG.poly([-8, 2, 8, 2, 6, -26, -6, -26]).fill({ color: outline });
+    torsoG.poly([-6, 0, 6, 0, 5, -25, -5, -25]).fill({ color: tint });
+    torsoG.rect(-5, -14, 10, 2).fill({ color: 0xffe066 });
+    torsoG.rect(-5, -3, 10, 2).fill({ color: 0xffe066 });
+    torsoG.rect(-2, -24, 4, 8).fill({ color: cloth });
     torso.addChild(torsoG);
+
+    // 围巾尾：随跑动摆动
+    const scarf = new PIXI.Graphics();
+    scarf.rect(-2, 0, 4, 14).fill({ color: 0xc94f4f });
+    scarf.rect(-2, 14, 4, 10).fill({ color: 0x8f3232 });
+    scarf.position.set(-4, -22);
+    torso.addChild(scarf);
+
     const head = new PIXI.Container();
     head.position.set(0, -30);
     const headG = new PIXI.Graphics();
-    headG.circle(0, 0, 7).fill({ color: 0xffd7a8 });
-    headG.circle(0, -1, 8).stroke({ width: 2, color: outline });
+    headG.circle(0, -2, 8).fill({ color: outline });
+    headG.circle(0, -2, 6.5).fill({ color: skin });
+    headG.rect(-6, -9, 12, 4).fill({ color: 0x1a1a22 });
+    headG.rect(-7, -8, 2, 2).fill({ color: 0x1a1a22 });
+    headG.rect(-3, -2, 2, 2).fill({ color: 0x222222 });
+    headG.rect(1, -2, 2, 2).fill({ color: 0x222222 });
     head.addChild(headG);
-    const armL = limb(4, 20, tint);
-    armL.position.set(-7, -24);
-    const armR = limb(4, 20, tint);
-    armR.position.set(7, -24);
-    const thighL = limb(5, 18, 0x2b3a4a);
+
+    const armL = limb(4, 20, tint, cloth);
+    armL.position.set(-8, -24);
+    const armR = limb(4, 20, tint, cloth);
+    armR.position.set(8, -24);
+
+    const thighL = limb(5, 18, boot, 0x131c26);
     thighL.position.set(-4, 0);
-    const shinL = limb(4, 18, 0x2b3a4a);
+    const shinL = limb(4, 18, boot, 0x131c26);
     shinL.position.set(0, 18);
+    shinL.addChild(new PIXI.Graphics().rect(-3, 16, 6, 3).fill({ color: 0x0b0d12 }));
     thighL.addChild(shinL);
-    const thighR = limb(5, 18, 0x2b3a4a);
+
+    const thighR = limb(5, 18, boot, 0x131c26);
     thighR.position.set(4, 0);
-    const shinR = limb(4, 18, 0x2b3a4a);
+    const shinR = limb(4, 18, boot, 0x131c26);
     shinR.position.set(0, 18);
+    shinR.addChild(new PIXI.Graphics().rect(-3, 16, 6, 3).fill({ color: 0x0b0d12 }));
     thighR.addChild(shinR);
+
     const sword = new PIXI.Graphics();
     sword.rect(-1.5, -34, 3, 34).fill({ color: 0xd8e4ff });
-    sword.rect(-4, -2, 8, 3).fill({ color: 0x8fb0d6 });
+    sword.rect(-0.5, -32, 1, 30).fill({ color: 0xffffff });
+    sword.rect(-5, -2, 10, 3).fill({ color: 0x8fb0d6 });
+    sword.rect(-2, 1, 4, 6).fill({ color: 0x6b4326 });
     sword.position.set(0, 20);
     armR.addChild(sword);
+
     torso.addChild(head, armL, armR);
     pelvis.addChild(torso, thighL, thighR);
     const root = new PIXI.Container();
     root.addChild(pelvis);
     this.rig.addChild(root);
     this.body.addChild(this.rig);
-    this.rigBones = { pelvis, torso, armL, armR, thighL, shinL, thighR, shinR, sword, head };
+    this.rigBones = { pelvis, torso, armL, armR, thighL, shinL, thighR, shinR, sword, head, scarf };
     this.sprite.visible = false;
     for (const o of this.outlines) o.visible = false;
   }
-
   /** 受击后仰：命中瞬间给目标一个短促的反向倾斜，随后回弹。 */
   setHurt(dir: number): void {
     this.hurtMs = 0.16;
@@ -515,7 +546,9 @@ export class HeroActor {
     b.shinL.rotation = lerp(b.shinL.rotation, legL < 0 ? 0.4 : 0.1);
     b.shinR.rotation = lerp(b.shinR.rotation, legR < 0 ? 0.4 : 0.1);
     b.torso.rotation = lerp(b.torso.rotation, lean);
-    b.pelvis.y = -26 + (this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 1.2 : 0);
+    b.pelvis.y = -28 + (this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 1.2 : 0);
+    const scarfTarget = this.state === "RUN" ? -0.5 - Math.sin(this.bob * 10) * 0.25 : -0.12;
+    b.scarf.rotation = lerp(b.scarf.rotation, scarfTarget, 6);
   }
 
   private updateGhosts(dt: number): void {
@@ -535,6 +568,8 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
+
 
 
 
