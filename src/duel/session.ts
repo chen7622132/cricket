@@ -151,7 +151,7 @@ export class DuelSession implements CombatSource {
   enemyHp = ENEMY_MAX;
   heroMaxHp = HERO_MAX;
   enemyMaxHp = ENEMY_MAX;
-  heroPos = 1;
+  heroPos = 0;
   enemyPos = 3;
 
   bans: { skills: string[]; move: string } = { skills: [], move: "dash" };
@@ -190,7 +190,7 @@ export class DuelSession implements CombatSource {
     this.winner = null;
     this.heroHp = HERO_MAX;
     this.enemyHp = ENEMY_MAX;
-    this.heroPos = 1;
+    this.heroPos = 0;
     this.enemyPos = 3;
     this.slots = Array(8).fill(null);
     this.logs = [];
@@ -770,6 +770,7 @@ export class DuelSession implements CombatSource {
     };
   }
 }
+
 
 
 
