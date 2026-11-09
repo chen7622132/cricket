@@ -481,7 +481,6 @@ export class Presenter {
   ): void {
     const profile = TIERS[tier];
     if (tier === "ultimate") flashScreen("strong");
-    else if (tier === "key") flashScreen("normal");
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
     // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
@@ -1289,6 +1288,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

@@ -17,8 +17,12 @@ export class CameraRig {
 
   kick(tier: Tier, dir = 1): void {
     const p = TIERS[tier];
+    // 创伤池节流：轻/中反馈在已有 trauma 未衰减时直接丢弃
+    if (tier === "normal" && this.trauma > 0.18) return;
+    if (tier === "key" && this.trauma > 0.5) return;
     // trauma 模型：每次命中累积创伤，强度按 trauma² 衰减
-    this.trauma = Math.min(1, this.trauma + p.shake / 9 + 0.08);
+    const add = tier === "ultimate" ? 0.55 : tier === "key" ? 0.28 : 0.12;
+    this.trauma = Math.min(1, this.trauma + add);
     if (p.camera === "none") {
       this.shake = Math.max(this.shake, p.shake);
       return;
@@ -67,6 +71,7 @@ export class CameraRig {
     return this.zoom;
   }
 }
+
 
 
 
