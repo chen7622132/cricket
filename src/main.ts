@@ -51,7 +51,7 @@ async function boot(): Promise<void> {
   const speedBtn = document.getElementById("speed-btn") as HTMLButtonElement;
   const heroCharSelect = document.getElementById("hero-char") as HTMLSelectElement;
   const enemyCharSelect = document.getElementById("enemy-char") as HTMLSelectElement;
-  const CHAR_IDS = ["martial", "samurai", "huntress", "wizard", "skeleton"];
+  const CHAR_IDS = ["martial", "boxer", "samurai", "huntress", "wizard", "skeleton"];
   const currentChars = (): { hero: string; enemy: string } => ({
     hero: CHAR_IDS.includes(heroCharSelect.value) ? heroCharSelect.value : "martial",
     enemy: CHAR_IDS.includes(enemyCharSelect.value) ? enemyCharSelect.value : "samurai",
@@ -155,12 +155,12 @@ async function boot(): Promise<void> {
       enemyRangedDamage: enemyDef.rangedDamage,
       heroRanged2: heroDef.rangedPrimary === true,
       heroTentacle: heroDef.id === "wizard",
-      heroMonkCombo: heroDef.id === "martial",
-      heroBoxer: heroDef.id === "martial",
+      heroMonkCombo: heroDef.id === "martial" || heroDef.id === "boxer",
+      heroBoxer: heroDef.id === "martial" || heroDef.id === "boxer",
       heroSamuraiKit: heroDef.id === "samurai",
       enemySamuraiKit: enemyDef.id === "samurai",
-      enemyBoxer: enemyDef.id === "martial",
-      enemyMonkCombo: enemyDef.id === "martial",
+      enemyBoxer: enemyDef.id === "martial" || enemyDef.id === "boxer",
+      enemyMonkCombo: enemyDef.id === "martial" || enemyDef.id === "boxer",
       enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
     });
@@ -176,12 +176,12 @@ async function boot(): Promise<void> {
       enemyRangedDamage: enemyDef.rangedDamage,
       heroRanged2: heroDef.rangedPrimary === true,
       heroTentacle: heroDef.id === "wizard",
-      heroMonkCombo: heroDef.id === "martial",
-      heroBoxer: heroDef.id === "martial",
+      heroMonkCombo: heroDef.id === "martial" || heroDef.id === "boxer",
+      heroBoxer: heroDef.id === "martial" || heroDef.id === "boxer",
       heroSamuraiKit: heroDef.id === "samurai",
       enemySamuraiKit: enemyDef.id === "samurai",
-      enemyBoxer: enemyDef.id === "martial",
-      enemyMonkCombo: enemyDef.id === "martial",
+      enemyBoxer: enemyDef.id === "martial" || enemyDef.id === "boxer",
+      enemyMonkCombo: enemyDef.id === "martial" || enemyDef.id === "boxer",
       enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
     }).run();
@@ -330,6 +330,8 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
+
 
 
 

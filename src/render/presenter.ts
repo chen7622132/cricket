@@ -564,7 +564,7 @@ export class Presenter {
         this.impact.clash(x, y, dir, tier === "ultimate");
         this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
         this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 250 : 140);
-      } else if (this.chars[o.attackerSide].id === "martial") {
+      } else if (this.chars[o.attackerSide].id === "martial" || this.chars[o.attackerSide].id === "boxer") {
         this.impact.bluntBurst(x, y, dir, tier === "ultimate", 0xffffff);
         this.fxLayer.spawn("impacts/blunt-hit", x, y, { dir }, 0.7, 1.0);
       } else {
@@ -657,7 +657,7 @@ export class Presenter {
 
       const charId = this.chars[side].id;
       const samurai = charId === "samurai";
-      const monk = charId === "martial";
+      const monk = charId === "martial" || charId === "boxer";
       const attacking = actor.state.startsWith("ATTACK") || actor.state.endsWith("WINDUP") || actor.state.endsWith("RECOVERY");
       if ((samurai || monk) && attacking) {
         const facing = side === "hero" ? this.heroFacing : this.enemyFacing;
@@ -1326,6 +1326,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
