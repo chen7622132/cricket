@@ -85,6 +85,7 @@ export class HeroActor {
   onHitFrame?: () => void;
 
   private flashMs = 0;
+  private flashIntensity = 0;
   private attackLean = 0;
   private leanTarget = 0;
   private hurtMs = 0;
@@ -198,8 +199,14 @@ export class HeroActor {
 
   /** 受击闪白：1-2 帧高对比，比柔光更像火柴人动画。 */
   flashWhite(seconds = 0.07): void {
+    this.flashIntensity = Math.max(this.flashIntensity, 0.75);
     this.flashMs = Math.max(this.flashMs, seconds);
-    this.sprite.tint = 0xffffff;
+  }
+
+  /** 按重量叠加受击高亮：0.3 轻 / 0.6 关键 / 0.95 重。 */
+  flashHit(weight: number): void {
+    this.flashIntensity = Math.max(this.flashIntensity, weight);
+    this.flashMs = 0.2;
   }
 
   /** 挤压回弹：命中瞬间给质量感。 */
@@ -496,9 +503,13 @@ export class HeroActor {
     this.shadow.scale.set(shadowScale);
     this.shadow.alpha = 0.4 + shadowScale * 0.35;
     this.bob += dt;
-    if (this.flashMs > 0) {
-      this.flashMs -= dt;
-      if (this.flashMs <= 0) this.sprite.tint = this.baseTint;
+    if (this.flashIntensity > 0) {
+      this.flashIntensity = Math.max(0, this.flashIntensity - dt * 6);
+      const k = Math.min(1, this.flashIntensity);
+      const r = ((this.baseTint >> 16) & 0xff) * (1 - k) + 255 * k;
+      const g = ((this.baseTint >> 8) & 0xff) * (1 - k) + 255 * k;
+      const b = (this.baseTint & 0xff) * (1 - k) + 255 * k;
+      this.sprite.tint = (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
     }
 
     // 挤压回弹
@@ -661,6 +672,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

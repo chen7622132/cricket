@@ -5,7 +5,7 @@ export function flashScreen(kind: "normal" | "strong"): void {
   if (typeof document === "undefined") return;
   const now = performance.now();
   // 节流：120ms 内不重复触发，避免连段硬闪
-  if (now - lastFlash < 120) return;
+  if (now - lastFlash < 300) return;
   lastFlash = now;
   const el = document.getElementById("screen-flash");
   if (!el) return;
@@ -14,4 +14,5 @@ export function flashScreen(kind: "normal" | "strong"): void {
   void el.offsetWidth;
   el.className = kind === "strong" ? "flash-strong" : "flash-normal";
 }
+
 

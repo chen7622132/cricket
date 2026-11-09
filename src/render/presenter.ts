@@ -577,7 +577,7 @@ export class Presenter {
     this.particles.burst(x, y, count);
     this.impact.trigger(x, y, dir, tier, this.impactKind(o.fx, o.skill));
     if (!o.guard) {
-      o.target.flashWhite(Math.max(0.07, this.freezeMs / 1000));
+      o.target.flashHit(tier === "ultimate" ? 0.95 : tier === "key" ? 0.6 : 0.32);
       o.attacker.spawnSmear(dir, o.attackerSide === "hero" ? 0xffffff : 0xffd0d0);
 
       // 连击 / 浮空追击 / 重击倒地
@@ -1322,6 +1322,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
