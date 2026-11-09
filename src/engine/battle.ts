@@ -612,6 +612,11 @@ export class Battle {
       this.milestone("first-guard", "首次格挡成功");
     }
 
+    const isPunish = skill.id === "hero_riposte" && att.statuses.has("riposte");
+    if (isPunish) {
+      att.statuses.delete("riposte");
+      tier = "key";
+    }
     const read = att.statuses.has("read");
     if (read) {
       att.statuses.delete("read");
@@ -731,6 +736,7 @@ export class Battle {
       mechMult *= 1.2;
       this.mechOnce("enemy:heavy", "机制触发｜蓄力重锤：重锤伤害 ×1.2");
     }
+    if (isPunish) mechMult *= 1.5;
     if (att.side === "hero" && mech === "bleed" && skill.id === "hero_execute" && def.statuses.has("bleed")) {
       mechMult *= 1.3;
       this.mechOnce("hero:bleed", "机制触发｜裂伤处决：处决流血目标伤害 ×1.3");
@@ -808,6 +814,20 @@ export class Battle {
     }
 
     if (skill.id === "hero_riposte") this.advanceChain("guard_counter", 3);
+
+    if (isPunish) {
+      att.statuses.set("combo_ready", 70);
+      this.emit("PUNISH", `确反！${att.name} 在格挡后用 ${skill.name} 打出确反（伤害 ×1.5，连招窗口 70f）`, {
+        side: att.side,
+        skill: skill.id,
+        tier: "key",
+        data: { punish: true, comboWindow: 70 },
+      });
+      this.mechOnce("hero:punish", "机制触发｜确反：格挡后还击伤害 ×1.5");
+    }
+    if (att.statuses.has("combo_ready") && (skill.id === "hero_earthhammer" || skill.id === "hero_execute")) {
+      att.statuses.delete("combo_ready");
+    }
 
     if (guardSuccess) {
       this.advanceChain("guard_counter", 2);
@@ -1096,6 +1116,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 

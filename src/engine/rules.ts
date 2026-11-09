@@ -769,18 +769,53 @@ ENEMY_RULESETS.ENEMY_C = ENEMY_RULES_C;
 ENEMY_RULESETS.ENEMY_D = ENEMY_RULES_D;
 ENEMY_RULESETS.ENEMY_E = ENEMY_RULES_E;
 
+/** 确反连招：格挡还击（确反）后 70 帧内自动接裂伤 / 碎地锤。 */
+const COMBO_RULES: RuleDraft[] = [
+  {
+    id: "combo_hammer",
+    side: "hero",
+    name: "确反→碎地",
+    when: "确反连招窗口 且 敌方流血 且 距离≤1",
+    skill: "hero_earthhammer",
+    priority: 99,
+    cost: { kind: "none" },
+    tags: tag("combo", "attack"),
+    test: ({ self, foe }) => self.has("combo_ready") && foe.has("bleed") && self.distance <= 1,
+  },
+  {
+    id: "combo_rend",
+    side: "hero",
+    name: "确反→裂伤",
+    when: "确反连招窗口 且 敌方未流血 且 距离≤1",
+    skill: "hero_rend",
+    priority: 99,
+    cost: { kind: "none" },
+    tags: tag("combo", "attack"),
+    test: ({ self, foe }) => self.has("combo_ready") && !foe.has("bleed") && self.distance <= 1,
+  },
+];
+
+function withCombo(rs: Ruleset): Ruleset {
+  const start = rs.rules.length;
+  return {
+    ...rs,
+    rules: [...rs.rules, ...COMBO_RULES.map((d, i) => ({ ...d, index: start + i + 1 }))],
+  };
+}
+
 export const HERO_RULESETS: Record<"A" | "B" | "C" | "D" | "E", Ruleset> = {
-  A: HERO_RULES_A,
-  B: HERO_RULES_B,
-  C: HERO_RULES_C,
-  D: HERO_RULES_D,
-  E: HERO_RULES_E,
+  A: withCombo(HERO_RULES_A),
+  B: withCombo(HERO_RULES_B),
+  C: withCombo(HERO_RULES_C),
+  D: withCombo(HERO_RULES_D),
+  E: withCombo(HERO_RULES_E),
 };
 
 export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

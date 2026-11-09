@@ -14,6 +14,7 @@ export type StatusId =
   | "airborne" // 浮空：处决击飞，可被空连
   | "downed" // 倒地：受身前的硬直
   | "ukemi_counter" // 受身反击：起身后下一击增伤
+  | "combo_ready" // 确反连招窗口
   | "read"; // 看破：下一次命中必暴击
 
 export type Tier = "normal" | "key" | "ultimate";
@@ -131,6 +132,7 @@ export type EventType =
   | "MECHANIC"
   | "DOWNED"
   | "GETUP"
+  | "PUNISH"
   | "BATTLE_END";
 
 export interface BattleEvent {
@@ -180,6 +182,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 

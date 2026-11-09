@@ -201,6 +201,15 @@ export class Presenter {
       case "DAMAGE":
         this.hooks.onLog({ frame: ev.frame, kind: "damage", text: ev.text });
         break;
+      case "PUNISH": {
+        const side: Side = ev.side === "enemy" ? "enemy" : "hero";
+        const actor = this.actor(side);
+        this.spawnFloat("确反", actor.x, terrainY(actor.x) - 78, "key", false);
+        this.impact.trigger(actor.x, terrainY(actor.x) - 34, 1, "key", "thrust");
+        this.camera.kick("key", side === "hero" ? 1 : -1);
+        this.hooks.onBanner("确反", "combo");
+        break;
+      }
       case "DOWNED": {
         const side: Side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
@@ -812,6 +821,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
