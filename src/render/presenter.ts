@@ -287,8 +287,15 @@ export class Presenter {
         this.kdActive[side] = true;
         this.knockdownCount++;
         actor.knockdown(side === "hero" ? 1 : -1);
+        actor.setSquash(1.35, 0.55);
         this.airCombo[side] = 0;
-        this.spawnFloat("倒地", actor.x, terrainY(actor.x) - 70, "key", false);
+        const gy = terrainY(actor.x);
+        this.impact.trigger(actor.x, gy - 6, 1, "key", "radial");
+        this.impact.trigger(actor.x, gy - 6, -1, "key", "radial");
+        flashScreen("strong");
+        this.camera.kick("ultimate", side === "hero" ? 1 : -1);
+        this.freezeMs = Math.max(this.freezeMs, 150);
+        this.spawnFloat("砸地", actor.x, gy - 58, "key", false);
         break;
       }
       case "GETUP": {
@@ -1115,6 +1122,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

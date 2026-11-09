@@ -67,6 +67,7 @@ interface ActorState {
   regenTimer: number;
   damageDealt: number;
   airHits: number;
+  pendingDowned: number;
   comboHits: number;
   lastHitFrame: number;
   nextActionAt: number;
@@ -240,6 +241,7 @@ export class Battle {
       regenTimer: 0,
       damageDealt: 0,
       airHits: 0,
+      pendingDowned: 0,
       comboHits: 0,
       lastHitFrame: -999,
       nextActionAt: 0,
@@ -332,7 +334,19 @@ export class Battle {
       const left = frames - 1;
       if (left <= 0) {
         a.statuses.delete(id);
-        if (id === "airborne") a.airHits = 0;
+        if (id === "airborne") {
+          a.airHits = 0;
+          if (a.pendingDowned > 0) {
+            const frames = a.pendingDowned;
+            a.pendingDowned = 0;
+            a.statuses.set("downed", frames);
+            a.statuses.set("iframes", frames + 8);
+            this.emit("DOWNED", `${a.name} 砸地倒地（${frames} 帧硬直）`, {
+              side: a.side,
+              data: { frames },
+            });
+          }
+        }
         if (id === "downed") {
           a.statuses.set("iframes", 24);
           a.statuses.set("ukemi_counter", 60);
@@ -710,14 +724,13 @@ export class Battle {
       this.advanceChain("bleed_exec", 3);
       if (def.hp > 0) {
         def.statuses.set("airborne", 75);
-        def.statuses.set("downed", 45);
+        def.pendingDowned = 60;
         def.airHits = 0;
-        this.emit("STATUS_APPLY", `${def.name} 被击飞（浮空 75f / 倒地 45f）`, {
+        this.emit("STATUS_APPLY", `${def.name} 被击飞（浮空 75f，落地后倒地 60f）`, {
           side: def.side,
           skill: skill.id,
           data: { status: "airborne", frames: 75 },
         });
-        this.emit("DOWNED", `${def.name} 倒地`, { side: def.side, data: { frames: 45 } });
       }
     }
 
@@ -1179,6 +1192,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 
