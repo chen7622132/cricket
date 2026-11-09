@@ -225,6 +225,22 @@ export class ImpactFx {
     this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "radial");
   }
 
+  /** 定向火花：沿打击方向喷出的锥形火星，标定受力点。 */
+  directionalSpark(x: number, y: number, dir: number, strong: boolean, color = 0xffd27a): void {
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: 2, color, alpha: 0.95, cap: "round" });
+    const n = strong ? 14 : 8;
+    for (let k = 0; k < n; k++) {
+      const a = Math.atan2(0, dir) + ((k / n) - 0.5) * 0.9;
+      const len = (strong ? 26 : 16) + ((k * 7) % 13);
+      g.moveTo(x, y);
+      g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len - len * 0.18);
+    }
+    g.stroke();
+    this.addShape(g, 0.12, 0);
+    this.star(x, y, strong ? 12 : 8);
+  }
+
   /** 振刀/拼刀：刀光相撞的大星芒 + 交叉刀弧 + 双环震荡。 */
   clash(x: number, y: number, dir: number, strong: boolean): void {
     const r = strong ? 26 : 18;
@@ -450,6 +466,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 

@@ -105,6 +105,7 @@ export class Presenter {
   private fallFrom: Record<Side, number> = { hero: ARENA.floorY, enemy: ARENA.floorY };
   private launchX: Record<Side, number> = { hero: 0, enemy: 0 };
   private launchVx: Record<Side, number> = { hero: 0, enemy: 0 };
+  private launchBoost: Record<Side, number> = { hero: 0, enemy: 0 };
   private baseX: Record<Side, number> = { hero: 0, enemy: 0 };
 
   constructor(
@@ -479,9 +480,11 @@ export class Presenter {
     const launchable = tier === "ultimate" || (o.fx ?? "").includes("hammer") || (o.fx ?? "").includes("scythe");
     if (launchable) {
       o.target.startJump(tier === "ultimate" ? 46 : 26);
-      this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 150 : 80);
+      this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 210 : 110);
+      this.launchBoost[o.targetSide] = tier === "ultimate" ? 0.14 : 0.07;
     }
 
+    o.target.play("HIT", true);
     o.attacker.setAttackLean(dir * 0.12);
     this.recoverAt[o.attackerSide] = this.battle.frame + 12;
     o.target.setHurt(dir);
@@ -495,6 +498,7 @@ export class Presenter {
     const x = o.target.x;
     const y = terrainY(o.target.x) - 30;
     if (tier === "ultimate") this.fxLayer.spawn("impacts/impact-frame", x, y, {}, 0.9, 1.2);
+    if (launchable) this.impact.directionalSpark(x, y, dir, tier === "ultimate", 0xffd27a);
     const arcColor = (o.fx ?? "").includes("scythe") ? 0xc77dff
       : (o.fx ?? "").includes("double-slash") ? 0xff6b6b
       : (o.fx ?? "").includes("hammer") ? 0xffe27a
@@ -875,8 +879,12 @@ export class Presenter {
     this.baseX.enemy = this.approach(this.baseX.enemy, enemyHome, dt);
     // 击飞：水平位移积分 + 落地回弹
     for (const side of ["hero", "enemy"] as Side[]) {
+      if (this.launchBoost[side] > 0) {
+        this.launchBoost[side] = Math.max(0, this.launchBoost[side] - dt);
+        this.launchVx[side] += Math.sign(this.launchVx[side] || 1) * 260 * dt;
+      }
       this.launchX[side] += this.launchVx[side] * dt;
-      this.launchVx[side] *= Math.exp(-dt * 3.2);
+      this.launchVx[side] *= Math.exp(-dt * (this.launchBoost[side] > 0 ? 1.4 : 3.4));
       if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
     }
     const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
@@ -1157,6 +1165,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
