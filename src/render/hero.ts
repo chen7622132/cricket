@@ -484,6 +484,8 @@ export class HeroActor {
     }
     if (this.airHeight > 0.5 && Math.abs(this.spinVel) > 0.01) {
       this.spin += this.spinVel * dt;
+      if (!Number.isFinite(this.spin)) this.spin = 0;
+      this.spin = Math.max(-Math.PI * 4, Math.min(Math.PI * 4, this.spin));
     } else if (this.airHeight <= 0.5) {
       this.spin *= Math.exp(-dt * 14);
       if (Math.abs(this.spin) < 0.01) this.spin = 0;
@@ -659,6 +661,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

@@ -309,6 +309,13 @@ export class Presenter {
         this.knockdownCount++;
         actor.knockdown(side === "hero" ? 1 : -1);
         actor.setSquash(1.35, 0.55);
+        // 倒地即冻结击飞物理，禁止继续滑行/乱飞
+        this.launchX[side] = 0;
+        this.launchVx[side] = 0;
+        this.launchBoost[side] = 0;
+        this.push[side] = 0;
+        this.prevAir[side] = false;
+        actor.startSpin(0);
         this.airCombo[side] = 0;
         const gy = terrainY(actor.x);
         this.impact.trigger(actor.x, gy - 6, 1, "key", "radial");
@@ -505,6 +512,9 @@ export class Presenter {
     if (launchable) {
       o.target.startJump(tier === "ultimate" ? 46 : 26);
       o.target.startSpin(dir * (tier === "ultimate" ? 7 : 4));
+      this.launchX[o.targetSide] = 0;
+      this.launchVx[o.targetSide] = 0;
+      this.launchBoost[o.targetSide] = 0;
       this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 210 : 110);
       this.launchBoost[o.targetSide] = tier === "ultimate" ? 0.14 : 0.07;
     }
@@ -680,6 +690,9 @@ export class Presenter {
   /** 跳跃落地冲击：双层环 + 灰尘 + 顿帧 + 震屏。 */
   private landingPulse(side: Side, speed: number): void {
     const actor = this.actor(side);
+    this.launchX[side] = 0;
+    this.launchVx[side] = 0;
+    this.launchBoost[side] = 0;
     const gy = terrainY(actor.x);
     const heavy = speed > 260;
     this.impact.trigger(actor.x, gy - 4, 1, heavy ? "key" : "normal", "radial");
@@ -1007,6 +1020,8 @@ export class Presenter {
         this.launchBoost[side] = Math.max(0, this.launchBoost[side] - dt);
         this.launchVx[side] += Math.sign(this.launchVx[side] || 1) * 260 * dt;
       }
+      const vmax = 900;
+      this.launchVx[side] = Math.max(-vmax, Math.min(vmax, this.launchVx[side]));
       this.launchX[side] += this.launchVx[side] * dt;
       if (Math.abs(this.launchX[side]) > 500) {
         this.launchX[side] = Math.sign(this.launchX[side]) * 500;
@@ -1018,8 +1033,23 @@ export class Presenter {
     const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
     this.push.hero *= Math.exp(-dt * 9);
     this.push.enemy *= Math.exp(-dt * 9);
-    const rawHero = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero + this.push.hero;
-    const rawEnemy = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy + this.push.enemy;
+    let rawHero = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero + this.push.hero;
+    let rawEnemy = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy + this.push.enemy;
+    // 防爆：任何 NaN/Infinity 立即回位
+    if (!Number.isFinite(rawHero)) {
+      this.baseX.hero = heroHome;
+      this.lunge.hero = 0;
+      this.launchX.hero = 0;
+      this.push.hero = 0;
+      rawHero = heroHome;
+    }
+    if (!Number.isFinite(rawEnemy)) {
+      this.baseX.enemy = enemyHome;
+      this.lunge.enemy = 0;
+      this.launchX.enemy = 0;
+      this.push.enemy = 0;
+      rawEnemy = enemyHome;
+    }
     const heroX = clampX(rawHero);
     const enemyX = clampX(rawEnemy);
 
@@ -1292,6 +1322,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
