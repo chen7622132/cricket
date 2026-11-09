@@ -194,16 +194,21 @@ export class Presenter {
           const gap = Math.abs(foe.x - actor.x);
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
-          this.pendingAttack[side] = attackForSkill(skill);
+          const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
+          this.pendingAttack[side] = heavy ? null : attackForSkill(skill);
           const leanMap: Record<string, number> = {
             hero_thrust: 0.2, hero_execute: 0.22, hero_rend: 0.14,
             hero_earthhammer: -0.16, enemy_swipe: 0.15, enemy_slam: -0.18,
           };
           this.pendingLean[side] = leanMap[skill] ?? 0;
+          if (heavy) {
+            actor.play(`${heavy}_WINDUP` as HeroState, true);
+            actor.setAttackLean(this.pendingLean[side]);
+          }
           // 远距离时用飞跃入场；碎地锤/处决跳得更高，形成空中攻击
           const leap = skill === "hero_earthhammer" ? 34 : skill === "hero_execute" ? 40 : skill === "hero_thrust" ? 18 : 0;
           if (leap > 0 && gap > 55) actor.startJump(leap);
-          actor.play("RUN", true);
+          if (!heavy) actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
         }
         this.pushLog(ev, "rule");
@@ -432,6 +437,10 @@ export class Presenter {
     }
 
     o.attacker.setAttackLean(0);
+    if (o.attackerSide === "hero" && (o.skill.includes("earthhammer") || o.skill.includes("execute"))) {
+      const recovery = o.skill.includes("earthhammer") ? "HAMMER_RECOVERY" : "EXEC_RECOVERY";
+      o.attacker.play(recovery as HeroState, true);
+    }
     o.target.setSquash(1.12, 0.9);
     o.attacker.setSquash(1.05, 0.95);
 
@@ -763,7 +772,8 @@ export class Presenter {
     // 滞空时使用真实的 Jump/Fall 序列帧，而不是整体平移
     for (const side of ["hero", "enemy"] as Side[]) {
       const a = this.actor(side);
-      if (a.airborne && a.state !== "ATTACK_1" && a.state !== "ATTACK_2" && a.state !== "HIT") {
+      if (a.airborne && a.state !== "ATTACK_1" && a.state !== "ATTACK_2" && a.state !== "HIT"
+        && a.state !== "EXEC_WINDUP" && a.state !== "EXEC_RECOVERY" && a.state !== "HAMMER_WINDUP" && a.state !== "HAMMER_RECOVERY") {
         a.play(a.airRising ? "JUMP" : "FALL");
       }
     }
@@ -937,6 +947,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 把 LuizMelo 的横排序列帧合成 spritesheet（atlas PNG + JSON）。
  * - 英雄：Martial Hero 2（hero）
  * - 敌方：Samurai Mack / Martial Hero 1（enemy）
@@ -23,6 +23,10 @@ const SETS = [
       { name: "fall", file: "Fall.png", frames: 2 },
       { name: "attack1", file: "Attack1.png", frames: 4 },
       { name: "attack2", file: "Attack2.png", frames: 4 },
+      { name: "exec_windup", file: "ExecWindup.png", frames: 2 },
+      { name: "exec_recovery", file: "ExecRecovery.png", frames: 2 },
+      { name: "hammer_windup", file: "HammerWindup.png", frames: 2 },
+      { name: "hammer_recovery", file: "HammerRecovery.png", frames: 2 },
       { name: "hit", file: "Take_hit.png", frames: 3 },
       { name: "death", file: "Death.png", frames: 7 },
     ],
@@ -106,3 +110,4 @@ function build({ dir, image, json, animations }) {
 }
 
 for (const set of SETS) build(set);
+
