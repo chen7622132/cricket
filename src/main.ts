@@ -154,6 +154,8 @@ async function boot(): Promise<void> {
       heroRangedDamage: heroDef.rangedDamage,
       enemyRangedDamage: enemyDef.rangedDamage,
       heroRanged2: heroDef.rangedPrimary === true,
+      heroTentacle: heroDef.id === "wizard",
+      enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
     });
 
@@ -167,6 +169,8 @@ async function boot(): Promise<void> {
       heroRangedDamage: heroDef.rangedDamage,
       enemyRangedDamage: enemyDef.rangedDamage,
       heroRanged2: heroDef.rangedPrimary === true,
+      heroTentacle: heroDef.id === "wizard",
+      enemyTentacle: enemyDef.id === "wizard",
       enemyRanged2: enemyDef.rangedPrimary === true,
     }).run();
 
@@ -314,6 +318,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

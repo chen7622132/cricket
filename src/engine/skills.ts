@@ -60,6 +60,24 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "melee/thrust",
     note: "格挡成功后的后摇反击",
   },
+  hero_tentacle: {
+    id: "hero_tentacle",
+    name: "暗触禁锢",
+    tier: "key",
+    windup: 18,
+    recovery: 22,
+    fx: "arcane/blink-in",
+    note: "远程触手：短禁锢 + 推开",
+  },
+  enemy_tentacle: {
+    id: "enemy_tentacle",
+    name: "暗触禁锢",
+    tier: "key",
+    windup: 18,
+    recovery: 22,
+    fx: "arcane/blink-in",
+    note: "敌方触手禁锢",
+  },
   hero_flurry: {
     id: "hero_flurry",
     name: "高频突刺",
@@ -246,6 +264,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_tentacle: 6,
+  enemy_tentacle: 6,
   hero_flurry: 4,
   enemy_flurry: 4,
   hero_whirl: 5,
@@ -285,6 +305,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

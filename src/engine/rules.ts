@@ -837,6 +837,21 @@ const ENEMY_RANGED_RULE: RuleDraft = {
   skill: "enemy_ranged",
 };
 
+const HERO_TENTACLE_RULE: RuleDraft = {
+  id: "hero_tentacle_rule",
+  side: "hero",
+  name: "暗触禁锢",
+  when: "距离 2~4",
+  skill: "hero_tentacle",
+  priority: 60,
+  cost: { kind: "none" },
+  cooldown: 240,
+  tags: tag("attack"),
+  test: ({ self }) => self.distance >= 2 && self.distance <= 4,
+};
+
+const ENEMY_TENTACLE_RULE: RuleDraft = { ...HERO_TENTACLE_RULE, id: "enemy_tentacle_rule", side: "enemy", skill: "enemy_tentacle" };
+
 const HERO_FLURRY_RULE: RuleDraft = {
   id: "hero_flurry_rule",
   side: "hero",
@@ -916,11 +931,11 @@ function withExtras(rs: Ruleset, extras: RuleDraft[]): Ruleset {
 }
 
 function withCombo(rs: Ruleset): Ruleset {
-  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE, HERO_FLURRY_RULE, HERO_WHIRL_RULE]);
+  return withExtras(rs, [SPACING_RULE, HERO_RANGED_RULE, HERO_RANGED2_RULE, HERO_SPECIAL_RULE, HERO_FLURRY_RULE, HERO_WHIRL_RULE, HERO_TENTACLE_RULE]);
 }
 
 function withEnemySpacing(rs: Ruleset): Ruleset {
-  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE, ENEMY_FLURRY_RULE, ENEMY_WHIRL_RULE]);
+  return withExtras(rs, [ENEMY_SPACING_RULE, ENEMY_RANGED_RULE, ENEMY_RANGED2_RULE, ENEMY_SPECIAL_RULE, ENEMY_FLURRY_RULE, ENEMY_WHIRL_RULE, ENEMY_TENTACLE_RULE]);
 }
 
 ENEMY_RULESETS.ENEMY = withEnemySpacing(ENEMY_RULES);
@@ -941,6 +956,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 

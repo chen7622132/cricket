@@ -221,11 +221,12 @@ export class Presenter {
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
           const ranged = this.chars[side].projectile;
           // 真远程判定：只有远程技能发弹道；近身技能一律走突进/近战
-          const useRanged = skill.includes("ranged") && gap > 36;
+          const useRanged = (skill.includes("ranged") || skill.includes("tentacle")) && gap > 36;
           if (useRanged) {
             this.lungeTarget[side] = 0;
             actor.playAttack(attackForSkill(skill));
-            this.spawnProjectile(side, ranged, foe.x, this.chars[side].element, skill.includes("_2"));
+            if (!skill.includes("tentacle")) this.spawnProjectile(side, ranged, foe.x, this.chars[side].element, skill.includes("_2"));
+            else this.fxLayer.spawn("arcane/blink-in", foe.x, terrainY(foe.x) - 36, {}, 0.7, 1.0);
             this.pushLog(ev, "rule");
             break;
           }
@@ -1286,6 +1287,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

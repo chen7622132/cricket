@@ -37,6 +37,8 @@ export interface BattleConfig {
   heroRangedDamage?: number;
   enemyRangedDamage?: number;
   heroRanged2?: boolean;
+  heroTentacle?: boolean;
+  enemyTentacle?: boolean;
   enemyRanged2?: boolean;
   /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流，或一个自定义 Ruleset */
   heroRuleset: "A" | "B" | "C" | "D" | "E" | Ruleset;
@@ -172,6 +174,8 @@ export class Battle {
   readonly heroRangedDamage: number;
   readonly enemyRangedDamage: number;
   readonly heroRanged2: boolean;
+  readonly heroTentacle: boolean;
+  readonly enemyTentacle: boolean;
   readonly enemyRanged2: boolean;
   private readonly mechSeen = new Set<string>();
 
@@ -214,6 +218,8 @@ export class Battle {
     this.heroRangedDamage = cfg.heroRangedDamage ?? 8;
     this.enemyRangedDamage = cfg.enemyRangedDamage ?? 7;
     this.heroRanged2 = cfg.heroRanged2 === true;
+    this.heroTentacle = cfg.heroTentacle === true;
+    this.enemyTentacle = cfg.enemyTentacle === true;
     this.enemyRanged2 = cfg.enemyRanged2 === true;
 
     this.hero = this.makeActor("hero", "英雄", HERO_MAX_HP, HERO_START_SLOT, 2);
@@ -428,6 +434,8 @@ export class Battle {
 
   private ruleAvailable(actor: ActorState, rule: RuleDef): boolean {
     if (rule.id === "hero_ranged2_rule" && !this.heroRanged2) return false;
+    if (rule.id === "hero_tentacle_rule" && !this.heroTentacle) return false;
+    if (rule.id === "enemy_tentacle_rule" && !this.enemyTentacle) return false;
     if (rule.id === "enemy_ranged2_rule" && !this.enemyRanged2) return false;
     if ((actor.cooldowns.get(rule.id) ?? 0) > 0) return false;
     if (rule.cost.kind === "resource" && actor.insight < rule.cost.insight) return false;
@@ -782,6 +790,13 @@ export class Battle {
           data: { status: "airborne", frames: 75 },
         });
       }
+    }
+
+    if (skill.id === "hero_tentacle" || skill.id === "enemy_tentacle") {
+      def.statuses.set("stun", 24);
+      this.stepAway(att, def, 1);
+      this.emit("MECHANIC", `${def.name} 被触手禁锢 24 帧`, { side: def.side, skill: skill.id, data: { kind: "root" } });
+      this.logLine("event", `禁锢：${def.name} 被推开并定身 0.4s`);
     }
 
     // 流血：裂伤
@@ -1242,6 +1257,7 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
 
 
 
