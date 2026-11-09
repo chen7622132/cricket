@@ -34,6 +34,24 @@ const SETS = [
     ],
   },
   {
+    dir: path.join("public", "assets", "boxer"),
+    image: "boxer.png",
+    json: "boxer.json",
+    sourceCell: 200,
+    animations: [
+      { name: "idle", file: "Idle.png", frames: 4 },
+      { name: "run", file: "Run.png", frames: 6 },
+      { name: "jump", file: "Jump.png", frames: 2 },
+      { name: "fall", file: "Fall.png", frames: 2 },
+      { name: "attack1", file: "Attack1.png", frames: 4 },
+      { name: "attack2", file: "Attack2.png", frames: 4 },
+      { name: "attack3", file: "Attack3.png", frames: 4 },
+      { name: "hit", file: "Take hit.png", frames: 2 },
+      { name: "death", file: "Death.png", frames: 4 },
+      { name: "getup", file: "Getup.png", frames: 4 },
+    ],
+  },
+  {
     dir: path.join("public", "assets", "evil-wizard"),
     image: "wizard.png",
     json: "wizard.json",
@@ -151,6 +169,7 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
 
 
 

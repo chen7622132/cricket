@@ -102,19 +102,21 @@ export class HeroActor {
   private landedThisFrame = false;
   private lastLanding = 0;
   private readonly baseTint: number;
+  private readonly baseScale: number;
   private squashX = 1;
   private squashY = 1;
   private actionTimer = 0;
   private actionKind: "attack1" | "attack2" | "attack3" | null = null;
   private bob = 0;
 
-  constructor(sheet: PIXI.Spritesheet, outlineColor: number, tint?: number) {
+  constructor(sheet: PIXI.Spritesheet, outlineColor: number, tint?: number, scaleMul = 1) {
     this.sheet = sheet;
     this.baseTint = tint ?? 0xffffff;
+    this.baseScale = BASE_SCALE * scaleMul;
 
     this.sprite = new PIXI.AnimatedSprite(sheet.animations.idle);
     this.sprite.anchor.set(ANCHOR_X, ANCHOR_Y);
-    this.sprite.scale.set(BASE_SCALE);
+    this.sprite.scale.set(this.baseScale);
     this.sprite.animationSpeed = SPEED.IDLE;
     this.sprite.loop = true;
     this.sprite.roundPixels = true;
@@ -516,7 +518,7 @@ export class HeroActor {
     const k = Math.min(1, dt * 7);
     this.squashX += (1 - this.squashX) * k;
     this.squashY += (1 - this.squashY) * k;
-    this.sprite.scale.set(BASE_SCALE * this.squashX * facing, BASE_SCALE * this.squashY);
+    this.sprite.scale.set(this.baseScale * this.squashX * facing, this.baseScale * this.squashY);
     for (const copy of this.outlines) {
       copy.texture = this.sprite.texture;
       copy.scale.copyFrom(this.sprite.scale);
@@ -672,6 +674,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

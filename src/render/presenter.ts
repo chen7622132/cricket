@@ -128,8 +128,8 @@ export class Presenter {
     this.hooks = hooks;
     this.chars = { hero: characterOf(heroChar), enemy: characterOf(enemyChar) };
     this.fxLayer = new PixelFxLayer(0.45);
-    this.hero = new HeroActor(sheet, 0x6fd3ff);
-    this.enemy = new HeroActor(enemySheet, 0xff5c5c, 0xffb9b9);
+    this.hero = new HeroActor(sheet, 0x6fd3ff, undefined, this.chars.hero.scale ?? 1);
+    this.enemy = new HeroActor(enemySheet, 0xff5c5c, 0xffb9b9, this.chars.enemy.scale ?? 1);
     if (this.chars.hero.rig) this.hero.enableRig();
     if (this.chars.enemy.rig) this.enemy.enableRig();
 
@@ -1326,6 +1326,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
