@@ -196,6 +196,35 @@ export class ImpactFx {
     this.addShape(g, 0.1, 0);
   }
 
+  /** 近战命中：KOF/BvN 式星芒 + 八向射线 + 冲击环。 */
+  meleeSpark(x: number, y: number, dir: number, tier: Tier, color = 0xffffff): void {
+    const heavy = tier === "ultimate";
+    const key = tier === "key";
+    const r = heavy ? 20 : key ? 15 : 10;
+
+    this.star(x, y, r);
+
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: 2, color, alpha: 0.95, cap: "round" });
+    const rays = heavy ? 10 : key ? 8 : 6;
+    for (let k = 0; k < rays; k++) {
+      const a = (k / rays) * Math.PI * 2 + 0.12;
+      const r0 = r * 0.7;
+      const r1 = r * (1.4 + (k % 3) * 0.25);
+      g.moveTo(x + Math.cos(a) * r0, y + Math.sin(a) * r0);
+      g.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
+    }
+    g.stroke();
+    this.addShape(g, 0.1, 0);
+
+    const ring = new PIXI.Graphics();
+    ring.circle(0, 0, r * 0.55).stroke({ width: 2, color, alpha: 0.85 });
+    ring.position.set(x, y);
+    this.addShape(ring, 0.16, 1.8);
+
+    this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "radial");
+  }
+
   /** 元素命中：火/雷/冰各自的硬边形态。 */
   elementBurst(x: number, y: number, element: "fire" | "thunder" | "ice"): void {
     const g = new PIXI.Graphics();
@@ -336,6 +365,8 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
+
 
 
 

@@ -59,7 +59,7 @@ export class Presenter {
   private ukemiCount = 0;
   private camZoom = 1;
   private readonly chars: { hero: CharacterDef; enemy: CharacterDef };
-  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" | "knife" | "wave" }> = [];
+  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" | "swordwave" | "wave" }> = [];
   private pendingLean: Record<Side, number> = { hero: 0, enemy: 0 };
   private arcQueue: Array<{ at: number; x: number; y: number; dir: number; color: number; radius: number }> = [];
   private koMs = 0;
@@ -477,6 +477,7 @@ export class Presenter {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
+      this.impact.meleeSpark(x, y, dir, tier, o.guard ? 0x7fd8ff : 0xffffff);
     }
     if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
       for (const delay of [4, 8]) {
@@ -536,7 +537,7 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
-  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "knife" | "wave", targetX: number, element: "fire" | "thunder" | "ice"): void {
+  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice"): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
     const tint = element === "fire" ? 0xff7a1a : element === "thunder" ? 0xffe14d : 0x9fe8ff;
@@ -547,11 +548,17 @@ export class Presenter {
       g.stroke();
       g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
       g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
-    } else if (kind === "knife") {
-      g.setStrokeStyle({ width: 2, color: tint, alpha: 0.95 });
-      g.moveTo(-8, 0).lineTo(8, 0);
+    } else if (kind === "swordwave") {
+      // 剑气：三层新月刀光
+      g.setStrokeStyle({ width: 4, color: tint, alpha: 0.95, cap: "round" });
+      g.arc(0, 0, 16, -0.75, 0.75);
       g.stroke();
-      g.poly([8, -2, 12, 0, 8, 2]).fill({ color: 0xffffff });
+      g.setStrokeStyle({ width: 2, color: 0xffffff, alpha: 0.9 });
+      g.arc(0, 0, 22, -0.6, 0.6);
+      g.stroke();
+      g.setStrokeStyle({ width: 1.5, color: tint, alpha: 0.7 });
+      g.arc(0, 0, 28, -0.45, 0.45);
+      g.stroke();
     } else if (kind === "wave") {
       g.setStrokeStyle({ width: 3, color: tint, alpha: 0.9 });
       g.arc(0, 0, 9, -0.9, 0.9);
@@ -1027,6 +1034,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
