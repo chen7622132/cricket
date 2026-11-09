@@ -60,6 +60,24 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     fx: "melee/thrust",
     note: "格挡成功后的后摇反击",
   },
+  hero_ranged: {
+    id: "hero_ranged",
+    name: "远程牵制",
+    tier: "normal",
+    windup: 12,
+    recovery: 18,
+    fx: "melee/thrust",
+    note: "中距离飞道，近战角色也会投掷/发劲",
+  },
+  enemy_ranged: {
+    id: "enemy_ranged",
+    name: "远程骚扰",
+    tier: "normal",
+    windup: 12,
+    recovery: 18,
+    fx: "melee/thrust",
+    note: "敌方中距离飞道",
+  },
   hero_retreat: {
     id: "hero_retreat",
     name: "拉开距离",
@@ -152,6 +170,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
+  hero_ranged: 8,
+  enemy_ranged: 7,
   hero_retreat: 0,
   enemy_retreat: 0,
   hero_read: 0,
@@ -181,6 +201,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

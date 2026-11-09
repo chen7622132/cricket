@@ -59,7 +59,7 @@ export class Presenter {
   private ukemiCount = 0;
   private camZoom = 1;
   private readonly chars: { hero: CharacterDef; enemy: CharacterDef };
-  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" }> = [];
+  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" | "knife" | "wave" }> = [];
   private pendingLean: Record<Side, number> = { hero: 0, enemy: 0 };
   private arcQueue: Array<{ at: number; x: number; y: number; dir: number; color: number; radius: number }> = [];
   private koMs = 0;
@@ -202,8 +202,8 @@ export class Presenter {
           const gap = Math.abs(foe.x - actor.x);
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
-          const ranged = this.chars[side].ranged;
-          const useRanged = !!ranged && gap > 60;
+          const ranged = this.chars[side].projectile;
+          const useRanged = skill.includes("ranged") || (this.chars[side].standOff && gap > 60);
           if (useRanged) {
             this.lungeTarget[side] = 0;
             actor.playAttack(attackForSkill(skill));
@@ -531,7 +531,7 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
-  private spawnProjectile(side: Side, kind: "arrow" | "orb", targetX: number): void {
+  private spawnProjectile(side: Side, kind: "arrow" | "orb" | "knife" | "wave", targetX: number): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
     const g = new PIXI.Graphics();
@@ -541,6 +541,18 @@ export class Presenter {
       g.stroke();
       g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
       g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
+    } else if (kind === "knife") {
+      g.setStrokeStyle({ width: 2, color: 0xd8e4ff, alpha: 0.95 });
+      g.moveTo(-8, 0).lineTo(8, 0);
+      g.stroke();
+      g.poly([8, -2, 12, 0, 8, 2]).fill({ color: 0xffffff });
+    } else if (kind === "wave") {
+      g.setStrokeStyle({ width: 3, color: 0xffc46b, alpha: 0.9 });
+      g.arc(0, 0, 9, -0.9, 0.9);
+      g.stroke();
+      g.setStrokeStyle({ width: 1.5, color: 0xffffff, alpha: 0.8 });
+      g.arc(0, 0, 14, -0.7, 0.7);
+      g.stroke();
     } else {
       g.circle(0, 0, 7).fill({ color: 0x9f6bff, alpha: 0.5 });
       g.circle(0, 0, 4).fill({ color: 0xd9c2ff });
@@ -1009,6 +1021,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
