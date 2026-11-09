@@ -1,6 +1,7 @@
 ﻿import "./style.css";
 import { Battle } from "./engine/battle.ts";
 import { applyRuleOverrides, getRuleset, MECHANIC_LABEL, type Ruleset } from "./engine/rules.ts";
+import { characterOf } from "./render/characters.ts";
 import type { PresenterHooks } from "./render/presenter.ts";
 import { Game } from "./render/game.ts";
 import { RuleEditor } from "./ui/editor.ts";
@@ -139,10 +140,29 @@ async function boot(): Promise<void> {
     });
     window.history.replaceState(null, "", `?${query.toString()}`);
 
-    const battle = new Battle({ seed, heroRuleset: heroRules, enemyRuleset });
+    const chars = currentChars();
+    const heroDef = characterOf(chars.hero);
+    const enemyDef = characterOf(chars.enemy);
+    const battle = new Battle({
+      seed,
+      heroRuleset: heroRules,
+      enemyRuleset,
+      heroElement: heroDef.element,
+      enemyElement: enemyDef.element,
+      heroRangedDamage: heroDef.rangedDamage,
+      enemyRangedDamage: enemyDef.rangedDamage,
+    });
 
     // 同 seed 预演一局：开场日志里给出"预测结果"，实况结束时应当完全一致（确定性自证）
-    const forecast = new Battle({ seed, heroRuleset: heroRules, enemyRuleset }).run();
+    const forecast = new Battle({
+      seed,
+      heroRuleset: heroRules,
+      enemyRuleset,
+      heroElement: heroDef.element,
+      enemyElement: enemyDef.element,
+      heroRangedDamage: heroDef.rangedDamage,
+      enemyRangedDamage: enemyDef.rangedDamage,
+    }).run();
 
     const baseHeroLabel = getRuleset(ruleset).name;
     const enemyLabel = getRuleset(enemyRuleset).name;
@@ -169,7 +189,6 @@ async function boot(): Promise<void> {
       onCombo: (n, air) => hud.setCombo(n, air),
     };
     hud.setRules(battle.heroRuleset.rules, battle.enemyRuleset.rules, `英雄 ${heroTag} · 敌方 ${enemyLabel}`);
-    const chars = currentChars();
     game.play(battle, hooks, chars.hero, chars.enemy);
   };
 
@@ -289,6 +308,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 

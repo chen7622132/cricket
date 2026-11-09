@@ -28,8 +28,14 @@ import type {
   Tier,
 } from "./types.ts";
 
+export type Element = "fire" | "thunder" | "ice";
+
 export interface BattleConfig {
   seed: number;
+  heroElement?: Element;
+  enemyElement?: Element;
+  heroRangedDamage?: number;
+  enemyRangedDamage?: number;
   /** 英雄规则表：A 突刺优先 / B 全格挡流 / C 识破流，或一个自定义 Ruleset */
   heroRuleset: "A" | "B" | "C" | "D" | "E" | Ruleset;
   /** 敌方规则表：ENEMY 碎地重锤 / ENEMY_B 压制连锤 */
@@ -154,6 +160,10 @@ export class Battle {
   readonly heroRuleset: Ruleset;
   readonly enemyRuleset: Ruleset;
   readonly maxFrames: number;
+  readonly heroElement?: Element;
+  readonly enemyElement?: Element;
+  readonly heroRangedDamage: number;
+  readonly enemyRangedDamage: number;
   private readonly mechSeen = new Set<string>();
 
   hero: ActorState;
@@ -190,6 +200,10 @@ export class Battle {
       typeof cfg.heroRuleset === "string" ? HERO_RULESETS[cfg.heroRuleset] : cfg.heroRuleset;
     this.enemyRuleset = ENEMY_RULESETS[cfg.enemyRuleset ?? "ENEMY"];
     this.maxFrames = cfg.maxFrames ?? 4800;
+    this.heroElement = cfg.heroElement;
+    this.enemyElement = cfg.enemyElement;
+    this.heroRangedDamage = cfg.heroRangedDamage ?? 8;
+    this.enemyRangedDamage = cfg.enemyRangedDamage ?? 7;
 
     this.hero = this.makeActor("hero", "英雄", HERO_MAX_HP, HERO_START_SLOT, 2);
     this.enemy = this.makeActor("enemy", "敌人", ENEMY_MAX_HP, ENEMY_START_SLOT, 0);
@@ -567,7 +581,9 @@ export class Battle {
   private resolveHit(att: ActorState, act: ActionState) {
     const def = att === this.hero ? this.enemy : this.hero;
     const skill = act.def;
-    const base = DAMAGE[skill.id] ?? 0;
+    const isRangedSkill = skill.id === "hero_ranged" || skill.id === "enemy_ranged";
+    let base = DAMAGE[skill.id] ?? 0;
+    if (isRangedSkill) base = att.side === "hero" ? this.heroRangedDamage : this.enemyRangedDamage;
     if (base <= 0) {
       if (skill.id === "hero_retreat" || skill.id === "enemy_retreat") {
         this.stepAway(att, def, 2);
@@ -800,6 +816,20 @@ export class Battle {
     );
 
     this.applyDamage(def, amount, "hit", skill.id, hitTier, skill.name, att);
+
+    if (isRangedSkill) {
+      const element = att.side === "hero" ? this.heroElement : this.enemyElement;
+      if (element === "fire") {
+        def.statuses.set("burn", 120);
+        this.emit("STATUS_APPLY", `${def.name} 灼烧 120 帧`, { side: def.side, skill: skill.id, data: { status: "burn", frames: 120 } });
+      } else if (element === "thunder") {
+        def.statuses.set("stun", 20);
+        this.emit("STATUS_APPLY", `${def.name} 被雷击麻痹 20 帧`, { side: def.side, skill: skill.id, data: { status: "stun", frames: 20 } });
+      } else if (element === "ice") {
+        def.statuses.set("stun", 12);
+        this.emit("STATUS_APPLY", `${def.name} 被冰冻 12 帧`, { side: def.side, skill: skill.id, data: { status: "stun", frames: 12 } });
+      }
+    }
 
     // 提前蓄力机制：重锤附带眩晕
     if (att.side === "enemy" && mech === "early_charge" && skill.id === "enemy_slam" && !def.statuses.has("stun")) {
@@ -1138,6 +1168,8 @@ export function describeCost(rule: RuleDef): string {
       return "无";
   }
 }
+
+
 
 
 

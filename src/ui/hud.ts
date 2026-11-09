@@ -17,6 +17,7 @@ const STATUS_LABEL: Record<StatusId, string> = {
   ukemi_counter: "受身反击",
   combo_ready: "连招窗口",
   roaming: "游走",
+  burn: "灼烧",
 };
 
 const LOG_CLASS: Record<LogEntry["kind"], string> = {
@@ -156,6 +157,7 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 
 

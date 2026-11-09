@@ -16,6 +16,7 @@ export type StatusId =
   | "ukemi_counter" // 受身反击：起身后下一击增伤
   | "combo_ready" // 确反连招窗口
   | "roaming" // 游走：持续拉开距离
+  | "burn" // 灼烧：持续伤害
   | "read"; // 看破：下一次命中必暴击
 
 export type Tier = "normal" | "key" | "ultimate";
@@ -187,6 +188,7 @@ export interface CombatSource {
   snapshot(): BattleSnapshot;
   drainEvents(): BattleEvent[];
 }
+
 
 
 
