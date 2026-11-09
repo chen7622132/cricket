@@ -7,6 +7,7 @@ import { ARENA, createArena, SLOT_X, slotX, terrainY } from "./arena.ts";
 import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
+import { characterOf, type CharacterDef } from "./characters.ts";
 import { HitParticles } from "./particles.ts";
 import { ImpactFx, type ImpactKind } from "./impact.ts";
 
@@ -57,6 +58,8 @@ export class Presenter {
   private kdActive: Record<Side, boolean> = { hero: false, enemy: false };
   private ukemiCount = 0;
   private camZoom = 1;
+  private readonly chars: { hero: CharacterDef; enemy: CharacterDef };
+  private projectiles: Array<{ g: PIXI.Graphics; owner: Side; life: number; max: number; vx: number; kind: "arrow" | "orb" }> = [];
   private pendingLean: Record<Side, number> = { hero: 0, enemy: 0 };
   private arcQueue: Array<{ at: number; x: number; y: number; dir: number; color: number; radius: number }> = [];
   private koMs = 0;
@@ -104,8 +107,11 @@ export class Presenter {
     sheet: PIXI.Spritesheet,
     enemySheet: PIXI.Spritesheet,
     hooks: PresenterHooks,
+    heroChar = "martial",
+    enemyChar = "samurai",
   ) {
     this.hooks = hooks;
+    this.chars = { hero: characterOf(heroChar), enemy: characterOf(enemyChar) };
     this.fxLayer = new PixelFxLayer(0.45);
     this.hero = new HeroActor(sheet, 0x6fd3ff);
     this.enemy = new HeroActor(enemySheet, 0xff5c5c, 0xffb9b9);
@@ -153,6 +159,8 @@ export class Presenter {
     this.enemy.clearGhosts();
     this.combo = 0;
     this.arcQueue = [];
+    for (const p of this.projectiles) p.g.destroy();
+    this.projectiles = [];
     this.comboOwner = null;
     this.comboTimer = 0;
     this.airCombo = { hero: 0, enemy: 0 };
@@ -194,6 +202,15 @@ export class Presenter {
           const gap = Math.abs(foe.x - actor.x);
           const stop = ev.tier === "ultimate" ? 16 : ev.tier === "key" ? 22 : 28;
           this.lungeTarget[side] = dir * Math.max(0, gap - stop);
+          const ranged = this.chars[side].ranged;
+          const useRanged = !!ranged && gap > 60;
+          if (useRanged) {
+            this.lungeTarget[side] = 0;
+            actor.playAttack(attackForSkill(skill));
+            this.spawnProjectile(side, ranged, foe.x);
+            this.pushLog(ev, "rule");
+            break;
+          }
           const heavy = skill === "hero_earthhammer" ? "HAMMER" : skill === "hero_execute" ? "EXEC" : null;
           const attackKind =
             (skill === "enemy_slam" || skill === "hero_riposte") && actor.supportsAttack3
@@ -514,6 +531,29 @@ export class Presenter {
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
+  private spawnProjectile(side: Side, kind: "arrow" | "orb", targetX: number): void {
+    const a = this.actor(side);
+    const dir = Math.sign(targetX - a.x) || 1;
+    const g = new PIXI.Graphics();
+    if (kind === "arrow") {
+      g.setStrokeStyle({ width: 2, color: 0xffe0a0, alpha: 0.95 });
+      g.moveTo(-14, 0).lineTo(10, 0);
+      g.stroke();
+      g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
+      g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
+    } else {
+      g.circle(0, 0, 7).fill({ color: 0x9f6bff, alpha: 0.5 });
+      g.circle(0, 0, 4).fill({ color: 0xd9c2ff });
+      g.circle(0, 0, 1.5).fill({ color: 0xffffff });
+    }
+    const x = a.x + dir * 18;
+    const y = terrainY(a.x) - 34;
+    g.position.set(x, y);
+    g.scale.set(dir, 1);
+    this.world.addChild(g);
+    this.projectiles.push({ g, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind });
+  }
+
   private startCutin(name: string): void {
     this.cutinMs = 380;
     this.cutinName = name;
@@ -773,6 +813,19 @@ export class Presenter {
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
     this.enemy.setMoving(Math.abs(this.lungeTarget.enemy - this.lunge.enemy) > 2);
 
+    for (const p of this.projectiles) {
+      p.life -= dt;
+      p.g.x += p.vx * dt;
+      p.g.alpha = Math.max(0, p.life / p.max);
+    }
+    this.projectiles = this.projectiles.filter((p) => {
+      if (p.life <= 0) {
+        p.g.destroy();
+        return false;
+      }
+      return true;
+    });
+
     this.hero.update(dt, heroX, heroFacing, snap.hero.statuses, this.footY.hero);
     this.enemy.update(dt, enemyX, -heroFacing, snap.enemy.statuses, this.footY.enemy);
 
@@ -912,6 +965,7 @@ export class Presenter {
     cutinName: string;
     overlayVisible: boolean;
     overlayChildren: number;
+    projectiles: number;
   } {
     return {
       frozen: this.freezeMs > 0,
@@ -939,6 +993,7 @@ export class Presenter {
       cutin: this.cutinMs > 0,
       ko: this.koMs > 0,
       camZoom: this.camZoom,
+      projectiles: this.projectiles.length,
       cutinName: this.cutinName,
       overlayVisible: this.overlay.visible,
       overlayChildren: this.overlay.children.length,
@@ -954,6 +1009,11 @@ export class Presenter {
     };
   }
 }
+
+
+
+
+
 
 
 
