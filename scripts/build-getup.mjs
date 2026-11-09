@@ -1,55 +1,69 @@
-﻿/**
- * 用每个角色的 Death 序列帧反放，生成 4 帧“起身”条带（Getup.png）。
- * 纯像素搬运，不改美术；之后再替换为手绘起身帧。
+/**
+ * 生成每个角色的 4 帧起身条带：躺地 → 撑地 → 半跪 → 站起。
+ * 以死亡末帧 + 待机帧烘焙旋转/缩放，得到专属姿势，而不是简单倒放。
  */
 import fs from "node:fs";
 import path from "node:path";
 import { PNG } from "pngjs";
 
-
 const SETS = [
-  { dir: "public/assets/martial-hero", death: "Death.png", cell: 200, frames: 7 },
-  { dir: "public/assets/samurai-mack", death: "Death.png", cell: 200, frames: 6 },
-  { dir: "public/assets/huntress", death: "Death.png", cell: 150, frames: 8 },
-  { dir: "public/assets/evil-wizard", death: "Death.png", cell: 250, frames: 7 },
+  { dir: "public/assets/martial-hero", cell: 200, deathFrames: 7, idle: "Idle.png", death: "Death.png" },
+  { dir: "public/assets/samurai-mack", cell: 200, deathFrames: 6, idle: "Idle.png", death: "Death.png" },
+  { dir: "public/assets/huntress", cell: 150, deathFrames: 8, idle: "Idle.png", death: "Death.png" },
+  { dir: "public/assets/evil-wizard", cell: 250, deathFrames: 7, idle: "Idle.png", death: "Death.png" },
 ];
 
-
-
-for (const set of SETS) {
-  const file = path.join(set.dir, set.death);
-  if (!fs.existsSync(file)) {
-    console.log(`skip ${file}`);
-    continue;
-  }
-  const src = PNG.sync.read(fs.readFileSync(file));
-  const srcCell = src.width / set.frames;
-  const CELL = set.cell;
-  const out = new PNG({ width: CELL * 4, height: CELL });
-  out.data.fill(0);
-
-  for (let i = 0; i < 4; i++) {
-    // 死亡序列最后一帧是躺地，反放即起身
-    const frame = set.frames - 1 - i;
-    const sx = frame * srcCell;
-    const scale = CELL / srcCell;
-    for (let y = 0; y < CELL; y++) {
-      for (let x = 0; x < CELL; x++) {
-        const px = Math.min(srcCell - 1, Math.floor(x / scale));
-        const py = Math.min(srcCell - 1, Math.floor(y / scale));
-        const si = ((py * src.width) + sx + px) * 4;
-        const di = ((y * out.width) + i * CELL + x) * 4;
-        out.data[di] = src.data[si];
-        out.data[di + 1] = src.data[si + 1];
-        out.data[di + 2] = src.data[si + 2];
-        out.data[di + 3] = src.data[si + 3];
-      }
-    }
-  }
-
-  const outFile = path.join(set.dir, "Getup.png");
-  fs.writeFileSync(outFile, PNG.sync.write(out));
-  console.log(`${outFile}: 4 frames (${CELL}x${CELL})`);
+function frameAt(png, cell, index) {
+  return { png, cell, x: index * cell, y: 0 };
 }
 
+function sample(src, x, y) {
+  if (x < 0 || y < 0 || x >= src.png.width || y >= src.png.height) return [0, 0, 0, 0];
+  const i = ((src.y + y) * src.png.width + (src.x + x)) * 4;
+  return [src.png.data[i], src.png.data[i + 1], src.png.data[i + 2], src.png.data[i + 3]];
+}
 
+function bake(out, cell, fx, angle, scale, dy) {
+  const pivotX = cell / 2;
+  const pivotY = cell * 0.9;
+  const cos = Math.cos(-angle);
+  const sin = Math.sin(-angle);
+  for (let y = 0; y < cell; y++) {
+    for (let x = 0; x < cell; x++) {
+      const vx = (x - pivotX) / scale;
+      const vy = (y - pivotY - dy) / scale;
+      const sx = vx * cos - vy * sin + pivotX;
+      const sy = vx * sin + vy * cos + pivotY;
+      const [r, g, b, a] = sample(src, Math.round(sx), Math.round(sy));
+      if (a === 0) continue;
+      const di = ((y * out.width) + fx * cell + x) * 4;
+      out.data[di] = r;
+      out.data[di + 1] = g;
+      out.data[di + 2] = b;
+      out.data[di + 3] = a;
+    }
+  }
+}
+
+for (const set of SETS) {
+  const cell = set.cell;
+  const idlePng = PNG.sync.read(fs.readFileSync(path.join(set.dir, set.idle)));
+  const deathPng = PNG.sync.read(fs.readFileSync(path.join(set.dir, set.death)));
+  const idle = frameAt(idlePng, cell, 0);
+  const dead = frameAt(deathPng, cell, set.deathFrames - 1);
+
+  const out = new PNG({ width: cell * 4, height: cell });
+  out.data.fill(0);
+
+  // 0 躺地：死亡末帧
+  bake(dead, cell, 0, 0, 1, 6);
+  // 1 撑地：待机帧旋转 1.05rad、略缩小
+  bake(idle, cell, 1, 1.05, 0.92, 10);
+  // 2 半跪：旋转 0.45rad
+  bake(idle, cell, 2, 0.45, 0.96, 4);
+  // 3 站起：待机帧
+  bake(idle, cell, 3, 0, 1, 0);
+
+  fs.writeFileSync(path.join(set.dir, "Getup.png"), PNG.sync.write(out));
+  console.log(`${set.dir}/Getup.png: 4 baked frames (${cell}x${cell})`);
+}

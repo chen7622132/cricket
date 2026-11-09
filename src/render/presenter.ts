@@ -626,6 +626,21 @@ export class Presenter {
       g.poly([10, -3, 16, 0, 10, 3]).fill({ color: 0xffffff });
       g.rect(-16, -3, 5, 2).fill({ color: 0xff8a5c });
     } else if (kind === "swordwave") {
+      const big = this.chars[side].id === "samurai" ? PIXI.Assets.get("assets/fx/samurai-slash.png") as PIXI.Texture | undefined : undefined;
+      if (big) {
+        // 武士专属 200x200 大剑气（8 帧）
+        const frames: PIXI.Texture[] = [];
+        for (let i = 0; i < 8; i++) {
+          frames.push(new PIXI.Texture({ source: big.source, frame: new PIXI.Rectangle(i * 200, 0, 200, 200) }));
+        }
+        anim = new PIXI.AnimatedSprite(frames);
+        anim.anchor.set(0.5);
+        anim.animationSpeed = 1.6;
+        anim.loop = false;
+        anim.play();
+        view = anim;
+        g.setStrokeStyle({ width: 1, color: tint, alpha: 0.01 });
+      } else {
       // pixelfx 导出的 24 帧剑斩序列
       const sheet = PIXI.Assets.get("assets/fx/sword-slash.png") as PIXI.Texture | undefined;
       if (sheet) {
@@ -648,6 +663,7 @@ export class Presenter {
         g.arc(0, 0, 16, -0.75, 0.75);
         g.stroke();
       }
+      }
     } else if (kind === "wave") {
       g.setStrokeStyle({ width: 3, color: tint, alpha: 0.9 });
       g.arc(0, 0, 9, -0.9, 0.9);
@@ -665,7 +681,7 @@ export class Presenter {
     const x = a.x + dir * 18;
     const y = terrainY(a.x) - 34;
     view.position.set(x, y);
-    const zoom = strong ? 2.6 : 1.6;
+    const zoom = strong ? 2.6 : kind === "swordwave" && this.chars[side].id === "samurai" ? 2.2 : 1.6;
     view.scale.set(dir * zoom, zoom);
     this.world.addChild(view);
     this.projectiles.push({ g: view, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind, anim });
@@ -1141,6 +1157,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
