@@ -8,7 +8,6 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { characterOf, type CharacterDef } from "./characters.ts";
-import { sfx } from "../audio/sfx.ts";
 import { HitParticles } from "./particles.ts";
 import { ImpactFx, type ImpactKind } from "./impact.ts";
 
@@ -238,7 +237,6 @@ export class Presenter {
           if (!heavy) actor.play("RUN", true);
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
         }
-        sfx.whoosh();
         this.pushLog(ev, "rule");
         break;
       }
@@ -414,7 +412,6 @@ export class Presenter {
           this.ended = true;
           (this.battle.winner === "hero" ? this.enemy : this.hero).playDeath();
         }
-        sfx.ko();
         this.hooks.onEnd(this.battle.winner ?? "draw", this.battle.frame);
         break;
       default:
@@ -441,8 +438,6 @@ export class Presenter {
     },
   ): void {
     const profile = TIERS[tier];
-    if (o.guard) sfx.guard();
-    else sfx.hit(tier, (o.skill ?? "").includes("ranged"));
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
     // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
@@ -609,7 +604,6 @@ export class Presenter {
     const zoom = strong ? 2.6 : 1.6;
     view.scale.set(dir * zoom, zoom);
     this.world.addChild(view);
-    sfx.projectile();
     this.projectiles.push({ g: view, owner: side, life: 0.3, max: 0.3, vx: (targetX - x) / 0.3, kind, anim });
   }
 
@@ -1080,6 +1074,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
