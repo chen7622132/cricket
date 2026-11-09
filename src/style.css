@@ -1061,3 +1061,31 @@ body.sidebar-collapsed #side {
 }
 
 
+
+#screen-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 6;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 40%, rgba(255,255,255,0.75) 100%);
+}
+
+#screen-flash.flash-normal {
+  animation: flash-normal 0.16s ease-out;
+}
+
+#screen-flash.flash-strong {
+  animation: flash-strong 0.26s ease-out;
+}
+
+@keyframes flash-normal {
+  0% { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+@keyframes flash-strong {
+  0% { opacity: 0.9; }
+  35% { opacity: 0.55; }
+  100% { opacity: 0; }
+}

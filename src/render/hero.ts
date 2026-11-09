@@ -87,6 +87,7 @@ export class HeroActor {
   private leanTarget = 0;
   private hurtMs = 0;
   private hurtDir = 1;
+  private shakeMs = 0;
   private kdMs = 0;
   private kdDir = 1;
   private airHeight = 0;
@@ -324,6 +325,7 @@ export class HeroActor {
   setHurt(dir: number): void {
     this.hurtMs = 0.16;
     this.hurtDir = dir;
+    this.shakeMs = 0.2;
   }
 
   /** 攻击姿态：前倾/后仰，弥补序列帧动作不足。 */
@@ -421,6 +423,16 @@ export class HeroActor {
       hurtLean = this.hurtDir * 0.18 * Math.max(0, this.hurtMs / 0.16);
     }
     const sway = this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 0.012 : 0;
+    let shakeX = 0;
+    let shakeY = 0;
+    if (this.shakeMs > 0) {
+      this.shakeMs -= dt;
+      const k = Math.max(0, this.shakeMs / 0.2);
+      shakeX = Math.sin(this.bob * 140) * 2 * k;
+      shakeY = Math.cos(this.bob * 190) * 1.5 * k;
+    }
+    this.body.x = shakeX;
+    this.body.y = shakeY;
     let kdRot = 0;
     if (this.kdMs > 0) {
       this.kdMs -= dt;
@@ -602,6 +614,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

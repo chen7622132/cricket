@@ -8,6 +8,7 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { characterOf, type CharacterDef } from "./characters.ts";
+import { flashScreen } from "./flash.ts";
 import { HitParticles } from "./particles.ts";
 import { ImpactFx, type ImpactKind } from "./impact.ts";
 
@@ -92,6 +93,7 @@ export class Presenter {
   private lungeVel: Record<Side, number> = { hero: 0, enemy: 0 };
   private recoverAt: Record<Side, number> = { hero: 0, enemy: 0 };
   private clashCd = 0;
+  private push: Record<Side, number> = { hero: 0, enemy: 0 };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -444,6 +446,8 @@ export class Presenter {
     },
   ): void {
     const profile = TIERS[tier];
+    if (tier === "ultimate") flashScreen("strong");
+    else if (tier === "key") flashScreen("normal");
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
     // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
@@ -502,7 +506,7 @@ export class Presenter {
       if (o.guard) {
         this.impact.clash(x, y, dir, tier === "ultimate");
         this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
-        this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 110 : 60);
+        this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 250 : 140);
       } else {
         this.impact.styleBurst(this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
       }
@@ -573,8 +577,11 @@ export class Presenter {
     const y = terrainY(x) - 36;
     const dir = Math.sign(this.enemy.x - this.hero.x) || 1;
     this.impact.clash(x, y, dir, strong);
+    this.push.hero = -dir * (strong ? 34 : 22);
+    this.push.enemy = dir * (strong ? 34 : 22);
+    flashScreen(strong ? "strong" : "normal");
     this.camera.kick(strong ? "ultimate" : "key", dir);
-    this.freezeMs = Math.max(this.freezeMs, strong ? 120 : 70);
+    this.freezeMs = Math.max(this.freezeMs, strong ? 250 : 150);
     this.spawnFloat(strong ? "振刀" : "拼刀", x, y - 30, strong ? "key" : "normal", false);
   }
 
@@ -831,8 +838,10 @@ export class Presenter {
       if (!this.actor(side).airborne) this.launchX[side] *= Math.exp(-dt * 4);
     }
     const clampX = (x: number): number => Math.max(26, Math.min(ARENA.w - 26, x));
-    const rawHero = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero;
-    const rawEnemy = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy;
+    this.push.hero *= Math.exp(-dt * 9);
+    this.push.enemy *= Math.exp(-dt * 9);
+    const rawHero = this.baseX.hero + this.lunge.hero + this.separation.hero + this.dodge.hero + this.launchX.hero + this.push.hero;
+    const rawEnemy = this.baseX.enemy + this.lunge.enemy + this.separation.enemy + this.dodge.enemy + this.launchX.enemy + this.push.enemy;
     const heroX = clampX(rawHero);
     const enemyX = clampX(rawEnemy);
 
@@ -1106,6 +1115,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
