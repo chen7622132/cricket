@@ -292,7 +292,6 @@ export class Presenter {
       case "PUNISH": {
         const side: Side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
-        this.spawnFloat("确反", actor.x, terrainY(actor.x) - 78, "key", false);
         this.impact.trigger(actor.x, terrainY(actor.x) - 34, 1, "key", "thrust");
         this.camera.kick("key", side === "hero" ? 1 : -1);
         this.hooks.onBanner("确反", "combo");
@@ -313,7 +312,6 @@ export class Presenter {
         flashScreen("strong");
         this.camera.kick("ultimate", side === "hero" ? 1 : -1);
         this.freezeMs = Math.max(this.freezeMs, 150);
-        this.spawnFloat("砸地", actor.x, gy - 58, "key", false);
         break;
       }
       case "GETUP": {
@@ -325,7 +323,6 @@ export class Presenter {
         actor.getup();
         actor.spawnGhost();
         actor.flashWhite(0.06);
-        this.spawnFloat("受身（无敌）", actor.x, terrainY(actor.x) - 64, "key", false);
         this.camera.kick("normal", side === "hero" ? 1 : -1);
         break;
       }
@@ -333,7 +330,6 @@ export class Presenter {
         const side: Side = ev.side === "enemy" ? "enemy" : "hero";
         const actor = this.actor(side);
         const text = this.mechanicShort(String(d.key ?? ""));
-        this.spawnFloat(text, actor.x, terrainY(actor.x) - 72, "key", false);
         this.impact.trigger(actor.x, terrainY(actor.x) - 34, 1, "key", "guard");
         break;
       }
@@ -344,7 +340,6 @@ export class Presenter {
         this.dodge[side] = dir * 58;
         actor.spawnGhost();
         actor.setSquash(1.06, 0.94);
-        this.spawnFloat("闪避", actor.x, terrainY(actor.x) - 62, "normal", false);
         this.camera.kick("normal", dir);
         this.hooks.onBanner("闪避", "reveal");
         break;
@@ -540,7 +535,6 @@ export class Presenter {
       this.impact.styleBurst(style, x, y, dir, "ultimate", sparkColor);
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
       this.camera.kick("key", dir);
-      this.spawnFloat("特技", x, y - 26, "key", false);
     } else if ((o.skill ?? "").includes("ranged")) {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
@@ -577,8 +571,7 @@ export class Presenter {
         if (o.target.airborne) {
           this.airCombo[o.targetSide] = Math.min(9, this.airCombo[o.targetSide] + 1);
           o.target.startJump(14);
-          this.spawnFloat(`空连 ${this.airCombo[o.targetSide]}`, o.target.x, o.target.airY + ARENA.floorY - 78, "key", false);
-        } else {
+            } else {
           this.airCombo[o.targetSide] = 0;
         }
         this.hooks.onCombo?.(this.combo, this.airCombo[o.targetSide]);
@@ -609,7 +602,7 @@ export class Presenter {
       }
     }
 
-    if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
+    if (o.damage > 0 && tier === "ultimate") this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
   }
 
   private clashPulse(strong: boolean): void {
@@ -991,7 +984,6 @@ export class Presenter {
         const wallX = atLeft ? 28 : ARENA.w - 28;
         this.impact.trigger(wallX, this.footY[side] - 30, atLeft ? 1 : -1, "key", "hammer");
         this.camera.kick("key", atLeft ? 1 : -1);
-        this.spawnFloat("撞墙", wallX, this.footY[side] - 62, "key", false);
       }
     }
 
@@ -1023,8 +1015,7 @@ export class Presenter {
           actor.setSquash(1.22, 0.8);
           this.particles.burst(x, target - 2, 4);
           if (drop > 16) {
-            this.spawnFloat("落地硬直", x, target - 58, "key", false);
-            this.camera.kick("key", side === "hero" ? 1 : -1);
+                  this.camera.kick("key", side === "hero" ? 1 : -1);
           }
         }
       } else {
@@ -1087,8 +1078,7 @@ export class Presenter {
         this.particles.burst(a.x, terrainY(a.x) - 2, 4);
         this.camera.kick("normal", side === "hero" ? 1 : -1);
         if (this.airCombo[side] > 0) {
-          this.spawnFloat(`落地 · 空连 ${this.airCombo[side]}`, a.x, terrainY(a.x) - 64, "key", false);
-          this.airCombo[side] = 0;
+              this.airCombo[side] = 0;
           this.hooks.onCombo?.(this.combo, 0);
         }
       }
@@ -1252,6 +1242,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
