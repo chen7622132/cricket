@@ -99,6 +99,7 @@ export class Presenter {
   private trailTick: Record<Side, number> = { hero: 0, enemy: 0 };
   private heroFacing = 1;
   private enemyFacing = -1;
+  private prevAir: Record<Side, boolean> = { hero: false, enemy: false };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -670,6 +671,18 @@ export class Presenter {
     }
   }
 
+  /** 跳跃落地冲击：双层环 + 灰尘 + 顿帧 + 震屏。 */
+  private landingPulse(side: Side, speed: number): void {
+    const actor = this.actor(side);
+    const gy = terrainY(actor.x);
+    const heavy = speed > 260;
+    this.impact.trigger(actor.x, gy - 4, 1, heavy ? "key" : "normal", "radial");
+    this.impact.trigger(actor.x, gy - 4, -1, heavy ? "key" : "normal", "radial");
+    this.fxLayer.spawn("impacts/heavy-landing", actor.x, gy, {}, 0.8, heavy ? 1.1 : 0.8);
+    this.freezeMs = Math.max(this.freezeMs, heavy ? 130 : 66);
+    this.camera.kick(heavy ? "key" : "normal", side === "hero" ? 1 : -1);
+  }
+
   private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice", strong = false): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
@@ -1238,6 +1251,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

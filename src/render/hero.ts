@@ -99,6 +99,7 @@ export class HeroActor {
   private airHeight = 0;
   private airVel = 0;
   private landedThisFrame = false;
+  private lastLanding = 0;
   private readonly baseTint: number;
   private squashX = 1;
   private squashY = 1;
@@ -387,6 +388,10 @@ export class HeroActor {
     return this.airHeight > 0.5;
   }
 
+  get landingSpeed(): number {
+    return this.lastLanding;
+  }
+
   get airY(): number {
     return this.airHeight;
   }
@@ -433,8 +438,11 @@ export class HeroActor {
     this.root.position.set(x, floorY);
     if (this.airHeight > 0 || this.airVel > 0) {
       this.airHeight += this.airVel * dt;
-      this.airVel -= 900 * dt;
+      // 不对称重力：下落阶段 1.8 倍，收掉“飘”
+      const gravity = this.airVel < 0 ? 900 * 1.8 : 900;
+      this.airVel -= gravity * dt;
       if (this.airHeight <= 0) {
+        this.lastLanding = Math.max(0, -this.airVel);
         this.airHeight = 0;
         this.airVel = 0;
         this.landedThisFrame = true;
@@ -651,6 +659,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
