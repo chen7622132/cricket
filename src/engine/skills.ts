@@ -206,8 +206,8 @@ export const DAMAGE: Record<SkillId, number> = {
   hero_guard: 0,
   hero_riposte: 9,
   hero_dodge: 0,
-  hero_special: 14,
-  enemy_special: 13,
+  hero_special: 12,
+  enemy_special: 11,
   hero_ranged: 8,
   hero_ranged_2: 11,
   enemy_ranged: 7,
@@ -241,6 +241,7 @@ export const JUDGE_TOLERANCE_FRAMES = 9;
 export function tierRank(t: Tier): number {
   return t === "normal" ? 0 : t === "key" ? 1 : 2;
 }
+
 
 
 

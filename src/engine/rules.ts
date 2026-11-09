@@ -843,9 +843,9 @@ const HERO_SPECIAL_RULE: RuleDraft = {
   name: "角色特技",
   when: "距离≤1",
   skill: "hero_special",
-  priority: 72,
+  priority: 52,
   cost: { kind: "none" },
-  cooldown: 240,
+  cooldown: 300,
   tags: tag("attack"),
   test: ({ self }) => self.distance <= 1,
 };
@@ -911,6 +911,7 @@ export function getRuleset(id: RulesetId): Ruleset {
   if (id in ENEMY_RULESETS) return ENEMY_RULESETS[id as keyof typeof ENEMY_RULESETS];
   return HERO_RULESETS[id as keyof typeof HERO_RULESETS];
 }
+
 
 
 
