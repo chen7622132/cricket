@@ -225,6 +225,43 @@ export class ImpactFx {
     this.spawnShards(x, y, heavy ? 8 : key ? 6 : 3, dir, "radial");
   }
 
+  /** 振刀/拼刀：刀光相撞的大星芒 + 交叉刀弧 + 双环震荡。 */
+  clash(x: number, y: number, dir: number, strong: boolean): void {
+    const r = strong ? 26 : 18;
+    this.star(x, y, r);
+    const blades = new PIXI.Graphics();
+    blades.setStrokeStyle({ width: 3, color: 0xffffff, alpha: 0.95, cap: "round" });
+    blades.moveTo(x - 26, y + 12).lineTo(x + 26, y - 12);
+    blades.moveTo(x - 26, y - 12).lineTo(x + 26, y + 12);
+    blades.stroke();
+    blades.setStrokeStyle({ width: 1.5, color: 0xffe08a, alpha: 0.9 });
+    blades.arc(x, y, 18, -0.7, 0.7);
+    blades.stroke();
+    this.addShape(blades, 0.14, 0);
+
+    const ringA = new PIXI.Graphics();
+    ringA.circle(0, 0, 10).stroke({ width: 3, color: 0xfff3c4, alpha: 0.9 });
+    ringA.position.set(x, y);
+    this.addShape(ringA, 0.24, 2.4);
+
+    const ringB = new PIXI.Graphics();
+    ringB.circle(0, 0, 18).stroke({ width: 2, color: 0xffb86b, alpha: 0.7 });
+    ringB.position.set(x, y);
+    this.addShape(ringB, 0.32, 1.6);
+
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: 2, color: 0xfff3c4, alpha: 0.95 });
+    const rays = strong ? 14 : 10;
+    for (let k = 0; k < rays; k++) {
+      const a = (k / rays) * Math.PI * 2 + 0.25;
+      g.moveTo(x + Math.cos(a) * 12, y + Math.sin(a) * 12);
+      g.lineTo(x + Math.cos(a) * (r * (1.6 + (k % 3) * 0.2)), y + Math.sin(a) * (r * (1.6 + (k % 3) * 0.2)));
+    }
+    g.stroke();
+    this.addShape(g, 0.12, 0);
+    this.spawnShards(x, y, strong ? 12 : 8, dir, "radial");
+  }
+
   /** 按角色武器区分近战命中形态：拳/刀/杖/弓。 */
   styleBurst(style: "fist" | "blade" | "staff" | "bow", x: number, y: number, dir: number, tier: Tier, color: number): void {
     if (style === "fist") {
@@ -413,6 +450,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 

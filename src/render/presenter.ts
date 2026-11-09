@@ -91,6 +91,7 @@ export class Presenter {
   private lunge: Record<Side, number> = { hero: 0, enemy: 0 };
   private lungeVel: Record<Side, number> = { hero: 0, enemy: 0 };
   private recoverAt: Record<Side, number> = { hero: 0, enemy: 0 };
+  private clashCd = 0;
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -238,6 +239,11 @@ export class Presenter {
           actor.setSquash(0.95, 1.05); // 起手蓄力后仰
         }
         this.pushLog(ev, "rule");
+        break;
+      }
+      case "PRIORITY_CLASH": {
+        this.clashPulse(false);
+        this.pushLog(ev, "clash");
         break;
       }
       case "HIT": {
@@ -493,7 +499,13 @@ export class Presenter {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
-      this.impact.styleBurst(o.guard ? "fist" : this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
+      if (o.guard) {
+        this.impact.clash(x, y, dir, tier === "ultimate");
+        this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
+        this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 110 : 60);
+      } else {
+        this.impact.styleBurst(this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
+      }
     }
     if (tier === "ultimate" && !(o.skill ?? "").includes("ranged")) {
       for (const delay of [4, 8]) {
@@ -551,6 +563,19 @@ export class Presenter {
     }
 
     if (o.damage > 0) this.spawnFloat(`${o.damage}`, x, y - 8, tier, o.crit);
+  }
+
+  private clashPulse(strong: boolean): void {
+    if (this.clashCd > 0) return;
+    if (Math.abs(this.hero.x - this.enemy.x) > 170) return;
+    this.clashCd = 0.35;
+    const x = (this.hero.x + this.enemy.x) / 2;
+    const y = terrainY(x) - 36;
+    const dir = Math.sign(this.enemy.x - this.hero.x) || 1;
+    this.impact.clash(x, y, dir, strong);
+    this.camera.kick(strong ? "ultimate" : "key", dir);
+    this.freezeMs = Math.max(this.freezeMs, strong ? 120 : 70);
+    this.spawnFloat(strong ? "振刀" : "拼刀", x, y - 30, strong ? "key" : "normal", false);
   }
 
   private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice", strong = false): void {
@@ -881,6 +906,7 @@ export class Presenter {
         this.actor(side).setAttackLean(0);
       }
     }
+    if (this.clashCd > 0) this.clashCd -= dt;
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
     this.enemy.setMoving(Math.abs(this.lungeTarget.enemy - this.lunge.enemy) > 2);
 
@@ -1080,6 +1106,9 @@ export class Presenter {
     };
   }
 }
+
+
+
 
 
 
