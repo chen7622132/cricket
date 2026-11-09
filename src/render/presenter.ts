@@ -89,6 +89,8 @@ export class Presenter {
 
   // 前冲 / 物理分离
   private lunge: Record<Side, number> = { hero: 0, enemy: 0 };
+  private lungeVel: Record<Side, number> = { hero: 0, enemy: 0 };
+  private recoverAt: Record<Side, number> = { hero: 0, enemy: 0 };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -459,7 +461,9 @@ export class Presenter {
       this.launchVx[o.targetSide] = dir * (tier === "ultimate" ? 150 : 80);
     }
 
-    o.attacker.setAttackLean(0);
+    o.attacker.setAttackLean(dir * 0.12);
+    this.recoverAt[o.attackerSide] = this.battle.frame + 12;
+    o.target.setHurt(dir);
     if (o.attackerSide === "hero" && (o.skill.includes("earthhammer") || o.skill.includes("execute"))) {
       const recovery = o.skill.includes("earthhammer") ? "HAMMER_RECOVERY" : "EXEC_RECOVERY";
       o.attacker.play(recovery as HeroState, true);
@@ -763,11 +767,17 @@ export class Presenter {
 
     // 前冲/退回收放
     for (const side of ["hero", "enemy"] as Side[]) {
-      const step = LUNGE_SPEED * dt;
+      // 弹簧式冲刺：带加速/减速，避免匀速直线瞬移感
       const diff = this.lungeTarget[side] - this.lunge[side];
-      this.lunge[side] += Math.sign(diff) * Math.min(Math.abs(diff), step);
+      const accel = diff * 120 - this.lungeVel[side] * 18;
+      this.lungeVel[side] += accel * dt;
+      this.lunge[side] += this.lungeVel[side] * dt;
+      if (Math.abs(diff) < 0.6 && Math.abs(this.lungeVel[side]) < 3) {
+        this.lunge[side] = this.lungeTarget[side];
+        this.lungeVel[side] = 0;
+      }
 
-      if (this.pendingAttack[side] && Math.abs(diff) < 4) {
+      if (this.pendingAttack[side] && Math.abs(diff) < 6) {
         this.actor(side).playAttack(this.pendingAttack[side]!);
         this.actor(side).setAttackLean(this.pendingLean[side]);
         this.pendingAttack[side] = null;
@@ -856,6 +866,12 @@ export class Presenter {
 
     const heroFacing = heroX <= enemyX ? 1 : -1;
 
+    for (const side of ["hero", "enemy"] as Side[]) {
+      if (this.recoverAt[side] > 0 && snap.frame >= this.recoverAt[side]) {
+        this.recoverAt[side] = 0;
+        this.actor(side).setAttackLean(0);
+      }
+    }
     this.hero.setMoving(Math.abs(this.lungeTarget.hero - this.lunge.hero) > 2);
     this.enemy.setMoving(Math.abs(this.lungeTarget.enemy - this.lunge.enemy) > 2);
 
@@ -1055,6 +1071,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

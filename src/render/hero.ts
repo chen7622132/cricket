@@ -80,6 +80,8 @@ export class HeroActor {
   private flashMs = 0;
   private attackLean = 0;
   private leanTarget = 0;
+  private hurtMs = 0;
+  private hurtDir = 1;
   private kdMs = 0;
   private kdDir = 1;
   private airHeight = 0;
@@ -213,6 +215,12 @@ export class HeroActor {
     }
   }
 
+  /** 受击后仰：命中瞬间给目标一个短促的反向倾斜，随后回弹。 */
+  setHurt(dir: number): void {
+    this.hurtMs = 0.16;
+    this.hurtDir = dir;
+  }
+
   /** 攻击姿态：前倾/后仰，弥补序列帧动作不足。 */
   setAttackLean(v: number): void {
     this.leanTarget = v;
@@ -301,7 +309,13 @@ export class HeroActor {
         this.setSquash(1.18, 0.84);
       }
     }
-    this.attackLean += (this.leanTarget - this.attackLean) * Math.min(1, dt * 12);
+    this.attackLean += (this.leanTarget - this.attackLean) * Math.min(1, dt * 10);
+    let hurtLean = 0;
+    if (this.hurtMs > 0) {
+      this.hurtMs -= dt;
+      hurtLean = this.hurtDir * 0.18 * Math.max(0, this.hurtMs / 0.16);
+    }
+    const sway = this.state === "IDLE" ? Math.sin(this.bob * 2.2) * 0.012 : 0;
     let kdRot = 0;
     if (this.kdMs > 0) {
       this.kdMs -= dt;
@@ -312,7 +326,7 @@ export class HeroActor {
     } else {
       this.body.y = -this.airHeight;
     }
-    this.body.rotation = kdRot + this.attackLean;
+    this.body.rotation = kdRot + this.attackLean + hurtLean + sway;
     const shadowScale = Math.max(0.45, 1 - this.airHeight / 90);
     this.shadow.scale.set(shadowScale);
     this.shadow.alpha = 0.4 + shadowScale * 0.35;
@@ -395,6 +409,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 
