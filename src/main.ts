@@ -90,8 +90,8 @@ async function boot(): Promise<void> {
     customRuleset = null;
   });
 
-  const speeds = [0.25, 0.5, 1, 2, 4];
-  let speedIdx = 2;
+  const speeds = [0.25, 0.5, 0.75, 1, 1.5, 2, 4];
+  let speedIdx = 3;
 
   // URL 参数：?seed=7&rules=C&enemy=ENEMY_B&speed=2 —— 一局就是一个可分享的链接
   const params = new URLSearchParams(window.location.search);
@@ -314,6 +314,7 @@ async function boot(): Promise<void> {
 }
 
 void boot();
+
 
 
 
