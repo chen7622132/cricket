@@ -94,6 +94,11 @@ export class Presenter {
   private recoverAt: Record<Side, number> = { hero: 0, enemy: 0 };
   private clashCd = 0;
   private push: Record<Side, number> = { hero: 0, enemy: 0 };
+  private trailG = new PIXI.Graphics();
+  private trailPts: Record<Side, Array<{ x: number; y: number; age: number }>> = { hero: [], enemy: [] };
+  private trailTick: Record<Side, number> = { hero: 0, enemy: 0 };
+  private heroFacing = 1;
+  private enemyFacing = -1;
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
@@ -622,6 +627,49 @@ export class Presenter {
     this.spawnFloat(strong ? "振刀" : "拼刀", x, y - 30, strong ? "key" : "normal", false);
   }
 
+  /** 武士刀光：沿刀尖位置画发光拖尾 + 残影 + 挥刀火花。 */
+  private updateSlashTrails(dt: number): void {
+    this.trailG.clear();
+    for (const side of ["hero", "enemy"] as Side[]) {
+      const actor = this.actor(side);
+      const pts = this.trailPts[side];
+      for (const p of pts) p.age += dt;
+      while (pts.length && pts[0].age > 0.18) pts.shift();
+
+      const samurai = this.chars[side].id === "samurai";
+      const attacking = actor.state.startsWith("ATTACK") || actor.state.endsWith("WINDUP") || actor.state.endsWith("RECOVERY");
+      if (samurai && attacking) {
+        const facing = side === "hero" ? this.heroFacing : this.enemyFacing;
+        pts.push({ x: actor.x + facing * 34, y: terrainY(actor.x) - 38, age: 0 });
+
+        this.trailTick[side] += dt;
+        if (this.trailTick[side] > 0.05) {
+          this.trailTick[side] = 0;
+          actor.spawnGhost();
+          this.fxLayer.spawn("impacts/hit-spark", actor.x + facing * 30, terrainY(actor.x) - 40, {}, 0.35, 0.55);
+        }
+      }
+
+      if (pts.length < 2) continue;
+      const color = samurai ? 0x9fe8ff : 0xffe066;
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1];
+        const b = pts[i];
+        const k = 1 - b.age / 0.18;
+        this.trailG.moveTo(a.x, a.y).lineTo(b.x, b.y);
+        this.trailG.stroke({ width: 3 + 7 * k, color, alpha: 0.16 + 0.3 * k });
+      }
+      const last = pts[pts.length - 1];
+      // 刀尖处的发光月牙，补足单条折线的体积感
+      this.trailG.setStrokeStyle({ width: 7, color, alpha: 0.28 });
+      this.trailG.arc(last.x, last.y, 26, -1.15, 1.15);
+      this.trailG.stroke();
+      this.trailG.setStrokeStyle({ width: 2.5, color: 0xffffff, alpha: 0.75 });
+      this.trailG.arc(last.x, last.y, 22, -0.85, 0.85);
+      this.trailG.stroke();
+    }
+  }
+
   private spawnProjectile(side: Side, kind: "arrow" | "orb" | "swordwave" | "wave", targetX: number, element: "fire" | "thunder" | "ice", strong = false): void {
     const a = this.actor(side);
     const dir = Math.sign(targetX - a.x) || 1;
@@ -980,7 +1028,9 @@ export class Presenter {
     if (this.koMs > 0) zoomTarget = 1.55;
     this.camZoom += (zoomTarget - this.camZoom) * Math.min(1, 0.12);
 
-    const heroFacing = heroX <= enemyX ? 1 : -1;
+    this.heroFacing = heroX <= enemyX ? 1 : -1;
+    this.enemyFacing = -this.heroFacing;
+    const heroFacing = this.heroFacing;
 
     for (const side of ["hero", "enemy"] as Side[]) {
       if (this.recoverAt[side] > 0 && snap.frame >= this.recoverAt[side]) {
@@ -1188,6 +1238,9 @@ export class Presenter {
     };
   }
 }
+
+
+
 
 
 
