@@ -21,6 +21,12 @@ import * as heavyCleave from "pixelfx/fx/melee/heavy-cleave";
 import * as uppercut from "pixelfx/fx/melee/uppercut";
 import * as scytheReap from "pixelfx/fx/melee/scythe-reap";
 import * as blinkOut from "pixelfx/fx/arcane/blink-out";
+import * as swordSlash from "pixelfx/fx/melee/sword-slash";
+import * as spinSlash from "pixelfx/fx/melee/spin-slash";
+import * as heavyLanding from "pixelfx/fx/impacts/heavy-landing";
+import * as hitSpark from "pixelfx/fx/impacts/hit-spark";
+import * as impactFrame from "pixelfx/fx/impacts/impact-frame";
+import * as ricochet from "pixelfx/fx/impacts/ricochet";
 
 /**
  * 招式 → pixelfx 资源映射。引擎只给键（SKILLS[].fx），这里负责落地。
@@ -47,6 +53,12 @@ export const FX_MODULES: Record<string, FxMod> = {
   "melee/uppercut": uppercut as unknown as FxMod,
   "melee/scythe-reap": scytheReap as unknown as FxMod,
   "arcane/blink-out": blinkOut as unknown as FxMod,
+  "melee/sword-slash": swordSlash as unknown as FxMod,
+  "melee/spin-slash": spinSlash as unknown as FxMod,
+  "impacts/heavy-landing": heavyLanding as unknown as FxMod,
+  "impacts/hit-spark": hitSpark as unknown as FxMod,
+  "impacts/impact-frame": impactFrame as unknown as FxMod,
+  "impacts/ricochet": ricochet as unknown as FxMod,
 };
 
 const CW = 256;
@@ -157,6 +169,7 @@ export class PixelFxLayer {
     }
   }
 }
+
 
 
 

@@ -292,6 +292,7 @@ export class Presenter {
         const gy = terrainY(actor.x);
         this.impact.trigger(actor.x, gy - 6, 1, "key", "radial");
         this.impact.trigger(actor.x, gy - 6, -1, "key", "radial");
+        this.fxLayer.spawn("impacts/heavy-landing", actor.x, gy, {}, 1.0, 1.2);
         flashScreen("strong");
         this.camera.kick("ultimate", side === "hero" ? 1 : -1);
         this.freezeMs = Math.max(this.freezeMs, 150);
@@ -492,6 +493,7 @@ export class Presenter {
 
     const x = o.target.x;
     const y = terrainY(o.target.x) - 30;
+    if (tier === "ultimate") this.fxLayer.spawn("impacts/impact-frame", x, y, {}, 0.9, 1.2);
     const arcColor = (o.fx ?? "").includes("scythe") ? 0xc77dff
       : (o.fx ?? "").includes("double-slash") ? 0xff6b6b
       : (o.fx ?? "").includes("hammer") ? 0xffe27a
@@ -502,6 +504,8 @@ export class Presenter {
       : 0xffe14d;
     if ((o.skill ?? "").includes("special")) {
       const style = this.chars[o.attackerSide].meleeStyle;
+      const mod = style === "blade" ? "melee/sword-slash" : style === "staff" ? "melee/spin-slash" : style === "bow" ? "melee/whip-crack" : "melee/uppercut";
+      this.fxLayer.spawn(mod, x, y, { dir }, 1.0, 1.3);
       this.impact.styleBurst(style, x, y, dir, "ultimate", sparkColor);
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
       this.camera.kick("key", dir);
@@ -511,6 +515,7 @@ export class Presenter {
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
       if (o.guard) {
+        this.fxLayer.spawn("impacts/ricochet", x, y, { dir }, 0.8, 1.1);
         this.impact.clash(x, y, dir, tier === "ultimate");
         this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
         this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 250 : 140);
@@ -584,6 +589,7 @@ export class Presenter {
     const y = terrainY(x) - 36;
     const dir = Math.sign(this.enemy.x - this.hero.x) || 1;
     this.impact.clash(x, y, dir, strong);
+    this.fxLayer.spawn("impacts/parry", x, y, { dir }, 1.1, 1.5);
     this.push.hero = -dir * (strong ? 34 : 22);
     this.push.enemy = dir * (strong ? 34 : 22);
     flashScreen(strong ? "strong" : "normal");
@@ -1122,6 +1128,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 
