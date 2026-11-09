@@ -95,13 +95,13 @@
           <div class="cards">
             <div class="card hero">
               <div class="row"><span>英雄</span><span id="hero-hp-text">160/160</span></div>
-              <div class="hp"><i id="hero-hp"></i></div>
+              <div class="hp"><b class="hp-ghost" id="hero-hp-ghost"></b><i id="hero-hp"></i></div>
               <div class="sub">识破 <span id="hero-insight">●●○ 2/3</span></div>
               <div class="status" id="hero-status"></div>
             </div>
             <div class="card enemy">
               <div class="row"><span>敌人</span><span id="enemy-hp-text">480/480</span></div>
-              <div class="hp"><i id="enemy-hp"></i></div>
+              <div class="hp"><b class="hp-ghost" id="enemy-hp-ghost"></b><i id="enemy-hp"></i></div>
               <div class="status" id="enemy-status"></div>
             </div>
           </div>
@@ -112,6 +112,7 @@
       </main>
 
       <div id="banner"></div>
+      <div id="danger-vignette"></div>
 
       <section id="editor-panel" class="hidden" aria-hidden="true">
         <header>
@@ -150,6 +151,7 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+
 
 
 

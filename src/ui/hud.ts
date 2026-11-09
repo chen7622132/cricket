@@ -39,6 +39,11 @@ export class Hud {
   private enemyHp = document.getElementById("enemy-hp") as HTMLElement;
   private enemyHpText = document.getElementById("enemy-hp-text") as HTMLElement;
   private enemyStatus = document.getElementById("enemy-status") as HTMLElement;
+  private heroHpGhost = document.getElementById("hero-hp-ghost") as HTMLElement;
+  private enemyHpGhost = document.getElementById("enemy-hp-ghost") as HTMLElement;
+  private danger = document.getElementById("danger-vignette") as HTMLElement;
+  private lastHeroHp = -1;
+  private lastEnemyHp = -1;
   private log = document.getElementById("log") as HTMLElement;
   private bannerEl = document.getElementById("banner") as HTMLElement;
   private seedLabel = document.getElementById("seed-label") as HTMLElement;
@@ -56,8 +61,12 @@ export class Hud {
   }
 
   updateSnapshot(snap: BattleSnapshot): void {
-    this.setHp(this.heroHp, this.heroHpText, snap.hero.hp, snap.hero.maxHp);
-    this.setHp(this.enemyHp, this.enemyHpText, snap.enemy.hp, snap.enemy.maxHp);
+    const heroPct = snap.hero.hp / snap.hero.maxHp;
+    this.setHp(this.heroHp, this.heroHpText, snap.hero.hp, snap.hero.maxHp, this.heroHpGhost, this.lastHeroHp);
+    this.setHp(this.enemyHp, this.enemyHpText, snap.enemy.hp, snap.enemy.maxHp, this.enemyHpGhost, this.lastEnemyHp);
+    this.lastHeroHp = snap.hero.hp;
+    this.lastEnemyHp = snap.enemy.hp;
+    this.danger.classList.toggle("active", heroPct <= 0.25 && heroPct > 0);
 
     const dots = "●".repeat(Math.max(0, snap.hero.insight)) + "○".repeat(Math.max(0, snap.hero.maxInsight - snap.hero.insight));
     this.heroInsight.textContent = `${dots} ${snap.hero.insight}/${snap.hero.maxInsight}`;
@@ -66,9 +75,21 @@ export class Hud {
     this.setStatus(this.enemyStatus, snap.enemy.statuses);
   }
 
-  private setHp(bar: HTMLElement, text: HTMLElement, hp: number, max: number): void {
+  private setHp(bar: HTMLElement, text: HTMLElement, hp: number, max: number, ghost?: HTMLElement, prevHp?: number): void {
     const pct = Math.max(0, Math.min(1, hp / max));
-    bar.style.width = `${(pct * 100).toFixed(1)}%`;
+    const pctText = `${(pct * 100).toFixed(1)}%`;
+    bar.style.width = pctText;
+    if (ghost) {
+      ghost.style.width = pctText;
+      if (prevHp !== undefined && hp < prevHp) {
+        const wrap = bar.parentElement;
+        if (wrap) {
+          wrap.classList.remove("hurt");
+          void wrap.offsetWidth;
+          wrap.classList.add("hurt");
+        }
+      }
+    }
     text.textContent = `${hp}/${max}`;
     bar.classList.toggle("low", pct <= 0.35);
   }
@@ -157,6 +178,7 @@ export class Hud {
     this.rulesPanel.setAttribute("aria-hidden", String(!open));
   }
 }
+
 
 
 

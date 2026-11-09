@@ -169,11 +169,56 @@ main {
 }
 
 .hp {
+  position: relative;
   height: 7px;
   background: #161c27;
   border-radius: 3px;
   overflow: hidden;
   margin: 6px 0;
+}
+
+.hp .hp-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(255, 236, 210, 0.55);
+  transition: width 0.45s ease 0.2s;
+  z-index: 0;
+}
+
+.hp i {
+  position: relative;
+  z-index: 1;
+  transition: width 0.08s linear;
+}
+
+.hp.hurt i {
+  animation: hp-flash 0.18s steps(2, end);
+}
+
+@keyframes hp-flash {
+  50% { filter: brightness(2.2); }
+}
+
+#danger-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(210, 30, 30, 0.35) 100%);
+  transition: opacity 0.3s;
+  z-index: 5;
+}
+
+#danger-vignette.active {
+  opacity: 1;
+  animation: danger-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes danger-pulse {
+  50% { opacity: 0.45; }
 }
 
 .hp i {
@@ -184,7 +229,51 @@ main {
   transition: width 0.12s linear;
 }
 
-.card.enemy .hp i {
+.card.enemy .hp .hp-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(255, 236, 210, 0.55);
+  transition: width 0.45s ease 0.2s;
+  z-index: 0;
+}
+
+.hp i {
+  position: relative;
+  z-index: 1;
+  transition: width 0.08s linear;
+}
+
+.hp.hurt i {
+  animation: hp-flash 0.18s steps(2, end);
+}
+
+@keyframes hp-flash {
+  50% { filter: brightness(2.2); }
+}
+
+#danger-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(210, 30, 30, 0.35) 100%);
+  transition: opacity 0.3s;
+  z-index: 5;
+}
+
+#danger-vignette.active {
+  opacity: 1;
+  animation: danger-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes danger-pulse {
+  50% { opacity: 0.45; }
+}
+
+.hp i {
   background: linear-gradient(90deg, #d05050, #ff8a8a);
 }
 
@@ -970,3 +1059,5 @@ body.sidebar-collapsed #side {
 .controls select {
   max-width: 96px;
 }
+
+
