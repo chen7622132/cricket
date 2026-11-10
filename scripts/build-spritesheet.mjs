@@ -17,12 +17,12 @@ const SETS = [
     image: "hero.png",
     json: "hero.json",
     animations: [
-      { name: "idle", file: "Idle.png", frames: 4 },
+      { name: "idle", file: "Idle.png", frames: 6 },
       { name: "run", file: "Run.png", frames: 8 },
       { name: "jump", file: "Jump.png", frames: 2 },
       { name: "fall", file: "Fall.png", frames: 2 },
-      { name: "attack1", file: "Attack1.png", frames: 4 },
-      { name: "attack2", file: "Attack2.png", frames: 4 },
+      { name: "attack1", file: "Attack1.png", frames: 8 },
+      { name: "attack2", file: "Attack2.png", frames: 8 },
       { name: "attack3", file: "HeroAttack3.png", frames: 4 },
       { name: "exec_windup", file: "ExecWindup.png", frames: 2 },
       { name: "exec_recovery", file: "ExecRecovery.png", frames: 2 },
@@ -39,15 +39,15 @@ const SETS = [
     json: "boxer.json",
     sourceCell: 200,
     animations: [
-      { name: "idle", file: "Idle.png", frames: 4 },
-      { name: "run", file: "Run.png", frames: 6 },
+      { name: "idle", file: "Idle.png", frames: 6 },
+      { name: "run", file: "Run.png", frames: 8 },
       { name: "jump", file: "Jump.png", frames: 2 },
       { name: "fall", file: "Fall.png", frames: 2 },
-      { name: "attack1", file: "Attack1.png", frames: 4 },
-      { name: "attack2", file: "Attack2.png", frames: 4 },
-      { name: "attack3", file: "Attack3.png", frames: 4 },
-      { name: "hit", file: "Take hit.png", frames: 2 },
-      { name: "death", file: "Death.png", frames: 4 },
+      { name: "attack1", file: "Attack1.png", frames: 8 },
+      { name: "attack2", file: "Attack2.png", frames: 8 },
+      { name: "attack3", file: "Attack3.png", frames: 8 },
+      { name: "hit", file: "Take hit.png", frames: 8 },
+      { name: "death", file: "Death.png", frames: 8 },
       { name: "getup", file: "Getup.png", frames: 4 },
     ],
   },
@@ -169,6 +169,8 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
+
 
 
 
