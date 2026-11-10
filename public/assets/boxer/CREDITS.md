@@ -1,7 +1,8 @@
-﻿# Boxer Game Character
+﻿# Boxer — Martial Hero 3
 
-- Author: Raga2D
-- Source: https://opengameart.org/content/boxer-game-character
+- Author: Luiz Melo (LuizMelo)
+- Source: https://luizmelo.itch.io/martial-hero-3
 - License: CC0 1.0 Universal
-- Frames used: idle 6, walk 8, jab 8, cross 8, uppercut 8, hurt 8, KO 8 (reversed 4 for getup)
-- Original 744x711 PNGs; white background keyed out, cropped and downscaled to 200x200 cells.
+- Frames used (126x126 source): idle 6, run 8, attack 7 (reused for jab/cross variants), hit 3, death 11, getup 4
+- Weapon (spear) pixels removed; frames upscaled to 200x200 cells.
+- Mirror used: https://github.com/alelthomas/2d-jungle-game (img/hunter)
