@@ -10,6 +10,9 @@ export type HeroState =
   | "ATTACK_1"
   | "ATTACK_2"
   | "ATTACK_3"
+  | "DASH"
+  | "AIRSLASH"
+  | "UPPERCUT"
   | "EXEC_WINDUP"
   | "EXEC_RECOVERY"
   | "HAMMER_WINDUP"
@@ -49,6 +52,9 @@ const SPEED: Record<HeroState, number> = {
   ATTACK_2: 0.14,
   ATTACK_3: 0.12,
   GETUP: 0.1,
+  DASH: 0.08,
+  AIRSLASH: 0.09,
+  UPPERCUT: 0.09,
   EXEC_WINDUP: 0.1,
   EXEC_RECOVERY: 0.14,
   HAMMER_WINDUP: 0.09,
@@ -177,6 +183,10 @@ export class HeroActor {
     this.actionKind = kind;
     this.actionTimer = 0;
     this.play(kind === "attack1" ? "ATTACK_1" : kind === "attack3" ? "ATTACK_3" : "ATTACK_2", true);
+  }
+
+  hasAnimation(name: string): boolean {
+    return !!(this.sheet.animations as Record<string, unknown>)[name];
   }
 
   get supportsAttack3(): boolean {
@@ -674,6 +684,7 @@ export function attackForSkill(skill: string): "attack1" | "attack2" {
 }
 
 export type { Side };
+
 
 
 

@@ -1179,6 +1179,126 @@
         "w": 200,
         "h": 200
       }
+    },
+    "dash_0": {
+      "frame": {
+        "x": 600,
+        "y": 1400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "dash_1": {
+      "frame": {
+        "x": 800,
+        "y": 1400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "dash_2": {
+      "frame": {
+        "x": 1000,
+        "y": 1400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "airslash_0": {
+      "frame": {
+        "x": 1200,
+        "y": 1400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "airslash_1": {
+      "frame": {
+        "x": 1400,
+        "y": 1400,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "airslash_2": {
+      "frame": {
+        "x": 0,
+        "y": 1600,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
     }
   },
   "animations": {
@@ -1260,6 +1380,16 @@
       "getup_1",
       "getup_2",
       "getup_3"
+    ],
+    "dash": [
+      "dash_0",
+      "dash_1",
+      "dash_2"
+    ],
+    "airslash": [
+      "airslash_0",
+      "airslash_1",
+      "airslash_2"
     ]
   },
   "meta": {
@@ -1269,7 +1399,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 1600,
-      "h": 1600
+      "h": 1800
     },
     "scale": "1"
   }

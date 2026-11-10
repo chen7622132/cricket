@@ -104,6 +104,7 @@ export class Presenter {
   private prevAir: Record<Side, boolean> = { hero: false, enemy: false };
   private lungeTarget: Record<Side, number> = { hero: 0, enemy: 0 };
   private pendingAttack: Record<Side, "attack1" | "attack2" | "attack3" | null> = { hero: null, enemy: null };
+  private pendingState: Record<Side, "DASH" | "AIRSLASH" | "UPPERCUT" | null> = { hero: null, enemy: null };
   private separation: Record<Side, number> = { hero: 0, enemy: 0 };
   private dodge: Record<Side, number> = { hero: 0, enemy: 0 };
   private insetLeft = 0;
@@ -238,6 +239,12 @@ export class Presenter {
               ? "attack3"
               : attackForSkill(skill);
           this.pendingAttack[side] = heavy ? null : attackKind;
+          const charId = this.chars[side].id;
+          this.pendingState[side] =
+            actor.airborne && actor.hasAnimation("airslash") ? "AIRSLASH"
+            : charId === "samurai" && skill.includes("iai") && actor.hasAnimation("dash") ? "DASH"
+            : charId === "samurai" && skill.includes("uppercut") && actor.hasAnimation("uppercut") ? "UPPERCUT"
+            : null;
           const leanMap: Record<string, number> = {
             hero_thrust: 0.2, hero_execute: 0.22, hero_rend: 0.14,
             hero_earthhammer: -0.16, enemy_swipe: 0.15, enemy_slam: -0.18,
@@ -1007,10 +1014,12 @@ export class Presenter {
         this.lungeVel[side] = 0;
       }
 
-      if (this.pendingAttack[side] && Math.abs(diff) < 6) {
-        this.actor(side).playAttack(this.pendingAttack[side]!);
+      if ((this.pendingAttack[side] || this.pendingState[side]) && Math.abs(diff) < 6) {
+        if (this.pendingState[side]) this.actor(side).play(this.pendingState[side]!, true);
+        else this.actor(side).playAttack(this.pendingAttack[side]!);
         this.actor(side).setAttackLean(this.pendingLean[side]);
         this.pendingAttack[side] = null;
+        this.pendingState[side] = null;
       }
       // 分离回弹
       this.separation[side] *= Math.exp(-dt * 12);
@@ -1328,6 +1337,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 

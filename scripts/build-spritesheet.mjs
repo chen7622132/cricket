@@ -105,6 +105,13 @@ const SETS = [
 ];
 
 function build({ dir, image, json, animations, sourceCell = CELL }) {
+  for (const extra of [
+    { name: "dash", file: "Dash.png", frames: 3 },
+    { name: "airslash", file: "AirSlash.png", frames: 3 },
+    { name: "uppercut", file: "Uppercut.png", frames: 3 },
+  ]) {
+    if (fs.existsSync(path.join(dir, extra.file)) && !animations.some((a) => a.name === extra.name)) animations.push(extra);
+  }
   const total = animations.reduce((n, a) => n + a.frames, 0);
   const rows = Math.ceil(total / COLS);
   const sheet = new PNG({ width: COLS * CELL, height: rows * CELL });
@@ -169,6 +176,7 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
 
 
 
