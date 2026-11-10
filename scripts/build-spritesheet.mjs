@@ -112,7 +112,10 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
   ]) {
     if (fs.existsSync(path.join(dir, extra.file)) && !animations.some((a) => a.name === extra.name)) animations.push(extra);
   }
-  const total = animations.reduce((n, a) => n + a.frames, 0);
+  const total = animations.reduce((n, a) => {
+    const p = PNG.sync.read(fs.readFileSync(path.join(dir, a.file)));
+    return n + Math.floor(p.width / sourceCell);
+  }, 0);
   const rows = Math.ceil(total / COLS);
   const sheet = new PNG({ width: COLS * CELL, height: rows * CELL });
   sheet.data.fill(0);
@@ -127,7 +130,8 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
     const fit = CELL / sourceCell;
     anims[anim.name] = [];
 
-    for (let f = 0; f < anim.frames; f++) {
+    const frameCount = Math.floor(strip.width / sourceCell);
+    for (let f = 0; f < frameCount; f++) {
       const col = index % COLS;
       const row = Math.floor(index / COLS);
       const key = `${anim.name}_${f}`;
@@ -176,6 +180,7 @@ function build({ dir, image, json, animations, sourceCell = CELL }) {
 }
 
 for (const set of SETS) build(set);
+
 
 
 
