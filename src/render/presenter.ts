@@ -8,7 +8,6 @@ import { CameraRig } from "./camera.ts";
 import { PixelFxLayer } from "./fx.ts";
 import { attackForSkill, HeroActor, type HeroState } from "./hero.ts";
 import { characterOf, type CharacterDef } from "./characters.ts";
-import { flashScreen } from "./flash.ts";
 import { HitParticles } from "./particles.ts";
 import { ImpactFx, type ImpactKind } from "./impact.ts";
 
@@ -322,8 +321,7 @@ export class Presenter {
         this.impact.trigger(actor.x, gy - 6, 1, "key", "radial");
         this.impact.trigger(actor.x, gy - 6, -1, "key", "radial");
         this.fxLayer.spawn("impacts/heavy-landing", actor.x, gy, {}, 1.0, 1.2);
-        flashScreen("strong");
-        this.camera.kick("ultimate", side === "hero" ? 1 : -1);
+          this.camera.kick("ultimate", side === "hero" ? 1 : -1);
         this.freezeMs = Math.max(this.freezeMs, 150);
         break;
       }
@@ -489,7 +487,6 @@ export class Presenter {
     },
   ): void {
     const profile = TIERS[tier];
-    if (tier === "ultimate") flashScreen("strong");
     const dir = Math.sign(o.target.x - o.attacker.x) || 1;
 
     // 编排模式：顿帧只由 pixelfx act.stop 派生的 freezeFrames 决定（0 = 不 freeze）
@@ -645,7 +642,6 @@ export class Presenter {
     this.fxLayer.spawn("impacts/parry", x, y, { dir }, 1.1, 1.5);
     this.push.hero = -dir * (strong ? 34 : 22);
     this.push.enemy = dir * (strong ? 34 : 22);
-    flashScreen(strong ? "strong" : "normal");
     this.camera.kick(strong ? "ultimate" : "key", dir);
     this.freezeMs = Math.max(this.freezeMs, strong ? 250 : 150);
     this.spawnFloat(strong ? "振刀" : "拼刀", x, y - 30, strong ? "key" : "normal", false);
@@ -1332,6 +1328,7 @@ export class Presenter {
     };
   }
 }
+
 
 
 
