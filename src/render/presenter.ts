@@ -557,16 +557,22 @@ export class Presenter {
       this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
     } else {
       this.impact.arc(x, y, dir, arcColor, tier === "ultimate" ? 38 : 30, dir > 0 ? -0.2 : 0.2);
-      if ((o.skill ?? "").includes("iai")) this.impact.line(x, y, dir, 130, 0x9fe8ff);
+      if ((o.skill ?? "").includes("iai")) this.impact.line(x, y, dir, 260, 0x9fe8ff);
       if ((o.skill ?? "").includes("uppercut")) this.impact.line(x, y, dir, 90, 0x9fe8ff, true);
       if (o.guard) {
         this.fxLayer.spawn("impacts/ricochet", x, y, { dir }, 0.8, 1.1);
         this.impact.clash(x, y, dir, tier === "ultimate");
         this.camera.kick(tier === "ultimate" ? "ultimate" : "key", dir);
         this.freezeMs = Math.max(this.freezeMs, tier === "ultimate" ? 250 : 140);
+      } else if (this.chars[o.attackerSide].id === "samurai") {
+        this.impact.slashCross(x, y, dir, tier === "ultimate", 0x9fe8ff);
+        this.impact.styleBurst("blade", x, y, dir, tier, sparkColor);
       } else if (this.chars[o.attackerSide].id === "martial" || this.chars[o.attackerSide].id === "boxer") {
         this.impact.bluntBurst(x, y, dir, tier === "ultimate", 0xffffff);
         this.fxLayer.spawn("impacts/blunt-hit", x, y, { dir }, 0.7, 1.0);
+      } else if (this.chars[o.attackerSide].id === "huntress" || this.chars[o.attackerSide].id === "wizard") {
+        this.impact.styleBurst(this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
+        this.impact.elementBurst(x, y, this.chars[o.attackerSide].element);
       } else {
         this.impact.styleBurst(this.chars[o.attackerSide].meleeStyle, x, y, dir, tier, sparkColor);
       }
@@ -683,10 +689,10 @@ export class Presenter {
       const last = pts[pts.length - 1];
       // 刀尖处的发光月牙，补足单条折线的体积感
       this.trailG.setStrokeStyle({ width: 7, color, alpha: 0.28 });
-      this.trailG.arc(last.x, last.y, 26, -1.15, 1.15);
+      this.trailG.arc(last.x, last.y, 34, -1.15, 1.15);
       this.trailG.stroke();
       this.trailG.setStrokeStyle({ width: 2.5, color: 0xffffff, alpha: 0.75 });
-      this.trailG.arc(last.x, last.y, 22, -0.85, 0.85);
+      this.trailG.arc(last.x, last.y, 29, -0.85, 0.85);
       this.trailG.stroke();
     }
   }
@@ -1326,6 +1332,8 @@ export class Presenter {
     };
   }
 }
+
+
 
 
 

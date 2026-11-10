@@ -278,6 +278,20 @@ export class ImpactFx {
     this.spawnShards(x, y, strong ? 12 : 8, dir, "radial");
   }
 
+  /** 武士大斩：双层大月牙 + 交叉白线，范围更大。 */
+  slashCross(x: number, y: number, dir: number, strong: boolean, color: number): void {
+    const r = strong ? 58 : 46;
+    this.arc(x, y, dir, color, r, 0.32);
+    this.arc(x, y, dir, 0xffffff, r * 0.86, -0.32);
+    const g = new PIXI.Graphics();
+    g.setStrokeStyle({ width: strong ? 4 : 2.5, color: 0xffffff, alpha: 0.9 });
+    g.moveTo(x - dir * (r * 0.9), y + r * 0.35).lineTo(x + dir * (r * 1.1), y - r * 0.35);
+    g.moveTo(x - dir * (r * 0.8), y - r * 0.4).lineTo(x + dir * (r * 1.0), y + r * 0.4);
+    g.stroke();
+    this.addShape(g, 0.12, 0);
+    this.star(x, y, strong ? 18 : 13);
+  }
+
   /** 长线刀光：居合/上挑的贯穿线。 */
   line(x: number, y: number, dir: number, len: number, color: number, vertical = false): void {
     const g = new PIXI.Graphics();
@@ -294,7 +308,7 @@ export class ImpactFx {
 
   /** 钝击：白色冲击环 + 黑色碎块，强调震荡而非锐利。 */
   bluntBurst(x: number, y: number, dir: number, strong: boolean, color = 0xffffff): void {
-    const r = strong ? 26 : 16;
+    const r = strong ? 42 : 26;
     const ring = new PIXI.Graphics();
     ring.circle(0, 0, r * 0.55).stroke({ width: 3, color, alpha: 0.9 });
     ring.position.set(x, y);
@@ -305,7 +319,7 @@ export class ImpactFx {
     const chunks = new PIXI.Graphics();
     for (let k = 0; k < (strong ? 8 : 4); k++) {
       const a = (k / (strong ? 8 : 4)) * Math.PI * 2 + 0.3;
-      const dist = (strong ? 18 : 12) + (k % 3) * 5;
+      const dist = (strong ? 28 : 18) + (k % 3) * 7;
       const s = strong ? 4 : 3;
       chunks.rect(x + Math.cos(a) * dist, y + Math.sin(a) * dist, s, s).fill({ color: 0x14161d, alpha: 0.9 });
     }
@@ -365,7 +379,7 @@ export class ImpactFx {
   elementBurst(x: number, y: number, element: "fire" | "thunder" | "ice"): void {
     const g = new PIXI.Graphics();
     if (element === "fire") {
-      g.circle(x, y, 10).fill({ color: 0xff7a1a, alpha: 0.55 });
+      g.circle(x, y, 16).fill({ color: 0xff7a1a, alpha: 0.55 });
       g.circle(x, y, 5).fill({ color: 0xffe066, alpha: 0.9 });
       for (const [dx, h] of [[-8, 18], [0, 26], [8, 16]] as const) {
         g.poly([x + dx - 3, y, x + dx, y - h, x + dx + 3, y]).fill({ color: 0xff9f43, alpha: 0.8 });
@@ -382,7 +396,7 @@ export class ImpactFx {
       g.stroke();
       this.addShape(g, 0.16, 0);
     } else {
-      g.circle(x, y, 12).stroke({ width: 2, color: 0x9fe8ff, alpha: 0.9 });
+      g.circle(x, y, 19).stroke({ width: 2.5, color: 0x9fe8ff, alpha: 0.9 });
       for (let k = 0; k < 4; k++) {
         const a = (k / 4) * Math.PI * 2;
         g.poly([
@@ -501,6 +515,7 @@ export class ImpactFx {
     return this.steps.length > 0 || this.shapes.length > 0 || this.shards.length > 0;
   }
 }
+
 
 
 
